@@ -6,8 +6,8 @@ function App() {
 
   return (
     <>
-      <div>
-     
+      <div className='bg-slate-100 h-[100vh] '>
+
       </div>
     </>
   )
