@@ -6,7 +6,7 @@ function App() {
 
   return (
     <>
-      <div className='bg-slate-100 h-[100vh] '>
+      <div className='bg-[#0E1620] h-[100vh] '>
 
       </div>
     </>

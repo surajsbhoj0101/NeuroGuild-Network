@@ -1,90 +1,48 @@
 import React, { useState } from "react";
 import logo from "../assets/images/logo.png";
-import { Link } from "react-router-dom";
-import { MdMenuOpen, MdClose } from "react-icons/md";
+import { IoSearch } from "react-icons/io5";
+import { MdOutlineDarkMode, MdOutlineLightMode } from "react-icons/md";
+import Snowfall from 'react-snowfall';
 
 function Navbar() {
-  const [isSidebar, setSidebar] = useState(false);
-
-  const toggleSidebar = () => setSidebar((prev) => !prev);
-  const closeSidebar = () => setSidebar(false);
-
-  const links = ["Home", "Find Work", "Find Freelancers", "Contact"];
+  const [darkMode, setDarkMode] = useState(true);
 
   return (
-    <nav className="bg-slate-100 px-4 sm:px-8 lg:px-24 py-4 z-50">
-      <div className="container mx-auto flex justify-between items-center shadow-md px-4 sm:px-6 lg:px-10 py-4 rounded-2xl bg-white">
-        {/* Logo */}
-        <div className="w-32 sm:w-36 md:w-40">
-          <img src={logo} alt="NeuroGuild Logo" className="object-contain" />
-        </div>
+    <nav className="bg-[#0E1620] px-6 py-3 flex items-center justify-between shadow-md border-b border-white/20">
+      <Snowfall
+        snowflakeCount={40}
+       
+      />
 
-        {/* Desktop Links */}
-        <div className="hidden md:flex items-center space-x-6 lg:space-x-12">
-          {links.map((link) => (
-            <Link
-              key={link}
-              to={`#${link.replace(/\s+/g, "").toLowerCase()}`}
-              className="relative font-medium text-base lg:text-lg text-gray-500 hover:text-blue-500 transition-colors duration-300
-                after:content-[''] after:absolute after:left-0 after:-bottom-1 after:w-0 after:h-[3px] after:bg-blue-500 after:rounded-full
-                hover:after:w-full after:transition-all after:duration-300"
-            >
-              {link}
-            </Link>
-          ))}
-        </div>
-
-        {/* Right Side */}
-        <div className="flex items-center space-x-3 sm:space-x-5">
-          {/* Login button visible from >=480px */}
-          <button className="px-3 sm:px-4 py-2 hidden min-[480px]:flex rounded-xl bg-blue-500 text-white font-medium shadow-lg hover:bg-blue-600 hover:scale-105 transition-all duration-300 text-sm sm:text-base">
-            Login / Connect
-          </button>
-
-          {/* Mobile Toggle */}
-          <div
-            className="md:hidden p-1 rounded-md cursor-pointer hover:bg-gray-100"
-            onClick={toggleSidebar}
-          >
-            <MdMenuOpen size={28} className="text-gray-700" />
-          </div>
-        </div>
+      {/* Logo */}
+      <div className="w-32 sm:w-36 md:w-52">
+        <img src={logo} alt="NeuroGuild Logo" className="object-contain" />
       </div>
 
-      {/* Sidebar */}
-      <div
-        className={`fixed inset-0 z-50 bg-slate-100 opacity-95 transform transition-transform duration-300 ${
-          isSidebar ? "translate-x-0" : "translate-x-full"
-        } md:hidden`}
-      >
-        {/* Close Button */}
-        <div className="flex justify-end p-4">
-          <button
-            onClick={closeSidebar}
-            aria-label="Close Menu"
-            className="p-2 rounded-md hover:bg-gray-200"
-          >
-            <MdClose className="text-3xl text-gray-700" />
-          </button>
+      {/* Right Section */}
+      <div className="flex items-center gap-6 w-[60%] justify-end">
+
+        <div className="flex items-center flex-1 max-w-md bg-transparent border-2 border-blue-500 rounded-lg px-5 py-3 text-white focus-within:shadow-[0_0_10px_2px_rgba(59,130,246,0.7)] transition-all duration-300">
+          <IoSearch className="text-blue-400 text-lg mr-2" />
+          <input
+            type="text"
+            placeholder="Find Ai-Automated Gigs.."
+            className="bg-transparent flex-1 outline-none text-sm md:text-base text-white placeholder-gray-400"
+          />
         </div>
 
-        {/* Sidebar Content */}
-        <div className="flex flex-col items-center space-y-6 h-[calc(100vh-80px)] text-2xl font-semibold text-gray-700">
-          <button className="px-4 py-2 rounded-xl bg-blue-500 text-white font-medium shadow-lg hover:bg-blue-600 transition-all duration-300">
-            Login / Connect
-          </button>
 
-          {links.map((link) => (
-            <Link
-              key={link}
-              to={`#${link.replace(/\s+/g, "").toLowerCase()}`}
-              onClick={closeSidebar}
-              className="relative font-medium text-lg text-gray-500 hover:text-blue-500 transition-colors duration-300"
-            >
-              {link}
-            </Link>
-          ))}
-        </div>
+        <button className="px-5 py-3 rounded-lg bg-gradient-to-r from-blue-700 to-[#0E1220] text-white font-medium shadow-blue-700 hover:shadow-[0_0_12px_rgba(168,85,247,0.8)] transition-all duration-300">
+          Connect / Login
+        </button>
+
+
+        <button
+          onClick={() => setDarkMode(!darkMode)}
+          className="text-white  hover:shadow-blue-700 hover:bg-[#0e1525] px-4 rounded-lg py-3  text-2xl  hover:shadow-lg hover:text-blue-400 transition-colors duration-300"
+        >
+          {darkMode ? <MdOutlineLightMode /> : <MdOutlineDarkMode />}
+        </button>
       </div>
     </nav>
   );
