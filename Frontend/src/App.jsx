@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import './App.css'
+
 
 function App() {
   const [count, setCount] = useState(0)
 
   return (
     <>
-      <div className='bg-[#0E1620] h-[100vh] '>
+      <div className='dark:bg-[#0f111d] bg-[#161c32] h-[100vh] '>
 
       </div>
     </>
