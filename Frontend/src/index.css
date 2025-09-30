@@ -1,2 +1,44 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
+
+/*
+  The keyframe now animates `background-position`
+  from its starting point to a point where the gradient has fully moved across.
+*/
+@keyframes snake-border {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+.border-snake::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit; /* Use the parent's border-radius */
+  padding: 2px; /* This is your border-thickness */
+
+  /* The gradient starts and ends with transparent to create a "head" for the snake.
+    The background-size is doubled horizontally to allow it to slide across.
+  */
+  background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+  background-size: 200% 100%;
+
+  /* This mask creates the hollow border shape */
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+
+  /* Apply the corrected animation */
+  animation: snake-border 3s linear infinite;
+}
+
+/* Optional: A nice touch to pause the animation on hover for better UX */
+.max-w-lg:hover .border-snake::before {
+  animation-play-state: paused;
+}

@@ -9,6 +9,13 @@ import Snowfall from "react-snowfall";
 
 import AppProviders from "./components/AppProviders.jsx";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import '@fontsource/orbitron/400.css';
+import '@fontsource/orbitron/700.css';
+import '@fontsource/roboto/400.css';
+import '@fontsource/roboto/700.css';
+
+const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
+const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
 
 const queryClient = new QueryClient({
   defaultOptions: {

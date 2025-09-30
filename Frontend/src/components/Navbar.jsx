@@ -9,7 +9,8 @@ import { useTheme } from "../contexts/ThemeContext";
 import CustomConnectButton from "./CustomConnectButton";
 
 function Navbar() {
-
+  const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
+  const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
   const { isDarkMode, toggleDark } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -35,7 +36,8 @@ function Navbar() {
           <input
             type="text"
             placeholder="Find Ai-Automated Gigs.."
-            className="bg-transparent flex-1 outline-none text-sm md:text-base text-white placeholder-gray-400"
+            style={robotoStyle}
+            className="bg-transparent flex-1 outline-none text-sm md:text-base text-gray-100 placeholder-gray-400"
           />
         </div>
 
@@ -61,7 +63,7 @@ function Navbar() {
 
 
       {menuOpen && (
-        <div  className="absolute border-b border-white/20 top-full left-0 w-full dark:bg-[#0f121e] bg-[#161c32] border-t  shadow-lg flex flex-col items-start p-4 gap-4 md:hidden z-50">
+        <div className="absolute border-b border-white/20 top-full left-0 w-full dark:bg-[#0f121e] bg-[#192037] border-t  shadow-lg flex flex-col items-start p-4 gap-4 md:hidden z-50">
 
           <div className="flex border-b  items-center border-[#31c4c1] w-full bg-transparent border-2 dark:border-blue-500 rounded-lg px-4 py-2 text-white">
             <IoSearch className="dark:text-blue-400 text-[#1be4e0] text-lg mr-2" />
