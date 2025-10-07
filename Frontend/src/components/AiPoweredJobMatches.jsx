@@ -91,22 +91,15 @@ function AiPoweredJobMatches() {
                                 </div>
                             </div>
 
-                            {/* description area */}
-                            <div className="relative z-10 pt-2">
-                                <p 
-                                    className="text-[1rem] text-gray-200 font-normal " 
-                                    style={{...robotoStyle, maxHeight: '4.2rem', overflow: 'hidden'}}
-                                >
-                                    {item.description}
-                                </p>
-                            </div>
+                            
+                            
 
                             {/* skills row */}
                             <div className="flex flex-wrap gap-2 pt-1 z-10">
                                 {item.skills.map((skill, id) => (
                                     <span
                                         key={id}
-                                        className="inline-block px-3 py-1 text-xs font-semibold text-cyan-200 bg-cyan-900/50 rounded-full tracking-wide"
+                                        className="inline-block px-3 py-1 text-xs   bg-[#1e2642] text-white rounded-full tracking-wide"
                                         style={robotoStyle}
                                     >
                                         {skill}
