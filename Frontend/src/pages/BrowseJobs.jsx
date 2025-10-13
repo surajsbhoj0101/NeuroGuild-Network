@@ -1,13 +1,20 @@
-import React from 'react'
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAccount } from 'wagmi'
 import SideBar from '../components/SideBar'
 
 import "../index.css"
 
-
 function BrowseJobs() {
+  
     const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
     const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
+
+    const { isConnected } = useAccount();
+    const navigate = useNavigate();
+
+    // user notice shown when redirecting due to no wallet
+    const [notice, setNotice] = useState(null);
 
     const aiPoweredJobMatches = [
         {
@@ -59,24 +66,35 @@ function BrowseJobs() {
 
         const sortedSkills = Array.from(skillSet).sort();
 
-        setSkills(prev => {
-            if (JSON.stringify(prev) !== JSON.stringify(sortedSkills)) {
-                return sortedSkills;
-            }
-            return prev;
-        });
+        setSkills(sortedSkills);
 
         // initialize results
         setFilteredJobs(aiPoweredJobMatches);
     }, []); // run once
 
-    const toggleSkill = (skill) => {
-        setSelectedSkills((prev) =>
-            prev.includes(skill)
-                ? prev.filter((s) => s !== skill)
-                : [...prev, skill]
-        );
-    };
+    useEffect(() => {
+        let t;
+        if (!isConnected) {
+            setNotice("Wallet not connected — redirecting to home...");
+            t = setTimeout(() => {
+                navigate('/');
+            }, 1600);
+        } else {
+            setNotice(null);
+        }
+        return () => clearTimeout(t);
+    }, [isConnected, navigate]);
+
+    function toggleSkill(skill) {
+        setSelectedSkills(prevSkills => {
+            if (prevSkills.includes(skill)) {
+                return prevSkills.filter(s => s !== skill);
+            } else {
+                return [...prevSkills, skill];
+            }
+        });
+    }
+
 
     const handleJobType = (type) => {
         setJobType(curr => curr === type ? "" : type);
@@ -117,7 +135,23 @@ function BrowseJobs() {
 
     return (
         <div className='dark:bg-[#0f111d] pt-6 flex bg-[#161c32] w-full'>
+            {/* floating notice */}
+            {notice && (
+                <div className="fixed top-4 right-4 z-50">
+                    <div className="flex items-center gap-3 bg-[#14a19f] text-white px-4 py-2 rounded shadow-lg">
+                        <div className="text-sm">{notice}</div>
+                        <button
+                            onClick={() => setNotice(null)}
+                            className="ml-2 text-xs text-white/90 px-2 py-1 rounded hover:opacity-90"
+                        >
+                            Dismiss
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <SideBar />
+            
             <div className='flex w-full flex-col lg:flex-row'>
                 <div className='filters w-full lg:w-1/2 '>
                     <h1 style={orbitronStyle} className='text-3xl  text-white font-bold px-6 mb-4'>Filters</h1>
@@ -134,9 +168,9 @@ function BrowseJobs() {
                                         shadow-md hover:shadow-lg  
                                         transition-all duration-300 
                                         focus:outline-none focus:ring-2 focus:ring-cyan-700 dark:focus:ring-blue-700 focus:ring-opacity-50
-                                        ${selectedSkills.includes(skill) 
-                                          ? 'bg-cyan-700 dark:bg-blue-800 text-white ring-2 dark:ring-blue-800 ring-cyan-700' 
-                                          : 'bg-[#262f52] text-white dark:bg-gray-900 dark:hover:bg-blue-700 hover:bg-cyan-700'}
+                                        ${selectedSkills.includes(skill)
+                                            ? 'bg-cyan-700 dark:bg-blue-800 text-white ring-2 dark:ring-blue-800 ring-cyan-700'
+                                            : 'bg-[#262f52] text-white dark:bg-gray-900 dark:hover:bg-blue-700 hover:bg-cyan-700'}
                                     `}
                                 >
                                     {skill}
@@ -156,8 +190,8 @@ function BrowseJobs() {
                                             shadow-md hover:shadow-lg  
                                             transition-all duration-300 
                                             focus:outline-none focus:ring-2 focus:ring-cyan-700 dark:focus:ring-blue-700 focus:ring-opacity-50
-                                            ${jobType === type ?  'bg-cyan-700 dark:bg-blue-800 text-white ring-2 dark:ring-blue-800 ring-cyan-700' 
-                                          : 'bg-[#262f52] text-white dark:bg-gray-900 dark:hover:bg-blue-700 hover:bg-cyan-700'}
+                                            ${jobType === type ? 'bg-cyan-700 dark:bg-blue-800 text-white ring-2 dark:ring-blue-800 ring-cyan-700'
+                                                : 'bg-[#262f52] text-white dark:bg-gray-900 dark:hover:bg-blue-700 hover:bg-cyan-700'}
                                         `}
                                     >
                                         {type}
@@ -181,8 +215,8 @@ function BrowseJobs() {
                                            shadow-md hover:shadow-lg  
                                            transition-all duration-300 
                                            focus:outline-none focus:ring-2 focus:ring-cyan-700 dark:focus:ring-blue-700 focus:ring-opacity-50
-                                           ${sortBy === sort  ? 'bg-cyan-700 dark:bg-blue-800 text-white ring-2 dark:ring-blue-800 ring-cyan-700' 
-                                          : 'bg-[#262f52] text-white dark:bg-gray-900 dark:hover:bg-blue-700 hover:bg-cyan-700'}
+                                           ${sortBy === sort ? 'bg-cyan-700 dark:bg-blue-800 text-white ring-2 dark:ring-blue-800 ring-cyan-700'
+                                            : 'bg-[#262f52] text-white dark:bg-gray-900 dark:hover:bg-blue-700 hover:bg-cyan-700'}
                                         `}
                                 >
                                     {sort}

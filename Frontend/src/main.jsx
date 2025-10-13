@@ -8,6 +8,7 @@ import { ThemeProvider } from './contexts/ThemeContext.jsx';
 import Snowfall from "react-snowfall";
 
 
+
 import AppProviders from "./components/AppProviders.jsx";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import '@fontsource/orbitron/400.css';
@@ -16,6 +17,7 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/700.css';
 import Dashboard from './pages/Dashboard.jsx';
 import BrowseJobs from './pages/BrowseJobs.jsx';
+import MyProfile from './pages/MyProfile.jsx';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
@@ -34,7 +36,7 @@ const router = createBrowserRouter([
     path: "/",
     element: (
       <>
-        <Snowfall snowflakeCount={60} />
+        {/* <Snowfall snowflakeCount={60} /> */}
         <Navbar />
         <App />
       </>
@@ -44,7 +46,7 @@ const router = createBrowserRouter([
     path: "/dashboard",
     element: (
       <>
-        <Snowfall snowflakeCount={60} />
+        {/* <Snowfall snowflakeCount={60} /> */}
         <Navbar />
         <Dashboard />
       </>
@@ -56,6 +58,15 @@ const router = createBrowserRouter([
         <Snowfall snowflakeCount={60} />
         <Navbar />
         <BrowseJobs />
+      </>
+    )
+  }, {
+    path: "/my-profile",
+    element: (
+      <>
+        <Snowfall snowflakeCount={60} />
+        <Navbar />
+        <MyProfile />
       </>
     )
   }

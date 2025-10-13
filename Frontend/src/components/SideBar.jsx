@@ -14,14 +14,13 @@ function SideBar() {
   const menuItems = [
     { name: "Dashboard", icon: <MdSpaceDashboard />, link: "/Dashboard" },
     { name: "Browse Jobs", icon: <BsBriefcase />, link: "/browse-jobs" },
-    { name: "My Profile", icon: <FaRegUser />, link: "/profile" },
+    { name: "My Profile", icon: <FaRegUser />, link: "/my-profile" },
     { name: "Settings", icon: <IoSettingsOutline />, link: "/settings" },
   ];
 
-  // Keep active state in sync with the current route so the active item persists
+ 
   useEffect(() => {
     const idx = menuItems.findIndex(item => {
-      // treat root-like or exact matches; fallback to startsWith for nested routes
       if (!item.link || item.link === "#") return false;
       return location.pathname === item.link || location.pathname.startsWith(item.link);
     });
