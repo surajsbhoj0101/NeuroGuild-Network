@@ -3,9 +3,8 @@ import SideBar from '../components/SideBar'
 import { useAccount } from "wagmi";
 import "../index.css"
 
-import MyJobsTabs from '../components/MyJobTabs'
-import AiPoweredJobMatches from '../components/AiPoweredJobMatches'
-function Dashboard() {
+
+function Setting() {
     const [count, setCount] = useState(0)
     const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
     const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
@@ -52,22 +51,9 @@ function Dashboard() {
                 <div className="pointer-events-none absolute right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
                 <div className="pointer-events-none absolute left-[5%] bottom-[1%] w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
 
-                <SideBar />
-
-                <div className='flex w-full'>
-                    {/* AI-powered job matches section */}
-                    <AiPoweredJobMatches />
-
-                    {/* Center the MyJobsTabs component */}
-                    <div className='flex justify-center w-full'>
-                        <MyJobsTabs />
-                    </div>
-                </div>
-            </div>
-
-
+                <SideBar /></div>
         </>
     )
 }
 
-export default Dashboard;
+export default Setting

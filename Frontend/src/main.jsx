@@ -16,6 +16,7 @@ import '@fontsource/roboto/700.css';
 import Dashboard from './pages/Dashboard.jsx';
 import BrowseJobs from './pages/BrowseJobs.jsx';
 import MyProfile from './pages/MyProfile.jsx';
+import Setting from './pages/Setting.jsx';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
@@ -65,6 +66,16 @@ const router = createBrowserRouter([
         <Snowfall snowflakeCount={60} />
         <Navbar />
         <MyProfile />
+      </>
+    )
+  },
+  , {
+    path: "/settings",
+    element: (
+      <>
+        <Snowfall snowflakeCount={60} />
+        <Navbar />
+        <Setting />
       </>
     )
   }
