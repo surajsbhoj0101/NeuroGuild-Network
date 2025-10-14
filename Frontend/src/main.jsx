@@ -7,8 +7,6 @@ import Navbar from './components/Navbar.jsx';
 import { ThemeProvider } from './contexts/ThemeContext.jsx';
 import Snowfall from "react-snowfall";
 
-
-
 import AppProviders from "./components/AppProviders.jsx";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import '@fontsource/orbitron/400.css';
