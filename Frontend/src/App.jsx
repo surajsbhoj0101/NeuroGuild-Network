@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { MdSecurity } from "react-icons/md";
 import { GiBrain } from "react-icons/gi";
 import { RiExchangeDollarLine } from "react-icons/ri";
@@ -8,14 +8,39 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount } from "wagmi";
 import Snowfall from "react-snowfall";
 import logo from "./assets/images/logo.png";
-
+import axios from "axios";
 import "./index.css";
+
 
 const orbitronStyle = { fontFamily: "Orbitron, sans-serif" };
 const robotoStyle = { fontFamily: "Roboto, sans-serif" };
 
 export default function App() {
   const { address, isConnected } = useAccount();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isConnected || !address) return;
+
+    const fetchOrCreateUser = async () => {
+      try {
+        const response = await axios.get(`http://localhost:5000/get-or-create/${address}`);
+
+        if (response.data.newUser) {
+          console.log(" Welcome, new user!");
+          navigate('/my-profile')
+        } else {
+          console.log("👤 Existing user loaded");
+        }
+
+      } catch (error) {
+        console.error("Error fetching or creating user:", error);
+      }
+    };
+
+    fetchOrCreateUser();
+  }, [isConnected, address]);
+
 
   const [toast, setToast] = useState(null);
   useEffect(() => {
@@ -51,7 +76,7 @@ export default function App() {
             </button>
           </div>
         </div>
-      )}  
+      )}
 
       {/* hero */}
       <section className="max-w-6xl mx-auto px-6 pt-6 pb-12 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center relative z-10">
@@ -85,7 +110,7 @@ export default function App() {
             </Link>
 
             <div className="ml-2 text-sm text-gray-400" style={robotoStyle}>
-              {isConnected ? `Connected: ${address?.slice(0,6)}...${address?.slice(-4)}` : "Wallet not connected"}
+              {isConnected ? `Connected: ${address?.slice(0, 6)}...${address?.slice(-4)}` : "Wallet not connected"}
             </div>
           </div>
 
@@ -130,7 +155,7 @@ export default function App() {
             <div className="flex items-start gap-4">
               <div className="w-15 h-15 rounded-lg overflow-hidden  flex items-center justify-center">
                 <div className="text-white font-bold" style={orbitronStyle}>
-                  <img src={logo}  alt="" />
+                  <img src={logo} alt="" />
                 </div>
               </div>
 
@@ -182,7 +207,7 @@ export default function App() {
           </div>
         </div>
       </section>
-     
+
 
       {/* footer */}
       <footer className="max-w-6xl mx-auto px-6 py-10 relative z-10">

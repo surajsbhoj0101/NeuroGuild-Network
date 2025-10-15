@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAccount } from 'wagmi';
 import SideBar from '../components/SideBar';
-import { Award, Plus, X, Check, User, Briefcase, Mail, MapPin, Github, Linkedin, Twitter, Globe } from 'lucide-react';
+import axios from "axios";
+import { Award, Plus, X, Check, User, Mail, MapPin, Github, Linkedin, Twitter, Globe } from 'lucide-react';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
@@ -12,7 +13,6 @@ export default function MyProfile() {
   const navigate = useNavigate();
   const [notice, setNotice] = useState(null);
 
-  // Profile data
   const [profile, setProfile] = useState({
     displayName: '',
     bio: '',
@@ -26,7 +26,7 @@ export default function MyProfile() {
     hourlyRate: '',
     experience: '',
     availability: 'available',
-    avatarUrl: '' // Added for profile picture
+    avatarUrl: ''
   });
 
   const [skills, setSkills] = useState([]);
@@ -35,53 +35,52 @@ export default function MyProfile() {
   const [showSkillInput, setShowSkillInput] = useState(false);
   const [editMode, setEditMode] = useState(false);
 
+  const mapUserToProfile = (user) => ({
+    displayName: user.BasicInformation?.name || '',
+    title: user.BasicInformation?.title || '',
+    bio: user.BasicInformation?.bio || '',
+    location: user.BasicInformation?.location || '',
+    email: user.BasicInformation?.email || '',
+    github: user.SocialLinks?.github || '',
+    linkedin: user.SocialLinks?.linkedIn || '',
+    twitter: user.SocialLinks?.twitter || '',
+    website: user.SocialLinks?.website || '',
+    hourlyRate: user.ProfessionalDetails?.hourlyRate || '',
+    experience: user.ProfessionalDetails?.experience || '',
+    availability: user.ProfessionalDetails?.availability || 'available',
+    avatarUrl: user.avatarUrl || ''
+  });
+
   useEffect(() => {
     let t;
     if (!isConnected) {
       setNotice("Wallet not connected — redirecting to home...");
       t = setTimeout(() => navigate('/'), 1600);
-    } else {
+    } else if (address) {
       setNotice(null);
-      // Load profile data from memory (in real app, this would be from blockchain/IPFS)
       loadProfileData();
     }
     return () => clearTimeout(t);
   }, [isConnected, navigate, address]);
 
-  const loadProfileData = () => {
-    // Simulate loading data
-    const savedProfile = {
-      displayName: 'Jane Developer',
-      bio: 'Full-stack blockchain developer passionate about Web3',
-      title: 'Senior Blockchain Developer',
-      location: 'Remote',
-      email: 'jane@example.com',
-      github: 'janedev',
-      linkedin: 'janedev',
-      twitter: 'janedev',
-      website: 'janedev.eth',
-      hourlyRate: '75',
-      experience: '5+ years',
-      availability: 'available',
-      // Use a fun, deterministic avatar based on the wallet address
-      avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${address || 'placeholder'}`
-    };
-
-    const savedSkills = ['Solidity', 'React', 'Web3.js'];
-    const savedSbts = [
-      { id: 1, name: 'Solidity Expert', issuer: 'ChainSkill DAO', date: '2024-01-15', level: 'Expert' },
-      { id: 2, name: 'React Developer', issuer: 'DevCert Protocol', date: '2024-02-20', level: 'Advanced' },
-      { id: 3, name: 'Web3.js Master', issuer: 'Ethereum Foundation', date: '2024-03-10', level: 'Master' }
-    ];
-
-    setProfile(savedProfile);
-    setSkills(savedSkills);
-    setSbts(savedSbts);
+  const loadProfileData = async () => {
+    if (!address) return;
+    try {
+      const response = await axios.get(`http://localhost:5000/get-user/${address}`);
+      if (response.data.success && response.data.user) {
+        setProfile(mapUserToProfile(response.data.user));
+      } else {
+        setEditMode(true);
+      }
+    } catch (e) {
+      console.error("Error loading profile:", e);
+      setEditMode(true);
+    }
   };
 
   const calculateProfileCompletion = () => {
     const fields = [
-      profile.avatarUrl, // Added for completion calculation
+      profile.avatarUrl,
       profile.displayName,
       profile.bio,
       profile.title,
@@ -92,17 +91,14 @@ export default function MyProfile() {
       skills.length > 0,
       profile.github || profile.linkedin || profile.twitter || profile.website
     ];
-
     const completed = fields.filter(field => field && field !== '').length;
     return Math.round((completed / fields.length) * 100);
   };
 
   const addSkill = () => {
-    if (newSkill.trim() && !skills.includes(newSkill.trim())) {
-      const skill = newSkill.trim();
+    const skill = newSkill.trim();
+    if (skill && !skills.includes(skill)) {
       setSkills([...skills, skill]);
-
-      // Simulate SBT minting
       const newSbt = {
         id: Date.now(),
         name: `${skill} Certification`,
@@ -111,7 +107,6 @@ export default function MyProfile() {
         level: 'Beginner'
       };
       setSbts([...sbts, newSbt]);
-
       setNewSkill('');
       setShowSkillInput(false);
       setNotice(`Skill added! SBT minted for ${skill}`);
@@ -124,11 +119,50 @@ export default function MyProfile() {
   };
 
   const handleInputChange = (field, value) => {
-    setProfile({ ...profile, [field]: value });
+    setProfile(prev => ({ ...prev, [field]: value }));
   };
 
   const completion = calculateProfileCompletion();
 
+  const updateUserData = async () => {
+    try {
+      if (!address) return;
+      const payload = {
+        BasicInformation: {
+          name: profile.displayName,
+          title: profile.title,
+          bio: profile.bio,
+          location: profile.location,
+          email: profile.email,
+        },
+        ProfessionalDetails: {
+          hourlyRate: profile.hourlyRate,
+          experience: profile.experience,
+          availability: profile.availability,
+        },
+        SocialLinks: {
+          github: profile.github,
+          linkedIn: profile.linkedin,
+          twitter: profile.twitter,
+          website: profile.website,
+        },
+      };
+      if (editMode) {
+        console.log("updating ...")
+        const response = await axios.put(`http://localhost:5000/update-profile/${address}`, payload);
+        console.log('Profile updated:', response.data);
+        setNotice("Profile updated successfully")
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Failed to update profile');
+    }
+    setEditMode(prev => !prev);
+  };
+
+  const mintSBTForSkill = (skill) => {
+    alert(`Minting SBT for ${skill}...`);
+  };
   return (
     <>
       {/* Floating notice */}
@@ -162,7 +196,7 @@ export default function MyProfile() {
                 My Profile
               </p>
               <button
-                onClick={() => setEditMode(!editMode)}
+                onClick={updateUserData}
                 className='px-4 py-2 bg-[#14a19f] hover:bg-[#1ecac7] text-white rounded transition-colors text-sm'
                 style={robotoStyle}
               >
@@ -205,17 +239,13 @@ export default function MyProfile() {
                   <div className='flex flex-col sm:flex-row-reverse items-center gap-6'>
                     {/* Avatar Display */}
                     <div className='flex-shrink-0'>
-                      {profile.avatarUrl ? (
-                        <img
-                          src={profile.avatarUrl}
-                          alt="Profile Avatar"
-                          className='w-24 h-24 rounded-full object-cover border-2 border-[#14a19f]'
-                        />
-                      ) : (
-                        <div className='w-24 h-24 rounded-full bg-[#0f111d] border-2 border-[#14a19f]/50 flex items-center justify-center'>
-                          <User size={40} className='text-gray-500' />
-                        </div>
-                      )}
+
+                      <img
+                        src={`https://api.dicebear.com/7.x/bottts/svg?seed=${address}`}
+                        alt="Profile Avatar"
+                        className='w-24 h-24 rounded-full object-cover border-2 border-[#14a19f]'
+                      />
+
                     </div>
 
                     {/* Name and Title Fields */}
@@ -443,6 +473,7 @@ export default function MyProfile() {
               </div>
 
               {/* Skills Section */}
+              {/* Skills Section */}
               <div className='bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20'>
                 <div className='flex justify-between items-center mb-4'>
                   <h2 style={orbitronStyle} className='text-white text-xl font-bold tracking-wide'>Skills</h2>
@@ -452,13 +483,14 @@ export default function MyProfile() {
                     style={robotoStyle}
                   ><Plus size={16} /> Add Skill</button>
                 </div>
+
                 {showSkillInput && (
                   <div className='mb-4 flex gap-2'>
                     <input
                       type='text'
                       value={newSkill}
                       onChange={(e) => setNewSkill(e.target.value)}
-                      onClick={(e) => e.key === 'Enter' && addSkill()}
+                      onKeyDown={(e) => e.key === 'Enter' && addSkill()}
                       placeholder='Enter skill name'
                       className='flex-1 bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
                       style={robotoStyle}
@@ -468,21 +500,45 @@ export default function MyProfile() {
                     <button onClick={() => { setShowSkillInput(false); setNewSkill(''); }} className='px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded transition-colors'><X size={20} /></button>
                   </div>
                 )}
-                <div className='flex flex-wrap gap-2'>
+
+                <div className='flex flex-wrap gap-3'>
                   {skills.length > 0 ? skills.map((skill, idx) => (
                     <div
                       key={idx}
-                      className='group relative px-4 py-2 bg-[#14a19f]/20 border border-[#14a19f]/50 text-[#14a19f] rounded-full text-sm flex items-center gap-2 hover:bg-[#14a19f]/30 transition-colors'
-                      style={robotoStyle}
+                      className='group relative flex flex-col bg-[#141620] rounded-xl p-5 w-52 
+             border border-transparent hover:border-[#14a19f] transition-all duration-300 shadow-xl'
                     >
-                      {skill}
-                      <button onClick={() => removeSkill(skill)} className='opacity-0 group-hover:opacity-100 transition-opacity'><X size={14} /></button>
+                      <div className='flex justify-between items-start mb-4'>
+                        <p className='text-gray-100 font-extrabold text-xl leading-tight' style={robotoStyle}>{skill}</p>
+
+                        <button
+                          onClick={() => removeSkill(skill)}
+                          className='p-1 text-gray-400 hover:text-red-500 transition-colors 
+                       opacity-0 group-hover:opacity-100 duration-200'
+                          aria-label={`Remove skill: ${skill}`}
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+
+                      <p className='text-xs text-[#14a19f] font-mono mb-6'>Tokenizable Skill</p>
+
+                      <button
+                        onClick={() => mintSBTForSkill(skill)}
+                        className='w-full mt-auto text-sm font-bold bg-[#14a19f] text-[#0f111d] py-2 rounded-lg 
+                   hover:bg-[#1ecac7] transition-all duration-200 
+                   shadow-lg shadow-[#14a19f]/20 hover:shadow-xl hover:shadow-[#14a19f]/40'
+                        style={robotoStyle}
+                      >
+                        Mint SBT
+                      </button>
                     </div>
                   )) : (
                     <p className='text-gray-500 text-sm' style={robotoStyle}>No skills added yet</p>
                   )}
                 </div>
               </div>
+
             </div>
 
             {/* Sidebar - SBTs */}
