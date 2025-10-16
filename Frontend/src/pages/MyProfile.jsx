@@ -12,6 +12,7 @@ export default function MyProfile() {
   const { isConnected, address } = useAccount();
   const navigate = useNavigate();
   const [notice, setNotice] = useState(null);
+  const [redNotice, setRedNotice] = useState(false);
 
   const skillTokenizable = [
     "Translate", "Write", "Draw", "Edit", "Photograph", "WebDev",
@@ -24,19 +25,19 @@ export default function MyProfile() {
     experience: '', availability: 'available', avatarUrl: ''
   });
 
-  const [skills, setSkills] = useState([]); // FIX: State will now consistently be an array of strings
+  const [skills, setSkills] = useState([]);
   const [sbts, setSbts] = useState([]);
   const [newSkill, setNewSkill] = useState('');
   const [showSkillInput, setShowSkillInput] = useState(false);
   const [editMode, setEditMode] = useState(false);
 
-  
+
   const mapUserToSkills = (user) => (
     user.skills?.map(skill => ({
       name: skill.name,
       sbtAddress: skill.sbtAddress,
       minted: skill.minted || false,
-      active: skill.active ?? true,
+      active: skill.active ?? true, //The ?? operator returns the right-hand value only if the left-hand value is null or undefined.
       tokenId: skill.tokenId || null
     })) || []
   );
@@ -60,12 +61,27 @@ export default function MyProfile() {
   useEffect(() => {
     let t;
     if (!isConnected) {
+      setRedNotice(true);
       setNotice("Wallet not connected — redirecting to home...");
       t = setTimeout(() => navigate('/'), 1600);
     } else if (address) {
       setNotice(null);
       loadProfileData();
     }
+    //Note:
+    /*
+      User opens the page → isConnected = false → setTimeout starts.
+
+      Before 1.6s, user connects wallet → isConnected = true.
+
+      Effect runs again:
+
+        Cleanup triggers → clearTimeout(t) cancels the old redirect.
+
+        loadProfileData() runs instead.
+
+      This ensures only the latest intended behavior happens.
+    */
     return () => clearTimeout(t);
   }, [isConnected, navigate, address]);
 
@@ -79,9 +95,13 @@ export default function MyProfile() {
 
         const userSkills = mapUserToSkills(user);
         // BUG FIX: Set skills state to an array of strings (skill names).
-        setSkills(userSkills.map(s => s.name));
+        setSkills(userSkills.map(s => s.name)); //creates a new array containing only the names
 
-        // BUG FIX: Populate SBTs list from loaded user data for skills that are already minted.
+        /*  
+          let arr = [1,2,3,4]
+          let a = arr.filter(a => a%2 == 0 ).map(a=>a*2);
+          [ 4, 8 ]
+         */
         const loadedSbts = userSkills
           .filter(skill => skill.minted)
           .map(skill => ({
@@ -98,6 +118,8 @@ export default function MyProfile() {
       }
     } catch (e) {
       console.error("Error loading profile:", e);
+      setRedNotice(true);
+      setNotice("Failed to load the profile")
       setEditMode(true);
     }
   };
@@ -113,15 +135,16 @@ export default function MyProfile() {
     return Math.round((completed / fields.length) * 100);
   };
 
-  // BUG FIX: Simplified logic to avoid creating "fake" SBTs.
+
   const addSkill = () => {
     const skill = newSkill.trim();
     if (skill && !skills.includes(skill)) {
-      setSkills([...skills, skill]);
+      setSkills([...skills, skill]); //first spread using ...skills the add skill
       setNewSkill('');
       setShowSkillInput(false);
+      setRedNotice(faslse);
       setNotice(`'${skill}' was added. Remember to save your profile.`);
-      setTimeout(() => setNotice(null), 3000);
+      setTimeout(() => setNotice(null), 6000);
     }
   };
 
@@ -164,11 +187,15 @@ export default function MyProfile() {
       };
 
       await axios.put(`http://localhost:5000/update-profile/${address}`, payload);
+      setRedNotice(false)
       setNotice("Profile updated successfully");
+
       setEditMode(false); // Only exit edit mode on success.
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Failed to update profile. Please try again.');
+      setRedNotice(true);
+      setNotice("Failed to upload profile")
+
       // Do NOT exit edit mode if the save fails.
     }
   };
@@ -182,7 +209,7 @@ export default function MyProfile() {
       {/* ... The rest of your JSX remains unchanged ... */}
       {notice && (
         <div className="fixed top-4 right-4 z-50 animate-pulse">
-          <div className="flex items-center gap-3 bg-[#14a19f] text-white px-4 py-2 rounded shadow-lg border border-[#1ecac7]/30">
+          <div className={`flex items-center gap-3 bg-[#14a19f] text-white px-4 py-2 rounded shadow-lg border border-[#1ecac7]/30 ${redNotice ? 'bg-red-600 border-red-700' : 'bg-[#14a19f] border-[#1ecac7]/30'} `}>
             <div className="text-sm">{notice}</div>
             <button
               onClick={() => setNotice(null)}
@@ -193,6 +220,8 @@ export default function MyProfile() {
           </div>
         </div>
       )}
+
+
 
       <div className='dark:bg-[#0f111d] pt-6 flex bg-[#161c32] w-full min-h-screen  '>
         <div className="pointer-events-none absolute right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
@@ -517,29 +546,46 @@ export default function MyProfile() {
                   {skills.length > 0 ? skills.map((skill, idx) => (
                     <div
                       key={idx}
-                      className='group relative flex flex-col bg-[#141620] rounded-xl p-5 w-52 border border-transparent hover:border-[#14a19f] transition-all duration-300 shadow-xl'
+                      className="group relative flex flex-col bg-slate-800 dark:bg-[#1a1f2b]/80 backdrop-blur-md rounded-xl p-4 w-52 border border-transparent hover:border-[#14a19f] hover:shadow-[0_0_20px_#14a19f33] transition-all duration-300 shadow-md"
                     >
-                      <div className='flex justify-between items-start mb-4'>
-                        <p className='text-gray-100 font-extrabold text-xl leading-tight' style={robotoStyle}>{skill}</p>
+                      {/* Skill Header */}
+                      <div className="flex justify-between items-center mb-2">
+                        <p
+                          className="text-gray-100 font-extrabold text-lg leading-snug truncate"
+                          style={robotoStyle}
+                          title={skill}
+                        >
+                          {skill}
+                        </p>
                         {editMode && (
                           <button
                             onClick={() => removeSkill(skill)}
-                            className='p-1 text-gray-400 hover:text-red-500 transition-colors'
+                            className="p-1 text-gray-400 hover:text-red-500 transition-colors"
                             aria-label={`Remove skill: ${skill}`}
                           >
                             <X size={18} />
                           </button>
                         )}
                       </div>
-                      <p className='text-xs text-[#14a19f] font-mono mb-6'>Tokenizable Skill</p>
+
+                      {/* Tokenizable Badge */}
+                      <p className="text-[10px] text-[#14a19f] font-mono mb-3 uppercase tracking-wide">
+                        Tokenizable Skill
+                      </p>
+
+                      {/* Mint SBT Button */}
                       <button
                         onClick={() => mintSBTForSkill(skill)}
-                        className='w-full mt-auto text-sm font-bold bg-[#14a19f] text-[#0f111d] py-2 rounded-lg hover:bg-[#1ecac7] transition-all duration-200 shadow-lg shadow-[#14a19f]/20 hover:shadow-xl hover:shadow-[#14a19f]/40'
+                        className="flex items-center justify-center gap-2 w-full mt-auto text-sm font-bold bg-gradient-to-r from-[#14a19f] to-[#1ecac7] text-[#0f111d] py-2.5 rounded-lg hover:scale-105 hover:shadow-[0_0_15px_#1ecac7] transition-all duration-300 shadow-md"
                         style={robotoStyle}
                       >
-                        Mint SBT
+                        Mint SBT <Award size={16} />
                       </button>
+
+                      {/* Optional Glow Overlay */}
+                      {/* <span className="absolute -inset-px rounded-xl bg-gradient-to-r from-[#14a19f]/30 to-[#1ecac7]/30 opacity-0 group-hover:opacity-20 transition-opacity duration-300 pointer-events-none"></span> */}
                     </div>
+
                   )) : (
                     <p className='text-gray-500 text-sm' style={robotoStyle}>No skills added yet</p>
                   )}
