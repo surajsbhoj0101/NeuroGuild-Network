@@ -49,6 +49,16 @@ const userSchema = new mongoose.Schema(
             enum: ["freelancer", "client"],
             default: "freelancer",
         },
+        skills: [
+            {
+                name: { type: String },
+                sbtAddress: { type: String },
+                minted: { type: Boolean, default: false },     
+                active: { type: Boolean, default: true },     
+                tokenId: { type: String },                    // Optional if you track on-chain tokenId
+            }
+        ],
+
 
         isVerified: {
             type: Boolean,
