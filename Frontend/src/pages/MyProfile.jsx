@@ -13,27 +13,33 @@ export default function MyProfile() {
   const navigate = useNavigate();
   const [notice, setNotice] = useState(null);
 
+  const skillTokenizable = [
+    "Translate", "Write", "Draw", "Edit", "Photograph", "WebDev",
+    "Python", "JavaScript", "Solidity", "HTML", "CSS"
+  ];
+
   const [profile, setProfile] = useState({
-    displayName: '',
-    bio: '',
-    title: '',
-    location: '',
-    email: '',
-    github: '',
-    linkedin: '',
-    twitter: '',
-    website: '',
-    hourlyRate: '',
-    experience: '',
-    availability: 'available',
-    avatarUrl: ''
+    displayName: '', bio: '', title: '', location: '', email: '',
+    github: '', linkedin: '', twitter: '', website: '', hourlyRate: '',
+    experience: '', availability: 'available', avatarUrl: ''
   });
 
-  const [skills, setSkills] = useState([]);
+  const [skills, setSkills] = useState([]); // FIX: State will now consistently be an array of strings
   const [sbts, setSbts] = useState([]);
   const [newSkill, setNewSkill] = useState('');
   const [showSkillInput, setShowSkillInput] = useState(false);
   const [editMode, setEditMode] = useState(false);
+
+  
+  const mapUserToSkills = (user) => (
+    user.skills?.map(skill => ({
+      name: skill.name,
+      sbtAddress: skill.sbtAddress,
+      minted: skill.minted || false,
+      active: skill.active ?? true,
+      tokenId: skill.tokenId || null
+    })) || []
+  );
 
   const mapUserToProfile = (user) => ({
     displayName: user.BasicInformation?.name || '',
@@ -68,7 +74,25 @@ export default function MyProfile() {
     try {
       const response = await axios.get(`http://localhost:5000/get-user/${address}`);
       if (response.data.success && response.data.user) {
-        setProfile(mapUserToProfile(response.data.user));
+        const user = response.data.user;
+        setProfile(mapUserToProfile(user));
+
+        const userSkills = mapUserToSkills(user);
+        // BUG FIX: Set skills state to an array of strings (skill names).
+        setSkills(userSkills.map(s => s.name));
+
+        // BUG FIX: Populate SBTs list from loaded user data for skills that are already minted.
+        const loadedSbts = userSkills
+          .filter(skill => skill.minted)
+          .map(skill => ({
+            id: skill.tokenId || skill.sbtAddress || skill.name,
+            name: `${skill.name} Certification`,
+            issuer: 'SkillChain Protocol',
+            date: new Date().toISOString().split('T')[0], // Placeholder
+            level: 'Beginner' // Placeholder
+          }));
+        setSbts(loadedSbts);
+
       } else {
         setEditMode(true);
       }
@@ -80,36 +104,23 @@ export default function MyProfile() {
 
   const calculateProfileCompletion = () => {
     const fields = [
-      profile.avatarUrl,
-      profile.displayName,
-      profile.bio,
-      profile.title,
-      profile.location,
-      profile.email,
-      profile.hourlyRate,
-      profile.experience,
+      profile.avatarUrl, profile.displayName, profile.bio, profile.title,
+      profile.location, profile.email, profile.hourlyRate, profile.experience,
       skills.length > 0,
       profile.github || profile.linkedin || profile.twitter || profile.website
     ];
-    const completed = fields.filter(field => field && field !== '').length;
+    const completed = fields.filter(Boolean).length;
     return Math.round((completed / fields.length) * 100);
   };
 
+  // BUG FIX: Simplified logic to avoid creating "fake" SBTs.
   const addSkill = () => {
     const skill = newSkill.trim();
     if (skill && !skills.includes(skill)) {
       setSkills([...skills, skill]);
-      const newSbt = {
-        id: Date.now(),
-        name: `${skill} Certification`,
-        issuer: 'SkillChain Protocol',
-        date: new Date().toISOString().split('T')[0],
-        level: 'Beginner'
-      };
-      setSbts([...sbts, newSbt]);
       setNewSkill('');
       setShowSkillInput(false);
-      setNotice(`Skill added! SBT minted for ${skill}`);
+      setNotice(`'${skill}' was added. Remember to save your profile.`);
       setTimeout(() => setNotice(null), 3000);
     }
   };
@@ -124,48 +135,51 @@ export default function MyProfile() {
 
   const completion = calculateProfileCompletion();
 
+  // BUG FIX: Refactored logic to be more robust.
   const updateUserData = async () => {
+    // If we are NOT in edit mode, the button's job is to ENTER edit mode.
+    if (!editMode) {
+      setEditMode(true);
+      return;
+    }
+
+    // If we ARE in edit mode, the button's job is to SAVE.
     try {
       if (!address) return;
       const payload = {
         BasicInformation: {
-          name: profile.displayName,
-          title: profile.title,
-          bio: profile.bio,
-          location: profile.location,
-          email: profile.email,
+          name: profile.displayName, title: profile.title, bio: profile.bio,
+          location: profile.location, email: profile.email,
         },
         ProfessionalDetails: {
-          hourlyRate: profile.hourlyRate,
-          experience: profile.experience,
+          hourlyRate: profile.hourlyRate, experience: profile.experience,
           availability: profile.availability,
         },
         SocialLinks: {
-          github: profile.github,
-          linkedIn: profile.linkedin,
-          twitter: profile.twitter,
-          website: profile.website,
+          github: profile.github, linkedIn: profile.linkedin,
+          twitter: profile.twitter, website: profile.website,
         },
+        // BUG FIX: Correctly map the array of skill strings to the required payload format.
+        skills: skills.map(skillName => ({ name: skillName }))
       };
-      if (editMode) {
-        console.log("updating ...")
-        const response = await axios.put(`http://localhost:5000/update-profile/${address}`, payload);
-        console.log('Profile updated:', response.data);
-        setNotice("Profile updated successfully")
-      }
+
+      await axios.put(`http://localhost:5000/update-profile/${address}`, payload);
+      setNotice("Profile updated successfully");
+      setEditMode(false); // Only exit edit mode on success.
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Failed to update profile');
+      alert('Failed to update profile. Please try again.');
+      // Do NOT exit edit mode if the save fails.
     }
-    setEditMode(prev => !prev);
   };
 
   const mintSBTForSkill = (skill) => {
     alert(`Minting SBT for ${skill}...`);
   };
+
   return (
     <>
-      {/* Floating notice */}
+      {/* ... The rest of your JSX remains unchanged ... */}
       {notice && (
         <div className="fixed top-4 right-4 z-50 animate-pulse">
           <div className="flex items-center gap-3 bg-[#14a19f] text-white px-4 py-2 rounded shadow-lg border border-[#1ecac7]/30">
@@ -181,7 +195,6 @@ export default function MyProfile() {
       )}
 
       <div className='dark:bg-[#0f111d] pt-6 flex bg-[#161c32] w-full min-h-screen  '>
-        {/* Background Gradient Orbs */}
         <div className="pointer-events-none absolute right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
         <div className="pointer-events-none absolute left-[20%] top-[1%] w-[120px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
         <div className="hidden md:block">
@@ -189,7 +202,6 @@ export default function MyProfile() {
         </div>
 
         <div className='flex-1 px-6 pb-8 max-w-7xl mx-auto w-full relative z-10'>
-          {/* Header */}
           <div className='mb-8'>
             <div className='flex justify-between items-center'>
               <p style={orbitronStyle} className='text-white text-3xl tracking-widest font-extrabold mb-1'>
@@ -205,7 +217,6 @@ export default function MyProfile() {
             </div>
           </div>
 
-          {/* Profile Completion Bar */}
           <div className='bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 mb-6 border border-[#14a19f]/20'>
             <div className='flex justify-between items-center mb-3'>
               <p style={robotoStyle} className='text-white text-lg font-semibold'>
@@ -226,29 +237,20 @@ export default function MyProfile() {
           </div>
 
           <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-            {/* Main Profile Section */}
             <div className='lg:col-span-2 space-y-6'>
-              {/* Basic Info */}
               <div className='bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20'>
                 <h2 style={orbitronStyle} className='text-white text-xl font-bold mb-4 tracking-wide'>
                   Basic Information
                 </h2>
-
                 <div className='space-y-4'>
-                  {/* --- AVATAR & NAME SECTION --- */}
                   <div className='flex flex-col sm:flex-row-reverse items-center gap-6'>
-                    {/* Avatar Display */}
                     <div className='flex-shrink-0'>
-
                       <img
                         src={`https://api.dicebear.com/7.x/bottts/svg?seed=${address}`}
                         alt="Profile Avatar"
                         className='w-24 h-24 rounded-full object-cover border-2 border-[#14a19f]'
                       />
-
                     </div>
-
-                    {/* Name and Title Fields */}
                     <div className='flex-1 w-full text-center sm:text-left'>
                       <div>
                         <label className='text-gray-400 text-sm mb-2 block' style={robotoStyle}>Display Name</label>
@@ -280,8 +282,6 @@ export default function MyProfile() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Avatar URL Input (only in edit mode) */}
                   {editMode && (
                     <div>
                       <label className='text-gray-400 text-sm mb-2 block' style={robotoStyle}>Avatar Image URL</label>
@@ -295,8 +295,6 @@ export default function MyProfile() {
                       />
                     </div>
                   )}
-                  {/* --- END AVATAR & NAME SECTION --- */}
-
                   <div>
                     <label className='text-gray-400 text-sm mb-2 block' style={robotoStyle}>Bio</label>
                     {editMode ? (
@@ -311,7 +309,6 @@ export default function MyProfile() {
                       <p className='text-white' style={robotoStyle}>{profile.bio || 'Not set'}</p>
                     )}
                   </div>
-
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                     <div>
                       <label className='text-gray-400 text-sm mb-2  flex items-center gap-2' style={robotoStyle}>
@@ -329,7 +326,6 @@ export default function MyProfile() {
                         <p className='text-white' style={robotoStyle}>{profile.location || 'Not set'}</p>
                       )}
                     </div>
-
                     <div>
                       <label className='text-gray-400 text-sm mb-2  flex items-center gap-2' style={robotoStyle}>
                         <Mail size={16} /> Email
@@ -349,8 +345,6 @@ export default function MyProfile() {
                   </div>
                 </div>
               </div>
-
-              {/* Professional Info */}
               <div className='bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20'>
                 <h2 style={orbitronStyle} className='text-white text-xl font-bold mb-4 tracking-wide'>
                   Professional Details
@@ -408,8 +402,6 @@ export default function MyProfile() {
                   </div>
                 </div>
               </div>
-
-              {/* Social Links */}
               <div className='bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20'>
                 <h2 style={orbitronStyle} className='text-white text-xl font-bold mb-4 tracking-wide'>Social Links</h2>
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
@@ -442,7 +434,7 @@ export default function MyProfile() {
                     )}
                   </div>
                   <div>
-                    <label className='text-gray-400 text-sm mb-2 block  items-center gap-2' style={robotoStyle}><Twitter size={16} /> Twitter Username</label>
+                    <label className='text-gray-400 text-sm mb-2   items-center flex gap-2' style={robotoStyle}><Twitter size={16} /> <p>Twitter Username</p></label>
                     {editMode ? (
                       <input
                         type='text'
@@ -471,63 +463,78 @@ export default function MyProfile() {
                   </div>
                 </div>
               </div>
-
-              {/* Skills Section */}
-              {/* Skills Section */}
-              <div className='bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20'>
-                <div className='flex justify-between items-center mb-4'>
+              <div className='bg-[#1a2139] min-h-40 relative overflow-auto dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20 '>
+                <div className='flex  justify-between items-center mb-4'>
                   <h2 style={orbitronStyle} className='text-white text-xl font-bold tracking-wide'>Skills</h2>
-                  <button
-                    onClick={() => setShowSkillInput(true)}
-                    className='flex items-center gap-2 px-3 py-2 bg-[#14a19f] hover:bg-[#1ecac7] text-white rounded transition-colors text-sm'
-                    style={robotoStyle}
-                  ><Plus size={16} /> Add Skill</button>
-                </div>
-
-                {showSkillInput && (
-                  <div className='mb-4 flex gap-2'>
-                    <input
-                      type='text'
-                      value={newSkill}
-                      onChange={(e) => setNewSkill(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && addSkill()}
-                      placeholder='Enter skill name'
-                      className='flex-1 bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                  {editMode && (
+                    <button
+                      onClick={() => setShowSkillInput(prev => !prev)}
+                      className={`flex items-center gap-2 px-3 py-2 text-white rounded transition-colors text-sm ${showSkillInput ? 'bg-red-500 hover:bg-red-600' : 'bg-[#14a19f] hover:bg-[#1ecac7]'
+                        }`}
                       style={robotoStyle}
-                      autoFocus
-                    />
-                    <button onClick={addSkill} className='px-4 py-2 bg-[#14a19f] hover:bg-[#1ecac7] text-white rounded transition-colors'><Check size={20} /></button>
-                    <button onClick={() => { setShowSkillInput(false); setNewSkill(''); }} className='px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded transition-colors'><X size={20} /></button>
+                    >
+                      {showSkillInput ? null : <Plus size={16} />} {showSkillInput ? 'Cancel' : 'Add Skill'}
+                    </button>
+                  )}
+                </div>
+                {showSkillInput && editMode && (
+                  <div className=' relative mb-4'>
+                    <div className='flex gap-2'>
+                      <div className='flex-1'>
+                        <input
+                          type='text'
+                          value={newSkill}
+                          onChange={(e) => setNewSkill(e.target.value)}
+                          placeholder='Select a skill'
+                          className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                          style={robotoStyle}
+                          autoFocus
+                        />
+                        {newSkill && (
+                          <ul className='absolute top-full mt-1 left-0 right-0 bg-[#141620] border border-[#14a19f]/30 rounded-lg max-h-40 overflow-y-auto z-50 shadow-lg'>
+                            {skillTokenizable
+                              .filter(skill => !skills.includes(skill) && skill.toLowerCase().includes(newSkill.toLowerCase()))
+                              .map((skill, idx) => (
+                                <li
+                                  key={idx}
+                                  className='px-4 py-2 cursor-pointer hover:bg-[#14a19f]/20 text-white'
+                                  onClick={() => { setNewSkill(skill); }}
+                                >
+                                  {skill}
+                                </li>
+                              ))}
+                          </ul>
+                        )}
+                      </div>
+                      <button
+                        onClick={addSkill}
+                        className='px-4 py-2 bg-[#14a19f] hover:bg-[#1ecac7] text-white rounded transition-colors'
+                      ><Check size={20} /></button>
+                    </div>
                   </div>
                 )}
-
                 <div className='flex flex-wrap gap-3'>
                   {skills.length > 0 ? skills.map((skill, idx) => (
                     <div
                       key={idx}
-                      className='group relative flex flex-col bg-[#141620] rounded-xl p-5 w-52 
-             border border-transparent hover:border-[#14a19f] transition-all duration-300 shadow-xl'
+                      className='group relative flex flex-col bg-[#141620] rounded-xl p-5 w-52 border border-transparent hover:border-[#14a19f] transition-all duration-300 shadow-xl'
                     >
                       <div className='flex justify-between items-start mb-4'>
                         <p className='text-gray-100 font-extrabold text-xl leading-tight' style={robotoStyle}>{skill}</p>
-
-                        <button
-                          onClick={() => removeSkill(skill)}
-                          className='p-1 text-gray-400 hover:text-red-500 transition-colors 
-                       opacity-0 group-hover:opacity-100 duration-200'
-                          aria-label={`Remove skill: ${skill}`}
-                        >
-                          <X size={18} />
-                        </button>
+                        {editMode && (
+                          <button
+                            onClick={() => removeSkill(skill)}
+                            className='p-1 text-gray-400 hover:text-red-500 transition-colors'
+                            aria-label={`Remove skill: ${skill}`}
+                          >
+                            <X size={18} />
+                          </button>
+                        )}
                       </div>
-
                       <p className='text-xs text-[#14a19f] font-mono mb-6'>Tokenizable Skill</p>
-
                       <button
                         onClick={() => mintSBTForSkill(skill)}
-                        className='w-full mt-auto text-sm font-bold bg-[#14a19f] text-[#0f111d] py-2 rounded-lg 
-                   hover:bg-[#1ecac7] transition-all duration-200 
-                   shadow-lg shadow-[#14a19f]/20 hover:shadow-xl hover:shadow-[#14a19f]/40'
+                        className='w-full mt-auto text-sm font-bold bg-[#14a19f] text-[#0f111d] py-2 rounded-lg hover:bg-[#1ecac7] transition-all duration-200 shadow-lg shadow-[#14a19f]/20 hover:shadow-xl hover:shadow-[#14a19f]/40'
                         style={robotoStyle}
                       >
                         Mint SBT
@@ -538,10 +545,7 @@ export default function MyProfile() {
                   )}
                 </div>
               </div>
-
             </div>
-
-            {/* Sidebar - SBTs */}
             <div className='lg:col-span-1'>
               <div className='bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20 sticky top-6'>
                 <div className='flex items-center gap-2 mb-6'>
