@@ -6,19 +6,23 @@ import {ERC721SBT} from "./ERC721SBT/ERC721SBT.sol";
 contract SkillSBT is ERC721SBT {
     uint256 private _currentTokenId; // auto-increment token IDs
 
-    constructor(address owner) ERC721SBT(owner) {}
+    constructor() ERC721SBT(msg.sender) {}
 
     /// @notice Admin or contract can mint SBT to a user
-    function mint(address to) external onlyOwner returns (uint256) {
+    function mint(
+        address to,
+        string memory uri
+    ) external onlyWhiteListed returns (uint256) {
         _currentTokenId++;
         uint256 newTokenId = _currentTokenId;
         _mint(to, newTokenId);
+        _setTokenUri(newTokenId, uri);
         return newTokenId;
     }
 
-    /// @notice Users can burn their own SBT
-    function burn(uint256 id) external {
-        require(msg.sender == _ownerOf[id], "SkillSBT: not owner");
-        _burn(id);
+    function tokenUri(uint256 id) external view returns (string memory) {
+        return _tokenUri[id];
     }
+
+    
 }

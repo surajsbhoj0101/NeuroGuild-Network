@@ -10,21 +10,32 @@ contract ERC721SBT is IERC721 {
         address indexed to,
         uint256 indexed id
     );
-    event SBTRevoked(address indexed user, uint256 indexed tokenId);
 
-    address public contractOwner;
+    event TokenURISet(uint256 indexed tokenId, string uri);
+    event addedToWhitelist(address indexed userAddr);
+
+    address public admin;
+
+    mapping(address => bool) internal _whiteList;
+
+    mapping(uint256 => string) internal _tokenUri;
 
     mapping(uint256 => address) internal _ownerOf;
 
-    mapping(address => uint256) internal _balanceOf;
+    mapping(address => uint8) internal _balanceOf;
 
-    constructor(address _contractOwner) {
-        require(_contractOwner != address(0), "owner = zero address");
-        contractOwner = _contractOwner;
+    constructor(address _admin) {
+        require(_admin != address(0), "verifier = zero address");
+        admin = _admin;
     }
 
-    modifier onlyOwner() {
-        require(msg.sender == contractOwner, "only owner can do this");
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "you are not admin");
+        _;
+    }
+
+    modifier onlyWhiteListed() {
+        require(_whiteList[msg.sender], "not whitelisted");
         _;
     }
 
@@ -46,12 +57,13 @@ contract ERC721SBT is IERC721 {
         return _balanceOf[owner];
     }
 
-    function adminRevoke(uint256 tokenId) public onlyOwner {
-        address tokenOwner = _ownerOf[tokenId];
-        require(tokenOwner != address(0), "token does not exist");
+    function isWhiteListed(address userAddr) external view returns (bool) {
+        return _whiteList[userAddr];
+    }
 
-        _burn(tokenId);
-        emit SBTRevoked(tokenOwner, tokenId);
+    function addToWhitelist(address userAddr) external onlyAdmin {
+        _whiteList[userAddr] = true;
+        emit addedToWhitelist(userAddr);
     }
 
     function _mint(address to, uint256 id) internal {
@@ -65,13 +77,8 @@ contract ERC721SBT is IERC721 {
         emit Transfer(address(0), to, id);
     }
 
-    function _burn(uint256 id) internal {
-        address owner = _ownerOf[id];
-        require(owner != address(0), "token not minted");
-
-        _balanceOf[owner] = 0;
-        delete _ownerOf[id];
-
-        emit Transfer(owner, address(0), id);
+    function _setTokenUri(uint256 id, string memory uri) internal {
+        _tokenUri[id] = uri;
+        emit TokenURISet(id, uri);
     }
 }

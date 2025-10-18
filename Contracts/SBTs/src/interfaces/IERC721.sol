@@ -7,7 +7,7 @@ interface IERC721 is IERC165 {
     function ownerOf(uint256 tokenId) external view returns (address owner);
     // function safeTransferFrom(address from, address to, uint256 tokenId)
     //     external;
-    // function safeTransferFrom(
+    // function safeTransferFrom(so where it storing all the user there is no array can it be stored only in map
     //     address from,
     //     address to,
     //     uint256 tokenId,
