@@ -3,6 +3,7 @@ import { getUser } from "../controllers/user.controller.js";
 import { updateUser } from "../controllers/user.controller.js";
 import { test } from "../controllers/user.controller.js";
 import { getOrCreateUser } from "../controllers/user.controller.js";
+import { fetchQuestions } from "../controllers/user.controller.js";
 
 // import { createUser } from "../controllers/user.controller";
 
@@ -13,4 +14,5 @@ router.get('/get-user/:address', getUser)
 router.put('/update-profile/:address', updateUser)
 router.get('/',test)
 router.get('/get-or-create/:address',getOrCreateUser)
+router.get('/fetch-questions/:skill',fetchQuestions)
 export default router;

@@ -16,21 +16,42 @@ contract MySkillTest is Test {
         mySkillSbt = deploySkillSbt.run(); // call the script’s run() to deploy the contract
     }
 
-    // Here, the contractOwner becomes the address that deployed the contract, i.e., msg.sender at deployment.
+    // deployed the contract via the script using msg.sender as the test contract’s address.
     function testOwner() public view {
-        assertEq(msg.sender, mySkillSbt.admin());
+        assertEq(address(this), mySkillSbt.admin());
     }
 
-    // When you call deploySkillSbt.run(), the contract is deployed by the DeploySkillSBT script, so in Solidity terms, msg.sender inside the SkillSBT constructor is the script contract, not your test contract or the test’s msg.sender.
+    function testName() public view {
+        assertEq("Solidity SBT", mySkillSbt.skillName());
+    }
+
     function testMint() public {
-        vm.prank(mySkillSbt.admin()); // impersonate admin
         mySkillSbt.addToWhitelist(address(this));
 
         uint tokenId = mySkillSbt.mint(address(this), uri);
+
         string memory storedUri = mySkillSbt.tokenUri(tokenId);
         assertEq(uri, storedUri);
 
         uint balance = mySkillSbt.balanceOf(address(this));
         assertEq(balance, 1);
+    }
+
+    function test_RevertIfMintNotWhitelisted() public {
+        vm.expectRevert("not whitelisted");
+        mySkillSbt.mint(address(this), "uri");
+    }
+
+    function testMintWithPrank() public {
+        address bob = address(2);
+
+       
+        vm.prank(mySkillSbt.admin());
+        mySkillSbt.addToWhitelist(bob);
+
+        vm.prank(bob);
+        uint tokenId = mySkillSbt.mint(bob, "skillURI");
+
+        assertEq(mySkillSbt.balanceOf(bob), 1);
     }
 }

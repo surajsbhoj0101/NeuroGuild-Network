@@ -16,6 +16,10 @@ contract ERC721SBT is IERC721 {
 
     address public admin;
 
+    string public skillName;
+
+    string public skillSymbol;
+
     mapping(address => bool) internal _whiteList;
 
     mapping(uint256 => string) internal _tokenUri;
@@ -24,9 +28,11 @@ contract ERC721SBT is IERC721 {
 
     mapping(address => uint8) internal _balanceOf;
 
-    constructor(address _admin) {
+    constructor(address _admin, string memory _name, string memory _symbol) {
         require(_admin != address(0), "verifier = zero address");
         admin = _admin;
+        skillName = _name;
+        skillSymbol = _symbol;
     }
 
     modifier onlyAdmin() {

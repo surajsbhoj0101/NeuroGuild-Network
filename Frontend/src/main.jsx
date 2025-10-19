@@ -17,6 +17,8 @@ import Dashboard from './pages/Dashboard.jsx';
 import BrowseJobs from './pages/BrowseJobs.jsx';
 import MyProfile from './pages/MyProfile.jsx';
 import Setting from './pages/Setting.jsx';
+import VerifySkillPage from './pages/VerifySkillPage.jsx';
+
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
@@ -35,7 +37,7 @@ const router = createBrowserRouter([
     path: "/",
     element: (
       <>
-        {/* <Snowfall snowflakeCount={60} /> */}
+        <Snowfall snowflakeCount={60} />
         <Navbar />
         <App />
       </>
@@ -45,7 +47,7 @@ const router = createBrowserRouter([
     path: "/dashboard",
     element: (
       <>
-        {/* <Snowfall snowflakeCount={60} /> */}
+        <Snowfall snowflakeCount={60} />
         <Navbar />
         <Dashboard />
       </>
@@ -77,6 +79,13 @@ const router = createBrowserRouter([
         <Navbar />
         <Setting />
       </>
+    )
+  }, {
+    path: "/verify-skill/:skill",
+    element: (
+      <>
+        <Navbar />
+        <VerifySkillPage /></>
     )
   }
 ]);

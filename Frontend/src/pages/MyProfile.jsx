@@ -15,9 +15,21 @@ export default function MyProfile() {
   const [redNotice, setRedNotice] = useState(false);
 
   const skillTokenizable = [
-    "Translate", "Write", "Draw", "Edit", "Photograph", "WebDev",
-    "Python", "JavaScript", "Solidity", "HTML", "CSS"
+    "English to Spanish Translate",
+    "Creative Writing",
+    "Photography",
+    "Video Editing",
+    "Frontend Development",
+    "Backend Development",
+    "Python",
+    "JavaScript",
+    "Solidity",
+    "HTML",
+    "CSS",
+    "React",
+    "Node.js",
   ];
+
 
   const [profile, setProfile] = useState({
     displayName: '', bio: '', title: '', location: '', email: '',
@@ -201,7 +213,7 @@ export default function MyProfile() {
   };
 
   const mintSBTForSkill = (skill) => {
-    alert(`Minting SBT for ${skill}...`);
+    navigate(`/verify-skill/${skill}`)
   };
 
   return (
@@ -569,18 +581,26 @@ export default function MyProfile() {
                       </div>
 
                       {/* Tokenizable Badge */}
-                      <p className="text-[10px] text-[#14a19f] font-mono mb-3 uppercase tracking-wide">
+                      {skillTokenizable.includes(skill) ? <p className="text-[10px] text-[#14a19f] font-mono mb-3 uppercase tracking-wide">
                         Tokenizable Skill
-                      </p>
+                      </p> : <p className="text-[10px] text-[#14a19f] font-mono mb-3 uppercase tracking-wide">
+                        Non  Tokenizable Skill
+                      </p>}
 
                       {/* Mint SBT Button */}
-                      <button
+                      {skillTokenizable.includes(skill) ? <button
                         onClick={() => mintSBTForSkill(skill)}
                         className="flex items-center justify-center gap-2 w-full mt-auto text-sm font-bold bg-gradient-to-r from-[#14a19f] to-[#1ecac7] text-[#0f111d] py-2.5 rounded-lg hover:scale-105 hover:shadow-[0_0_15px_#1ecac7] transition-all duration-300 shadow-md"
                         style={robotoStyle}
                       >
                         Mint SBT <Award size={16} />
-                      </button>
+                      </button> : <button
+                      disabled={true}
+                        className="flex items-center justify-center gap-2 w-full mt-auto text-sm font-bold bg-gradient-to-r from-gray-800 to-gray-900 text-[#0f111d] py-2.5 rounded-lg  "
+                        style={robotoStyle}
+                      >
+                        Mint SBT <Award size={16} />
+                      </button>}
 
                       {/* Optional Glow Overlay */}
                       {/* <span className="absolute -inset-px rounded-xl bg-gradient-to-r from-[#14a19f]/30 to-[#1ecac7]/30 opacity-0 group-hover:opacity-20 transition-opacity duration-300 pointer-events-none"></span> */}

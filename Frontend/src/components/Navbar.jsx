@@ -19,7 +19,7 @@ function Navbar() {
   return (
     <nav className="relative z-40">
       <div className="dark:bg-[#0f121e] bg-[#161c32] px-4 md:px-6 py-3 shadow-md border-b border-white/8 backdrop-blur-sm">
-        {/* <Snowfall snowflakeCount={18} /> */}
+        <Snowfall snowflakeCount={18} />
 
         <div className="max-w-6xl mx-auto flex items-center gap-4 justify-between">
           {/* logo (larger, left-aligned) */}

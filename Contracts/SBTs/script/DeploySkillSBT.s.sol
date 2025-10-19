@@ -7,7 +7,7 @@ contract DeploySkillSBT is Script {
     function run() external returns (SkillSBT) {
         SkillSBT skillSbt;
         vm.startBroadcast();
-        skillSbt = new SkillSBT();
+        skillSbt = new SkillSBT(msg.sender,"Solidity SBT","SOL");
         vm.stopBroadcast();
         return skillSbt;
     }

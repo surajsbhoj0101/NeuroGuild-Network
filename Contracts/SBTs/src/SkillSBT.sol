@@ -6,9 +6,12 @@ import {ERC721SBT} from "./ERC721SBT/ERC721SBT.sol";
 contract SkillSBT is ERC721SBT {
     uint256 private _currentTokenId; // auto-increment token IDs
 
-    constructor() ERC721SBT(msg.sender) {}
+    constructor(
+        address _admin,
+        string memory _name,
+        string memory _symbol
+    ) ERC721SBT(_admin, _name, _symbol) {}
 
-    /// @notice Admin or contract can mint SBT to a user
     function mint(
         address to,
         string memory uri
@@ -23,6 +26,4 @@ contract SkillSBT is ERC721SBT {
     function tokenUri(uint256 id) external view returns (string memory) {
         return _tokenUri[id];
     }
-
-    
 }
