@@ -14,5 +14,5 @@ router.get('/get-user/:address', getUser)
 router.put('/update-profile/:address', updateUser)
 router.get('/',test)
 router.get('/get-or-create/:address',getOrCreateUser)
-router.get('/fetch-questions/:skill',fetchQuestions)
+router.post('/fetch-questions',fetchQuestions)
 export default router;

@@ -1,6 +1,8 @@
 import User from "../models/user.model.js";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import quizModel from "../models/quiz.model.js";
+import quizAttemptModel from "../models/quizAttempt.model.js";
 
 dotenv.config();
 export const test = async (req, res) => {
@@ -106,45 +108,101 @@ export const updateUser = async (req, res) => {
 };
 
 export const fetchQuestions = async (req, res) => {
-    const { skill } = req.params;
-    const prompt = `
-Generate multiple-choice questions for the skill "${skill}" in JSON format.
-Use this structure for each difficulty level: 
-
-{
-  "timeLimit": 240, // seconds for basic, 360 for medium, 600 for advanced
-  "questions": [
-    {
-      "question": "...",
-      "options": ["A...", "B...", "C...", "D..."],
-      "correctAnswer": "..."
-    }
-  ]
-}
-
-Generate exactly:
-- 10 basic questions (timeLimit: 240 seconds)
-- 10 medium questions (timeLimit: 360 seconds)
-- 10 advanced questions (timeLimit: 600 seconds)
-Return JSON with three keys: "basic", "medium", "advanced".
-`;
-
-
+    
+    const { address, skill } = req.body;
 
     try {
-        // The client gets the API key from the environment variable `GEMINI_API_KEY`.
-        const ai = new GoogleGenAI({ apiKey: process.env.AI_API_KEY });
+        console.log("Finding. ..")
+        const lastAttempt = await quizAttemptModel.findOne({
+            skill,
+            wallet: address.toLowerCase(),
+            createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // last 24 hours
+        });
+        console.log("Found..")
+        if (lastAttempt) {
+            return res.status(400).json({
+                success: false,
+                message: "You can attempt this skill only once every 24 hours."
+            });
+        }
 
+
+        const prompt = `
+            You are an AI quiz generator. Generate **25 multiple-choice questions** on the topic: ${skill}.
+
+            Requirements:
+            - Divide the questions by difficulty:
+              - 10 easy
+              - 10 medium
+              - 5 hard
+            - Each question must have:
+              - "question": The text of the question
+              - "options": An array of 4 possible answers (A, B, C, D)
+              - "answer": The correct option (A, B, C, or D)
+              - "difficulty": easy, medium, or hard
+              - "points": 3 for easy, 4 for medium, 6 for hard
+
+            Output format: JSON only, like this:
+            {
+              "quiz": [
+                {
+                  "question": "What is ...?",
+                  "options": ["A) ...", "B) ...", "C) ...", "D) ..."],
+                  "answer": "B",
+                  "difficulty": "easy",
+                  "points": 3
+                }
+              ]
+            }
+            Make the questions diverse, clear, and non-repetitive.
+            Avoid any explanations or markdown — only return valid JSON.
+        `;
+        console.log("Generating ....")
+
+        const ai = new GoogleGenAI({ apiKey: process.env.AI_API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
         });
 
+        let resultText = response.text || "";
+        resultText = resultText.replace(/```json\s*|```/g, '').trim();
 
-        const resultText = response.output_text; // or response.contents[0].text
-        const questions = JSON.parse(resultText);
-        res.status(200).json(questions);
+        const quizJSON = JSON.parse(resultText);
+        console.log("Storing ...")
+        const storedQuestions = await Promise.all(
+            quizJSON.quiz.map(async (q) => {
+                const newQ = new quizModel({
+                    skill,
+                    question: q.question,
+                    options: q.options,
+                    answer: q.answer,
+                    difficulty: q.difficulty,
+                    points: q.points
+                });
+                await newQ.save();
+                const { answer, ...questionWithoutAnswer } = q;
+                return questionWithoutAnswer;
+            })
+        );
+
+
+        await quizAttemptModel.create({
+            skill,
+            wallet: address.toLowerCase(),
+        });
+
+
+        res.status(200).json({
+            success: true,
+            questions: storedQuestions
+        });
+
     } catch (error) {
-        res.status(500).json({success:false})
+        console.error("Error generating quiz:", error);
+        res.status(500).json({
+            success: false,
+            message: "Something went wrong while generating the quiz.",
+        });
     }
-}
+};

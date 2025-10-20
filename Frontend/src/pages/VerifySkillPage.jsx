@@ -1,252 +1,358 @@
-import { useState, useEffect } from "react";
-import { useAccount } from "wagmi";
-import { useParams } from "react-router-dom";
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from "axios";
+import { useAccount } from 'wagmi';
+import { Timer } from 'lucide-react';
 
-// Icons
-const CheckIcon = () => (
-  <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-);
-const LockIcon = () => (
-  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-  </svg>
-);
+const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
+const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
 
-// --- Sample Quiz Data (Replace with your API fetch if needed) ---
-const quizData = {
-  basic: {
-    timeLimit: 180,
-    passingScore: 2,
-    questions: [
-      {
-        question: "What does 'blockchain' primarily refer to?",
-        options: [
-          "A type of cryptocurrency",
-          "A distributed, immutable ledger",
-          "A centralized database",
-          "A financial services company"
-        ],
-        correctAnswer: "A distributed, immutable ledger"
-      },
-      {
-        question: "What is a 'smart contract'?",
-        options: [
-          "A legal document written by a lawyer",
-          "A digital agreement on a website",
-          "A program that automatically executes on the blockchain",
-          "A new type of AI"
-        ],
-        correctAnswer: "A program that automatically executes on the blockchain"
-      }
-    ]
-  },
-  medium: {
-    timeLimit: 300,
-    passingScore: 2,
-    questions: [
-      { question: "Medium Question 1...", options: ["A", "B"], correctAnswer: "A" },
-      { question: "Medium Question 2...", options: ["A", "B"], correctAnswer: "B" }
-    ]
-  },
-  advanced: {
-    timeLimit: 600,
-    passingScore: 2,
-    questions: [
-      { question: "Advanced Question 1...", options: ["A", "B"], correctAnswer: "A" },
-      { question: "Advanced Question 2...", options: ["A", "B"], correctAnswer: "B" }
-    ]
-  },
-  proof: { questions: null }
-};
-
-// --- Main Component ---
-export default function VerifySkillPage() {
+function VerifySkillPage() {
+  const navigate = useNavigate();
+  const { isConnected, address } = useAccount();
   const { skill } = useParams();
-  const { isConnected } = useAccount();
 
   const [notice, setNotice] = useState(null);
-  const [selectedQuiz, setSelectedQuiz] = useState("basic");
-  const [completionStatus, setCompletionStatus] = useState({
-    basic: false, medium: false, advanced: false, proof: false
-  });
+  const [redNotice, setRedNotice] = useState(false);
 
-  const [quizState, setQuizState] = useState("pending"); // 'pending', 'running', 'submitted'
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState({});
-  const [timeLeft, setTimeLeft] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState({});
+  const [current, setCurrent] = useState(0);
+
+  const totalTime = 1200;
+  const [timeLeft, setTimeLeft] = useState(totalTime);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [score, setScore] = useState(0);
 
-  const orbitronStyle = { fontFamily: "Orbitron, sans-serif" };
-  const robotoStyle = { fontFamily: "Roboto, sans-serif" };
+  const total = questions.length;
+  const progress = ((current + 1) / total) * 100;
 
-  const quizCategories = [
-    { id: 'basic', name: 'Basic Quiz', requires: null },
-    { id: 'medium', name: 'Medium Quiz', requires: 'basic' },
-    { id: 'advanced', name: 'Advanced Quiz', requires: 'medium' },
-    { id: 'proof', name: 'Proof of Skill', requires: 'advanced' },
-  ];
-
+  // Fetch Questions
   useEffect(() => {
+    let t;
     if (!isConnected) {
-      setNotice("Wallet not connected — redirecting...");
-      const t = setTimeout(() => window.location.href = "/", 1800);
-      return () => clearTimeout(t);
-    } else setNotice(null);
-  }, [isConnected]);
+      setRedNotice(true);
+      setNotice("Wallet not connected — redirecting to home...");
+      t = setTimeout(() => navigate('/'), 1600);
+    } else if (address) {
+      setNotice(null);
+      getQuizQuestions();
+    }
+    return () => clearTimeout(t);
+  }, [isConnected, navigate, address]);
 
+  async function getQuizQuestions() {
+    try {
+      const response = await axios.post("http://localhost:5000/fetch-questions", {
+        address,
+        skill,
+      });
+      if (response.data.success) {
+        setQuestions(response.data.questions);
+      } else {
+        console.log("Next attempt after 24hrs");
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+
+
+  // TIMER: auto-submit after 1200 seconds
   useEffect(() => {
-    if (quizState !== 'running') return;
-    if (timeLeft <= 0) return handleSubmit();
+    if (isLoading || isSubmitted || questions.length === 0) return;
 
-    const timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleAutoSubmit(); // ✅ Auto submit when time runs out
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
     return () => clearInterval(timer);
-  }, [quizState, timeLeft]);
+  }, [isLoading, isSubmitted, questions.length]);
 
-  const startQuiz = () => {
-    const quiz = quizData[selectedQuiz];
-    setQuizState('running');
-    setCurrentQuestionIndex(0);
-    setSelectedAnswers({});
-    setTimeLeft(quiz.timeLimit);
-    setScore(0);
-  };
+  // ✅ Auto Submit Handler
+  const handleAutoSubmit = async () => {
+    if (isSubmitted) return;
+    setIsSubmitted(true);
 
-  const handleAnswerSelect = (option) => {
-    setSelectedAnswers({ ...selectedAnswers, [currentQuestionIndex]: option });
-  };
+    try {
+      const res = await axios.post("http://localhost:5000/submit-quiz", {
+        address,
+        skill,
+        answers,
+        autoSubmitted: true, // optional flag for backend to know it was auto-submitted
+      });
 
-  const handleNext = () => {
-    if (currentQuestionIndex < quizData[selectedQuiz].questions.length - 1)
-      setCurrentQuestionIndex(i => i + 1);
-  };
-
-  const handleSubmit = () => {
-    const quiz = quizData[selectedQuiz];
-    const totalScore = quiz.questions.reduce((acc, q, idx) => {
-      return acc + (selectedAnswers[idx] === q.correctAnswer ? 1 : 0);
-    }, 0);
-    setScore(totalScore);
-    setQuizState('submitted');
-    setCompletionStatus(prev => ({ ...prev, [selectedQuiz]: true }));
-  };
-
-  const formatTime = (s) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
-  const isUnlocked = (category) => !category.requires || completionStatus[category.requires];
-
-  const renderQuiz = () => {
-    const quiz = quizData[selectedQuiz];
-
-    if (selectedQuiz === "proof") {
-      return (
-        <div className="p-8 rounded-3xl shadow-xl bg-white dark:bg-[#0f121e] text-gray-900 dark:text-white">
-          <h2 style={orbitronStyle} className="text-4xl font-bold mb-6">Proof of Skill</h2>
-          <p style={robotoStyle} className="text-lg mb-4">
-            Submit a GitHub repository, deployed dApp, or portfolio link to demonstrate your work.
-          </p>
-          {/* Upload or form component can go here */}
-        </div>
-      );
+      if (res.data.success) {
+        setScore(res.data.score || 0);
+        setNotice("⏰ Time’s up! Quiz auto-submitted.");
+        setRedNotice(false);
+      } else {
+        setNotice("⚠️ Failed to submit quiz automatically.");
+        setRedNotice(true);
+      }
+    } catch (err) {
+      console.error("Auto submit error:", err);
+      setNotice("⚠️ Error while submitting automatically.");
+      setRedNotice(true);
     }
-
-    if (quizState === 'pending') {
-      return (
-        <div className="p-8 rounded-3xl shadow-xl text-center bg-white dark:bg-[#0f121e] text-gray-900 dark:text-white">
-          <h2 style={orbitronStyle} className="text-4xl font-bold mb-6">{skill} - {quizCategories.find(c => c.id === selectedQuiz).name}</h2>
-          <p style={robotoStyle} className="text-lg mb-4">
-            Time: <span className="font-semibold">{formatTime(quiz.timeLimit)}</span>
-          </p>
-          <p style={robotoStyle} className="text-lg mb-4">
-            Questions: <span className="font-semibold">{quiz.questions.length}</span>
-          </p>
-          <p style={robotoStyle} className="text-lg mb-6">
-            Passing Score: <span className="font-semibold">{quiz.passingScore}</span>
-          </p>
-          <button onClick={startQuiz} className="bg-[#14a19f] px-14 py-4 text-xl rounded-xl font-semibold hover:opacity-90 transition">
-            Start Quiz
-          </button>
-        </div>
-      );
-    }
-
-    if (quizState === 'submitted') {
-      const passed = score >= quiz.passingScore;
-      return (
-        <div className="p-8 rounded-3xl shadow-xl text-center bg-white dark:bg-[#0f121e] text-gray-900 dark:text-white">
-          <h2 style={orbitronStyle} className="text-4xl font-bold mb-6">Quiz Complete!</h2>
-          <p style={robotoStyle} className={`text-3xl mb-6 font-semibold ${passed ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
-            Score: {score} / {quiz.questions.length}
-          </p>
-          {passed ? <p style={robotoStyle} className="text-xl">Congratulations! You passed.</p> :
-            <button onClick={startQuiz} className="bg-[#14a19f] px-12 py-3 text-xl rounded-xl mt-4 hover:opacity-90 transition">Retake Quiz</button>
-          }
-        </div>
-      );
-    }
-
-    const q = quiz.questions[currentQuestionIndex];
-    return (
-      <div className="p-8 rounded-3xl shadow-xl space-y-6 bg-white dark:bg-[#0f121e] text-gray-900 dark:text-white">
-        <div className="flex justify-between items-center mb-6">
-          <h2 style={orbitronStyle} className="text-3xl font-bold">{quizCategories.find(c => c.id === selectedQuiz).name}</h2>
-          <div style={orbitronStyle} className="text-3xl font-bold px-6 py-3 rounded-xl bg-gray-200 dark:bg-gray-800 border border-gray-400 dark:border-gray-600">{formatTime(timeLeft)}</div>
-        </div>
-
-        <div className="mb-6">
-          <p style={robotoStyle} className="text-xl mb-2 font-medium">Question {currentQuestionIndex + 1} / {quiz.questions.length}</p>
-          <h3 style={robotoStyle} className="text-2xl md:text-3xl font-semibold">{q.question}</h3>
-        </div>
-
-        <div className="space-y-4 mb-6">
-          {q.options.map((opt, i) => (
-            <button key={i} onClick={() => handleAnswerSelect(opt)}
-              className={`w-full text-left p-5 rounded-xl border-2 text-lg md:text-xl transition-all
-                ${selectedAnswers[currentQuestionIndex] === opt ? 'bg-[#14a19f] border-[#14a19f] text-white' : 'bg-gray-100 dark:bg-[#0f172a] border-gray-300 dark:border-[#1e293b] hover:border-[#14a19f]'}`}>
-              {opt}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex justify-end">
-          {currentQuestionIndex < quiz.questions.length - 1 ?
-            <button onClick={handleNext} className="bg-[#14a19f] px-8 py-3 rounded-xl text-xl hover:opacity-90 transition">Next</button> :
-            <button onClick={handleSubmit} className="bg-green-600 px-8 py-3 rounded-xl text-xl hover:opacity-90 transition">Submit Quiz</button>
-          }
-        </div>
-      </div>
-    );
   };
+
+
+
+  const handleAnswerSelect = (index, option) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [index]: option,
+    }));
+  };
+
+  const nextQuestion = () => {
+    if (current < total - 1) {
+      setCurrent((prev) => prev + 1);
+      setTimeLeft(120); // reset timer for next question
+    }
+  };
+
+  const prevQuestion = () => {
+    if (current > 0) {
+      setCurrent((prev) => prev - 1);
+      setTimeLeft(120);
+    }
+  };
+
+  // Submit Quiz
+  const handleSubmit = async () => {
+    if (isSubmitted) return;
+    setIsSubmitted(true);
+
+    try {
+      const res = await axios.post("http://localhost:5000/submit-quiz", {
+        address,
+        skill,
+        answers,
+      });
+
+
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+
 
   return (
     <>
-      {notice && <div className="fixed top-4 right-4 z-50 px-4 py-2 rounded bg-[#14a19f] text-white">{notice}</div>}
-      <div className="min-h-screen p-8 md:p-12 bg-gray-50 dark:bg-[#0f1422] text-gray-900 dark:text-white grid md:grid-cols-4 gap-8">
-        {/* Sidebar */}
-        <div className="md:col-span-1 p-6 bg-white dark:bg-[#0f121e] rounded-3xl shadow-lg flex flex-col">
-          <h1 style={orbitronStyle} className="text-2xl font-bold mb-6 text-center">Skill Verification</h1>
-          <ul className="space-y-3 flex-1">
-            {quizCategories.map(cat => {
-              const unlocked = isUnlocked(cat);
-              const completed = completionStatus[cat.id];
-              return (
-                <li key={cat.id}>
-                  <button disabled={!unlocked}
-                    onClick={() => setSelectedQuiz(cat.id)}
-                    className={`w-full flex justify-between items-center px-4 py-3 rounded-xl font-medium text-left transition
-                      ${selectedQuiz === cat.id ? 'bg-[#14a19f] text-white' : 'bg-gray-100 dark:bg-[#0f172a] text-gray-900 dark:text-white'} 
-                      ${!unlocked ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#14a19f] hover:text-white'}`}>
-                    <span>{cat.name}</span>
-                    {completed ? <CheckIcon /> : (!unlocked ? <LockIcon /> : null)}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+      {notice && (
+        <div className="fixed top-4 right-4 z-50 animate-pulse">
+          <div className={`flex items-center gap-3 text-white px-4 py-2 rounded shadow-lg border ${redNotice ? 'bg-red-600 border-red-700' : 'bg-[#14a19f] border-[#1ecac7]/30'}`}>
+            <div className="text-sm">{notice}</div>
+            <button
+              onClick={() => setNotice(null)}
+              className="ml-2 text-xs text-white/90 px-2 py-1 rounded hover:opacity-90 transition-opacity"
+            >
+              Dismiss
+            </button>
+          </div>
         </div>
-        {/* Main Panel */}
-        <div className="md:col-span-3">{renderQuiz()}</div>
-      </div>
+      )}
+
+      <div className="dark:bg-[#0f111d] pt-6 space-y-4 flex flex-col bg-[#161c32] overflow-hidden relative min-h-screen">
+        {/* Background gradients */}
+        <div className="pointer-events-none absolute -left-32 -top-32 w-[520px] h-[520px] rounded-full bg-gradient-to-br from-[#122033] via-[#0f2540] to-[#08101a] opacity-40 blur-3xl mix-blend-screen"></div>
+        <div className="pointer-events-none absolute right-[-120px] top-48 w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
+
+        {/* Title */}
+        <div className="flex justify-center border-white/10">
+          <h1 style={orbitronStyle} className="text-3xl font-extrabold text-white">
+            {skill} Skill Verification Quiz
+          </h1>
+        </div>
+
+        <div className="flex p-4 gap-6 w-full">
+          {/* LEFT SECTION */}
+          {isLoading ? (
+            <div className="w-[65%] flex flex-col space-y-4 min-h-[580px] animate-pulse">
+              {/* Header Placeholder */}
+              <div className="w-full flex justify-between">
+                <div className="h-4 w-32 bg-gradient-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded"></div>
+                <div className="h-4 w-24 bg-gradient-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded"></div>
+              </div>
+
+              {/* Progress Bar Placeholder */}
+              <div className="w-full bg-[#0f111d] rounded-full h-2 overflow-hidden border border-[#1a2537]">
+                <div className="h-full w-[30%] bg-gradient-to-r from-[#14a19f]/30 to-[#1ecac7]/30"></div>
+              </div>
+
+              {/* Question Box Skeleton */}
+              <div className="dark:bg-[#0f111d] bg-transparent border dark:border-[#1a2537] border-white/10 rounded-xl shadow-md flex flex-col justify-between h-full">
+                {/* Header */}
+                <div className="flex justify-between items-center w-full px-4 py-2 mb-3">
+                  <div className="h-6 w-20 bg-gradient-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded-full"></div>
+                  <div className="h-6 w-16 bg-gradient-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded-full"></div>
+                  <div className="h-6 w-20 bg-gradient-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded-full"></div>
+                </div>
+
+                {/* Question */}
+                <div className="px-4 py-2">
+                  <div className="h-5 w-[90%] bg-gradient-to-r from-[#14a19f]/15 to-[#1ecac7]/15 rounded mb-2"></div>
+                  <div className="h-5 w-[70%] bg-gradient-to-r from-[#14a19f]/15 to-[#1ecac7]/15 rounded"></div>
+                </div>
+
+                {/* Options */}
+                <div className="mt-4 flex flex-col space-y-3 px-4 pb-6">
+                  {[...Array(4)].map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="h-12 w-full rounded-lg bg-gradient-to-r from-[#14a19f]/10 to-[#1ecac7]/10 border dark:border-[#1a2537] border-white/10"
+                    ></div>
+                  ))}
+                </div>
+
+                {/* Buttons */}
+                <div className="mt-auto flex justify-between flex-row-reverse px-4 pb-4">
+                  <div className="h-10 w-24 bg-gradient-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded-md"></div>
+                  <div className="h-10 w-24 bg-gradient-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded-md"></div>
+                </div>
+              </div>
+            </div>
+          ) : isSubmitted ? (
+            <div>
+              Total Score is 22
+            </div>
+          ) : (
+
+            <div className="w-[65%] flex flex-col space-y-4 min-h-[580px]">
+              {/* Progress */}
+              <div style={orbitronStyle} className="w-full text-md font-semibold text-gray-300 flex justify-between">
+                <p>Question {current + 1} of {total}</p>
+                <p>{Math.round(progress)}% Complete</p>
+              </div>
+
+              <div className="w-full dark:bg-[#0a0f1b] bg-[#0f111d] rounded-full h-2 overflow-hidden border border-[#1a2537]">
+                <div
+                  className="bg-gradient-to-r from-[#14a19f] to-[#1ecac7] h-full transition-all duration-500 relative"
+                  style={{ width: `${progress}%` }}
+                >
+                  <div className="absolute inset-0 bg-[#14a19f]/10 animate-pulse"></div>
+                </div>
+              </div>
+
+              {/* Question Box */}
+              <div
+                style={orbitronStyle}
+                className="dark:bg-[#0f111d] bg-transparent dark:text-[#e5e5e5] text-white/10 p-4 text-xl font-semibold rounded-xl border dark:border-[#1a2537] border-white/10 shadow-md flex flex-col justify-between h-full"
+              >
+                {/* Header */}
+                <div className="flex justify-between items-center w-full px-4 py-2 mb-3 rounded-xl bg-transparent dark:bg-[#0f111d] border border-[#1a2537]">
+                  <span className="bg-gradient-to-r from-[#14a19f] to-[#1ecac7] dark:text-[#081220] text-white font-bold px-3 py-1 rounded-full text-[15px] tracking-wide">
+                    {questions[current].points} points
+                  </span>
+                  <span className="flex items-center gap-2 text-[15px] text-white dark:text-[#1ecac7]">
+                    <Timer className="w-5 h-5 text-[#1ecac7]" />
+                    <p className="font-semibold">{formatTime(timeLeft)}</p>
+                  </span>
+                  <span className="px-3 py-1 rounded-md text-[15px] font-semibold bg-[#0a1629] text-white dark:text-[#1ecac7] border dark:border-[#1a2537] border-white/10">
+                    {questions[current].difficulty}
+                  </span>
+                </div>
+
+                {/* Question */}
+                <div className="p-2 mt-2">
+                  <p className="text-[20px] font-semibold leading-relaxed text-[#cfd9e2]">
+                    {questions[current].question}
+                  </p>
+                </div>
+
+                {/* Options */}
+                <div className="mt-4 flex flex-col space-y-3">
+                  {questions[current].options.map((opt, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleAnswerSelect(current, opt)}
+                      className={`w-full text-left px-4 py-3 rounded-lg transition-all border
+              ${answers[current] === opt
+                          ? "bg-gradient-to-r from-[#14a19f]/30 to-[#1ecac7]/30 border-[#1ecac7]"
+                          : "bg-transparent hover:bg-gradient-to-r hover:from-[#14a19f]/10 hover:to-[#1ecac7]/10 border-white/10 text-[#bfc9d6]"
+                        }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Navigation */}
+                <div className="mt-6 flex justify-between">
+                  {current > 0 && (
+                    <button
+                      onClick={prevQuestion}
+                      className="px-6 py-2 rounded-md border border-[#1a2537] hover:bg-gradient-to-r hover:from-[#14a19f]/10 hover:to-[#1ecac7]/10 transition-all text-[#bfc9d6]"
+                    >
+                      Previous
+                    </button>
+                  )}
+
+                  {current < total - 1 ? (
+                    <button
+                      onClick={nextQuestion}
+                      className="ml-auto px-6 py-2 rounded-md bg-gradient-to-r from-[#14a19f] to-[#1ecac7] text-[#081220] font-semibold hover:opacity-90 transition-all"
+                    >
+                      Next
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleSubmit}
+                      className="ml-auto px-6 py-2 rounded-md bg-gradient-to-r from-[#14a19f] to-[#1ecac7] text-[#081220] font-semibold hover:opacity-90 transition-all"
+                    >
+                      Submit
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* RIGHT SECTION */}
+          <div className="w-[30%] bg-transparent dark:bg-[#0f111d] rounded-xl border dark:border-[#1a2537] border-white/10 p-4 space-y-3 min-h-[580px]">
+            <h2 style={orbitronStyle} className="text-[#1ecac7] text-lg font-semibold mb-2">
+              Progress Overview
+            </h2>
+
+            <ul className="text-[#bfc9d6] space-y-2 text-sm">
+              <li className="flex justify-between">
+                <span>Completed:</span>
+                <span className="text-[#1ecac7]">{Object.keys(answers).length} / {total}</span>
+              </li>
+              <li className="flex justify-between">
+                <span>Current Skill:</span>
+                <span className="text-[#14a19f]">{skill}</span>
+              </li>
+              <li className="flex justify-between">
+                <span>Level:</span>
+                <span className="text-[#1ecac7]">Intermediate</span>
+              </li>
+            </ul>
+
+            <div className="mt-4 border-t border-[#1a2537] pt-3">
+              <p className="text-[#9aa8b6] text-sm">
+                Answer all questions correctly to mint your Skill Badge (SBT)!
+              </p>
+            </div>
+          </div>
+        </div >
+      </div >
     </>
   );
 }
+
+export default VerifySkillPage;
