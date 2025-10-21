@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from "axios";
 import { useAccount } from 'wagmi';
 import { Timer } from 'lucide-react';
+import skillTokenizable from '../utils/tokenizableSkills';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
@@ -11,7 +12,7 @@ function VerifySkillPage() {
   const navigate = useNavigate();
   const { isConnected, address } = useAccount();
   const { skill } = useParams();
-
+  console.log(skill)
   const [notice, setNotice] = useState(null);
   const [redNotice, setRedNotice] = useState(false);
 
@@ -20,13 +21,16 @@ function VerifySkillPage() {
   const [answers, setAnswers] = useState({});
   const [current, setCurrent] = useState(0);
 
-  const totalTime = 1200;
+  const totalTime = 60;
   const [timeLeft, setTimeLeft] = useState(totalTime);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [score, setScore] = useState(0);
+  const [isPassed, setIsPassed] = useState(false);
 
   const total = questions.length;
   const progress = ((current + 1) / total) * 100;
+
+  const answersRef = useRef({}); // always contains latest answers
 
   // Fetch Questions
   useEffect(() => {
@@ -43,26 +47,45 @@ function VerifySkillPage() {
   }, [isConnected, navigate, address]);
 
   async function getQuizQuestions() {
+    if(!skillTokenizable.includes(skill)){
+      setRedNotice(true);
+      setNotice("This Skill is not tokenizable")
+      setTimeout(() => {
+        navigate('/');
+      }, 3000);
+    }
     try {
       const response = await axios.post("http://localhost:5000/fetch-questions", {
         address,
         skill,
       });
+
       if (response.data.success) {
         setQuestions(response.data.questions);
-      } else {
-        console.log("Next attempt after 24hrs");
+        setIsLoading(false);
       }
     } catch (error) {
-      console.log(error);
-    } finally {
-      setIsLoading(false);
+      const message = error.response?.data?.message?.trim();
+      switch (message) {
+        case 'You can attempt this skill only once every 24 hours.':
+          setRedNotice(true);
+          setNotice(message);
+          setTimeout(() => navigate('/'), 2000);
+          break;
+        case 'You already passed this quiz.':
+          setRedNotice(false);
+          setNotice('You already passed this quiz — mint your SBT now');
+          setIsPassed(true);
+          setIsSubmitted(true);
+          break;
+        default:
+          setRedNotice(true);
+          setNotice('Something went wrong.');
+      }
     }
   }
 
-
-
-  // TIMER: auto-submit after 1200 seconds
+  // Timer
   useEffect(() => {
     if (isLoading || isSubmitted || questions.length === 0) return;
 
@@ -70,7 +93,7 @@ function VerifySkillPage() {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          handleAutoSubmit(); // ✅ Auto submit when time runs out
+          handleAutoSubmit();
           return 0;
         }
         return prev - 1;
@@ -80,82 +103,88 @@ function VerifySkillPage() {
     return () => clearInterval(timer);
   }, [isLoading, isSubmitted, questions.length]);
 
-  // ✅ Auto Submit Handler
+  const handleAnswerSelect = (index, option) => {
+    if (isSubmitted) return; // disable after submit
+    const letter = option.trim().charAt(0);
+    setAnswers((prev) => {
+      const updated = { ...prev, [index]: letter };
+      answersRef.current = updated; // update ref immediately
+      return updated;
+    });
+  };
+
   const handleAutoSubmit = async () => {
     if (isSubmitted) return;
     setIsSubmitted(true);
 
-    try {
-      const res = await axios.post("http://localhost:5000/submit-quiz", {
-        address,
-        skill,
-        answers,
-        autoSubmitted: true, // optional flag for backend to know it was auto-submitted
-      });
-
-      if (res.data.success) {
-        setScore(res.data.score || 0);
-        setNotice("⏰ Time’s up! Quiz auto-submitted.");
-        setRedNotice(false);
-      } else {
-        setNotice("⚠️ Failed to submit quiz automatically.");
-        setRedNotice(true);
-      }
-    } catch (err) {
-      console.error("Auto submit error:", err);
-      setNotice("⚠️ Error while submitting automatically.");
-      setRedNotice(true);
-    }
+    await submitQuiz(answersRef.current);
   };
 
-
-
-  const handleAnswerSelect = (index, option) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [index]: option,
-    }));
-  };
-
-  const nextQuestion = () => {
-    if (current < total - 1) {
-      setCurrent((prev) => prev + 1);
-      setTimeLeft(120); // reset timer for next question
-    }
-  };
-
-  const prevQuestion = () => {
-    if (current > 0) {
-      setCurrent((prev) => prev - 1);
-      setTimeLeft(120);
-    }
-  };
-
-  // Submit Quiz
   const handleSubmit = async () => {
     if (isSubmitted) return;
     setIsSubmitted(true);
 
+    // Check for unanswered questions
+    const unanswered = questions.filter((_, idx) => !answers[idx]);
+    if (unanswered.length > 0) {
+      setRedNotice(true);
+      setNotice(`You have ${unanswered.length} unanswered questions`);
+      setIsSubmitted(false);
+      return;
+    }
+
+    await submitQuiz(answers);
+  };
+
+  const submitQuiz = async (finalAnswers) => {
     try {
       const res = await axios.post("http://localhost:5000/submit-quiz", {
         address,
         skill,
-        answers,
+        answers: finalAnswers,
       });
 
-
+      if (res.data.isPassed) {
+        setIsPassed(true);
+        setRedNotice(false);
+        setNotice(" Congratulations! You passed the quiz");
+      } else {
+        setIsPassed(false);
+        setRedNotice(true);
+        setNotice(" You did not pass the quiz");
+      }
     } catch (err) {
-      console.log(err);
+      console.error("Submit error:", err);
+      setRedNotice(true);
+      setNotice("Error submitting quiz");
     }
   };
 
+  const nextQuestion = () => {
+    if (current < total - 1) setCurrent((prev) => prev + 1);
+  };
 
+  const prevQuestion = () => {
+    if (current > 0) setCurrent((prev) => prev - 1);
+  };
+
+  function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
 
   return (
     <>
+      {/* Notice */}
       {notice && (
         <div className="fixed top-4 right-4 z-50 animate-pulse">
-          <div className={`flex items-center gap-3 text-white px-4 py-2 rounded shadow-lg border ${redNotice ? 'bg-red-600 border-red-700' : 'bg-[#14a19f] border-[#1ecac7]/30'}`}>
+          <div
+            className={`flex items-center gap-3 text-white px-4 py-2 rounded shadow-lg border ${redNotice
+              ? "bg-red-600 border-red-700"
+              : "bg-[#14a19f] border-[#1ecac7]/30"
+              }`}
+          >
             <div className="text-sm">{notice}</div>
             <button
               onClick={() => setNotice(null)}
@@ -167,6 +196,42 @@ function VerifySkillPage() {
         </div>
       )}
 
+      {/* Pass / Fail Overlay */}
+      {isSubmitted && isPassed !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#0f111d] border border-[#1a2537] rounded-xl p-8 w-[400px] text-center space-y-4 shadow-lg">
+            {isPassed ? (
+              <>
+                <h2 className="text-2xl font-bold text-[#14a19f]"> Congratulations!</h2>
+                <p className="text-white/80">
+                  You passed the {skill} quiz! Your Skill Badge (SBT) is ready to mint.
+                </p>
+                <button
+                  onClick={() => navigate(`/mint-sbt/${skill}`)}
+                  className="mt-4 px-6 py-2 bg-gradient-to-r from-[#14a19f] to-[#1ecac7] text-[#081220] font-semibold rounded-md hover:opacity-90 transition-all"
+                >
+                  Mint SBT
+                </button>
+              </>
+            ) : (
+              <>
+                <h2 className="text-2xl font-bold text-red-600"> Quiz Failed</h2>
+                <p className="text-white/80">
+                  You didn’t pass the {skill} quiz. Try again later!
+                </p>
+                <button
+                  onClick={() => navigate("/")}
+                  className="mt-4 px-6 py-2 bg-gradient-to-r from-[#14a19f] to-[#1ecac7] text-[#081220] font-semibold rounded-md hover:opacity-90 transition-all"
+                >
+                  Go Home
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* MAIN QUIZ UI */}
       <div className="dark:bg-[#0f111d] pt-6 space-y-4 flex flex-col bg-[#161c32] overflow-hidden relative min-h-screen">
         {/* Background gradients */}
         <div className="pointer-events-none absolute -left-32 -top-32 w-[520px] h-[520px] rounded-full bg-gradient-to-br from-[#122033] via-[#0f2540] to-[#08101a] opacity-40 blur-3xl mix-blend-screen"></div>
@@ -183,33 +248,24 @@ function VerifySkillPage() {
           {/* LEFT SECTION */}
           {isLoading ? (
             <div className="w-[65%] flex flex-col space-y-4 min-h-[580px] animate-pulse">
-              {/* Header Placeholder */}
+              {/* Skeleton placeholders */}
               <div className="w-full flex justify-between">
                 <div className="h-4 w-32 bg-gradient-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded"></div>
                 <div className="h-4 w-24 bg-gradient-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded"></div>
               </div>
-
-              {/* Progress Bar Placeholder */}
               <div className="w-full bg-[#0f111d] rounded-full h-2 overflow-hidden border border-[#1a2537]">
                 <div className="h-full w-[30%] bg-gradient-to-r from-[#14a19f]/30 to-[#1ecac7]/30"></div>
               </div>
-
-              {/* Question Box Skeleton */}
-              <div className="dark:bg-[#0f111d] bg-transparent border dark:border-[#1a2537] border-white/10 rounded-xl shadow-md flex flex-col justify-between h-full">
-                {/* Header */}
-                <div className="flex justify-between items-center w-full px-4 py-2 mb-3">
+              <div className="dark:bg-[#0f111d] bg-transparent border dark:border-[#1a2537] border-white/10 rounded-xl shadow-md flex flex-col justify-between h-full p-4">
+                <div className="flex justify-between items-center w-full mb-3">
                   <div className="h-6 w-20 bg-gradient-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded-full"></div>
                   <div className="h-6 w-16 bg-gradient-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded-full"></div>
                   <div className="h-6 w-20 bg-gradient-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded-full"></div>
                 </div>
-
-                {/* Question */}
                 <div className="px-4 py-2">
                   <div className="h-5 w-[90%] bg-gradient-to-r from-[#14a19f]/15 to-[#1ecac7]/15 rounded mb-2"></div>
                   <div className="h-5 w-[70%] bg-gradient-to-r from-[#14a19f]/15 to-[#1ecac7]/15 rounded"></div>
                 </div>
-
-                {/* Options */}
                 <div className="mt-4 flex flex-col space-y-3 px-4 pb-6">
                   {[...Array(4)].map((_, idx) => (
                     <div
@@ -218,27 +274,24 @@ function VerifySkillPage() {
                     ></div>
                   ))}
                 </div>
-
-                {/* Buttons */}
                 <div className="mt-auto flex justify-between flex-row-reverse px-4 pb-4">
                   <div className="h-10 w-24 bg-gradient-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded-md"></div>
                   <div className="h-10 w-24 bg-gradient-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded-md"></div>
                 </div>
               </div>
             </div>
-          ) : isSubmitted ? (
-            <div>
-              Total Score is 22
-            </div>
           ) : (
-
             <div className="w-[65%] flex flex-col space-y-4 min-h-[580px]">
               {/* Progress */}
-              <div style={orbitronStyle} className="w-full text-md font-semibold text-gray-300 flex justify-between">
-                <p>Question {current + 1} of {total}</p>
+              <div
+                style={orbitronStyle}
+                className="w-full text-md font-semibold text-gray-300 flex justify-between"
+              >
+                <p>
+                  Question {current + 1} of {total}
+                </p>
                 <p>{Math.round(progress)}% Complete</p>
               </div>
-
               <div className="w-full dark:bg-[#0a0f1b] bg-[#0f111d] rounded-full h-2 overflow-hidden border border-[#1a2537]">
                 <div
                   className="bg-gradient-to-r from-[#14a19f] to-[#1ecac7] h-full transition-all duration-500 relative"
@@ -251,7 +304,7 @@ function VerifySkillPage() {
               {/* Question Box */}
               <div
                 style={orbitronStyle}
-                className="dark:bg-[#0f111d] bg-transparent dark:text-[#e5e5e5] text-white/10 p-4 text-xl font-semibold rounded-xl border dark:border-[#1a2537] border-white/10 shadow-md flex flex-col justify-between h-full"
+                className="dark:bg-[#0f111d] bg-transparent dark:text-[#e5e5e5] text-white p-4 text-xl font-semibold rounded-xl border dark:border-[#1a2537] border-white/10 shadow-md flex flex-col justify-between"
               >
                 {/* Header */}
                 <div className="flex justify-between items-center w-full px-4 py-2 mb-3 rounded-xl bg-transparent dark:bg-[#0f111d] border border-[#1a2537]">
@@ -280,10 +333,10 @@ function VerifySkillPage() {
                     <button
                       key={idx}
                       onClick={() => handleAnswerSelect(current, opt)}
-                      className={`w-full text-left px-4 py-3 rounded-lg transition-all border
-              ${answers[current] === opt
-                          ? "bg-gradient-to-r from-[#14a19f]/30 to-[#1ecac7]/30 border-[#1ecac7]"
-                          : "bg-transparent hover:bg-gradient-to-r hover:from-[#14a19f]/10 hover:to-[#1ecac7]/10 border-white/10 text-[#bfc9d6]"
+                      disabled={isSubmitted}
+                      className={`w-full text-left px-4 py-3 rounded-lg transition-all border ${answers[current] === opt.charAt(0)
+                        ? "bg-gradient-to-r from-[#14a19f]/30 to-[#1ecac7]/30 border-[#1ecac7]"
+                        : "bg-transparent hover:bg-gradient-to-r hover:from-[#14a19f]/10 hover:to-[#1ecac7]/10 border-white/10 text-[#bfc9d6]"
                         }`}
                     >
                       {opt}
@@ -296,15 +349,16 @@ function VerifySkillPage() {
                   {current > 0 && (
                     <button
                       onClick={prevQuestion}
+                      disabled={isSubmitted}
                       className="px-6 py-2 rounded-md border border-[#1a2537] hover:bg-gradient-to-r hover:from-[#14a19f]/10 hover:to-[#1ecac7]/10 transition-all text-[#bfc9d6]"
                     >
                       Previous
                     </button>
                   )}
-
                   {current < total - 1 ? (
                     <button
                       onClick={nextQuestion}
+                      disabled={isSubmitted}
                       className="ml-auto px-6 py-2 rounded-md bg-gradient-to-r from-[#14a19f] to-[#1ecac7] text-[#081220] font-semibold hover:opacity-90 transition-all"
                     >
                       Next
@@ -312,6 +366,7 @@ function VerifySkillPage() {
                   ) : (
                     <button
                       onClick={handleSubmit}
+                      disabled={isSubmitted}
                       className="ml-auto px-6 py-2 rounded-md bg-gradient-to-r from-[#14a19f] to-[#1ecac7] text-[#081220] font-semibold hover:opacity-90 transition-all"
                     >
                       Submit
@@ -349,10 +404,11 @@ function VerifySkillPage() {
               </p>
             </div>
           </div>
-        </div >
-      </div >
+        </div>
+      </div>
     </>
   );
 }
 
 export default VerifySkillPage;
+

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAccount } from 'wagmi';
 import SideBar from '../components/SideBar';
 import axios from "axios";
+import skillTokenizable from '../utils/tokenizableSkills';
 import { Award, Plus, X, Check, User, Mail, MapPin, Github, Linkedin, Twitter, Globe } from 'lucide-react';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
@@ -14,21 +15,7 @@ export default function MyProfile() {
   const [notice, setNotice] = useState(null);
   const [redNotice, setRedNotice] = useState(false);
 
-  const skillTokenizable = [
-    "English to Spanish Translate",
-    "Creative Writing",
-    "Photography",
-    "Video Editing",
-    "Frontend Development",
-    "Backend Development",
-    "Python",
-    "JavaScript",
-    "Solidity",
-    "HTML",
-    "CSS",
-    "React",
-    "Node.js",
-  ];
+
 
 
   const [profile, setProfile] = useState({
@@ -154,7 +141,7 @@ export default function MyProfile() {
       setSkills([...skills, skill]); //first spread using ...skills the add skill
       setNewSkill('');
       setShowSkillInput(false);
-      setRedNotice(faslse);
+      setRedNotice(false);
       setNotice(`'${skill}' was added. Remember to save your profile.`);
       setTimeout(() => setNotice(null), 6000);
     }
@@ -213,6 +200,7 @@ export default function MyProfile() {
   };
 
   const mintSBTForSkill = (skill) => {
+
     navigate(`/verify-skill/${skill}`)
   };
 
@@ -595,7 +583,7 @@ export default function MyProfile() {
                       >
                         Mint SBT <Award size={16} />
                       </button> : <button
-                      disabled={true}
+                        disabled={true}
                         className="flex items-center justify-center gap-2 w-full mt-auto text-sm font-bold bg-gradient-to-r from-gray-800 to-gray-900 text-[#0f111d] py-2.5 rounded-lg  "
                         style={robotoStyle}
                       >

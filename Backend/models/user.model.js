@@ -56,7 +56,8 @@ const userSchema = new mongoose.Schema(
                 sbtAddress: { type: String },
                 minted: { type: Boolean, default: false },
                 active: { type: Boolean, default: true },
-                tokenId: { type: String },                    // Optional if you track on-chain tokenId
+                tokenId: { type: String }, 
+                quizPassed:{type: Boolean, default: false}                   // Optional if you track on-chain tokenId
             }
         ],
 

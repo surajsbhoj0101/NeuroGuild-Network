@@ -2,7 +2,6 @@ import User from "../models/user.model.js";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import quizModel from "../models/quiz.model.js";
-import quizAttemptModel from "../models/quizAttempt.model.js";
 
 dotenv.config();
 export const test = async (req, res) => {
@@ -108,57 +107,48 @@ export const updateUser = async (req, res) => {
 };
 
 export const fetchQuestions = async (req, res) => {
-    
     const { address, skill } = req.body;
 
     try {
-        console.log("Finding. ..")
-        const lastAttempt = await quizAttemptModel.findOne({
-            skill,
-            wallet: address.toLowerCase(),
-            createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // last 24 hours
+        const cooldown = 24 * 60 * 60 * 1000;
+
+        const alreadyPassed = await User.findOne({
+            walletAddress: address.toLowerCase(),
+            skills: {
+                $elemMatch: {
+                    name: skill,
+                    quizPassed: true
+                }
+            }
         });
-        console.log("Found..")
-        if (lastAttempt) {
+
+        if (alreadyPassed) {
+            console.log("You already passed this quiz");
+            return res.status(400).json({
+                success: false,
+                message: "You already passed this quiz."
+            });
+            
+        }
+
+
+        const lastSession = await quizModel.findOne({
+            wallet: address.toLowerCase(),
+            skill,
+            createdAt: { $gte: new Date(Date.now() - cooldown) }
+        });
+
+        if (lastSession) {
+            console.log("You can attempt this skill only once every 24 hours.");
             return res.status(400).json({
                 success: false,
                 message: "You can attempt this skill only once every 24 hours."
             });
         }
 
+        // const prompt = `You are an AI quiz generator.Generate ** 25 multiple - choice questions ** on the topic: ${skill}.Requirements: - Divide by difficulty: 10 easy, 10 medium, 5 hard - Each question must include: - "question" - "options": array of 4 choices - "answer": correct letter(A, B, C, or D) - "difficulty" - "points": 3 for easy, 4 for medium, 6 for hard Output JSON only in this structure: { "quiz": [{ "question": "What is ...?", "options": ["A) ...", "B) ...", "C) ...", "D) ..."], "answer": "B", "difficulty": "easy", "points": 3 }] }`;
 
-        const prompt = `
-            You are an AI quiz generator. Generate **25 multiple-choice questions** on the topic: ${skill}.
-
-            Requirements:
-            - Divide the questions by difficulty:
-              - 10 easy
-              - 10 medium
-              - 5 hard
-            - Each question must have:
-              - "question": The text of the question
-              - "options": An array of 4 possible answers (A, B, C, D)
-              - "answer": The correct option (A, B, C, or D)
-              - "difficulty": easy, medium, or hard
-              - "points": 3 for easy, 4 for medium, 6 for hard
-
-            Output format: JSON only, like this:
-            {
-              "quiz": [
-                {
-                  "question": "What is ...?",
-                  "options": ["A) ...", "B) ...", "C) ...", "D) ..."],
-                  "answer": "B",
-                  "difficulty": "easy",
-                  "points": 3
-                }
-              ]
-            }
-            Make the questions diverse, clear, and non-repetitive.
-            Avoid any explanations or markdown — only return valid JSON.
-        `;
-        console.log("Generating ....")
-
+        const prompt = `You are an AI quiz generator.Generate ** 5 multiple - choice questions ** on the topic: ${skill}.Requirements: - Divide by difficulty: 2 easy, 2 medium, 1 hard - Each question must include: - "question" - "options": array of 4 choices - "answer": correct letter(A, B, C, or D) - "difficulty" - "points": 3 for easy, 4 for medium, 6 for hard Output JSON only in this structure: { "quiz": [{ "question": "What is ...?", "options": ["A) ...", "B) ...", "C) ...", "D) ..."], "answer": "B", "difficulty": "easy", "points": 3 }] }`;
         const ai = new GoogleGenAI({ apiKey: process.env.AI_API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
@@ -166,32 +156,27 @@ export const fetchQuestions = async (req, res) => {
         });
 
         let resultText = response.text || "";
-        resultText = resultText.replace(/```json\s*|```/g, '').trim();
+        resultText = resultText.replace(/```json\s*|```/g, "").trim();
 
-        const quizJSON = JSON.parse(resultText);
-        console.log("Storing ...")
-        const storedQuestions = await Promise.all(
-            quizJSON.quiz.map(async (q) => {
-                const newQ = new quizModel({
-                    skill,
-                    question: q.question,
-                    options: q.options,
-                    answer: q.answer,
-                    difficulty: q.difficulty,
-                    points: q.points
-                });
-                await newQ.save();
-                const { answer, ...questionWithoutAnswer } = q;
-                return questionWithoutAnswer;
-            })
-        );
+        let quizJSON;
+        try {
+            quizJSON = JSON.parse(resultText);
+        } catch (err) {
+            console.error("Error parsing AI response:", resultText);
+            return res.status(500).json({
+                success: false,
+                message: "Invalid AI response format. Try again.",
+            });
+        }
 
-
-        await quizAttemptModel.create({
-            skill,
+        const newSession = new quizModel({
             wallet: address.toLowerCase(),
+            skill,
+            questions: quizJSON.quiz,
         });
+        await newSession.save();
 
+        const storedQuestions = quizJSON.quiz.map(({ answer, ...rest }) => rest);
 
         res.status(200).json({
             success: true,
@@ -206,3 +191,91 @@ export const fetchQuestions = async (req, res) => {
         });
     }
 };
+
+const handleUserSkillPass = async (walletAddress, skillName) => {
+    const wallet = walletAddress.toLowerCase();
+
+    // Try to find the user
+    let user = await User.findOne({ walletAddress: wallet });
+
+    if (!user) {
+        user = await User.create({
+            walletAddress: wallet,
+            skills: [
+                {
+                    name: skillName,
+                    quizPassed: true,
+                },
+            ]
+        })
+    } else {
+        const skillIndex = user.skills.findIndex(s => s.name === skillName);
+        if (skillIndex === -1) {
+
+            user.skills.push({
+                name: skillName,
+                quizPassed: true,
+            });
+        } else {
+
+            user.skills[skillIndex].quizPassed = true;
+        }
+
+        await user.save();
+    }
+    return user;
+}
+
+
+export const quizCheckAllCorrect = async (req, res) => {
+    const { address, skill, answers, autoSubmitted } = req.body;
+    const walletAddress = address.toLowerCase();
+
+    try {
+
+        const latestQuiz = await quizModel
+            .findOne({ wallet: walletAddress, skill })
+            .sort({ createdAt: -1 });
+
+        if (!latestQuiz) {
+            return res.status(404).json({ error: "No quiz found for this user and skill" });
+        }
+        console.log(latestQuiz)
+        const questions = latestQuiz.questions;
+
+
+        let allCorrect = true;
+        console.log(answers)
+        for (let i = 0; i < questions.length; i++) {
+            if (answers[i] !== questions[i].answer) {
+                console.log(`${answers[i]} == ${questions[i].answer}`)
+                allCorrect = false;
+                break;
+            }
+        }
+
+        // Store attempt in DB
+        const attempt = await quizModel.create({
+            wallet: walletAddress,
+            skill,
+            questions: latestQuiz.questions, // optional: store questions too
+            passed: allCorrect,
+        });
+
+        if (allCorrect) {
+            const updatedUser = await handleUserSkillPass(address, skill);
+            console.log("User updated or created:", updatedUser);
+        }
+
+
+        res.status(200).json({
+            message: allCorrect ? "All answers are correct " : "Some answers are wrong ",
+            isPassed: allCorrect
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Something went wrong" });
+    }
+};
+
+
