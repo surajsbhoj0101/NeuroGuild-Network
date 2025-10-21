@@ -21,14 +21,11 @@ contract MySkillTest is Test {
         assertEq(address(this), mySkillSbt.admin());
     }
 
-    function testName() public view {
-        assertEq("Solidity SBT", mySkillSbt.skillName());
-    }
-
     function testMint() public {
         mySkillSbt.addToWhitelist(address(this));
+        string memory skillName = "Javascript";
 
-        uint tokenId = mySkillSbt.mint(address(this), uri);
+        uint tokenId = mySkillSbt.mint(uri, skillName);
 
         string memory storedUri = mySkillSbt.tokenUri(tokenId);
         assertEq(uri, storedUri);
@@ -39,19 +36,35 @@ contract MySkillTest is Test {
 
     function test_RevertIfMintNotWhitelisted() public {
         vm.expectRevert("not whitelisted");
-        mySkillSbt.mint(address(this), "uri");
+        mySkillSbt.mint("uri", "Javascript");
     }
 
     function testMintWithPrank() public {
         address bob = address(2);
 
-       
         vm.prank(mySkillSbt.admin());
         mySkillSbt.addToWhitelist(bob);
-
+        string memory skillName = "Javascript";
         vm.prank(bob);
-        uint tokenId = mySkillSbt.mint(bob, "skillURI");
+        mySkillSbt.mint("skillURI", skillName);
 
         assertEq(mySkillSbt.balanceOf(bob), 1);
+    }
+
+    function testUpdate() public {
+        address bob = address(2);
+        string memory skillName = "Javascript";
+        vm.prank(mySkillSbt.admin());
+       
+       mySkillSbt.addToWhitelist(bob);
+        vm.prank(bob);
+        mySkillSbt.mint("skillURI", skillName);
+
+        assertEq(mySkillSbt.balanceOf(bob), 1);
+        vm.prank(bob);
+        mySkillSbt.updateSkill(skillName);
+
+        vm.prank(bob);
+        assertEq(mySkillSbt.skillLevels(skillName), 2);
     }
 }

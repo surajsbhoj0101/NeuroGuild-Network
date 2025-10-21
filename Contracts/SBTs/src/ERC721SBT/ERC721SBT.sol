@@ -11,14 +11,20 @@ contract ERC721SBT is IERC721 {
         uint256 indexed id
     );
 
+    event SkillUpdated(
+        address indexed userAddr,
+        string indexed skillName,
+        uint8 indexed level
+    );
+
     event TokenURISet(uint256 indexed tokenId, string uri);
     event addedToWhitelist(address indexed userAddr);
 
     address public admin;
 
-    string public skillName;
+    uint8 public constant MAX_LEVEL = 2;
 
-    string public skillSymbol;
+    mapping(address => mapping(bytes32 => uint8)) public _skillLevels;
 
     mapping(address => bool) internal _whiteList;
 
@@ -28,11 +34,9 @@ contract ERC721SBT is IERC721 {
 
     mapping(address => uint8) internal _balanceOf;
 
-    constructor(address _admin, string memory _name, string memory _symbol) {
+    constructor(address _admin) {
         require(_admin != address(0), "verifier = zero address");
         admin = _admin;
-        skillName = _name;
-        skillSymbol = _symbol;
     }
 
     modifier onlyAdmin() {
@@ -72,6 +76,24 @@ contract ERC721SBT is IERC721 {
         emit addedToWhitelist(userAddr);
     }
 
+    function skillLevels(
+        string memory skillName
+    ) external view returns (uint8) {
+        require(_balanceOf[msg.sender] > 0, "mint SBT first");
+        bytes32 skillKey = keccak256(abi.encodePacked(skillName));
+        return _skillLevels[msg.sender][skillKey];
+    }
+
+    function _updateSkill(string memory skillName) internal onlyWhiteListed {
+        require(_balanceOf[msg.sender] > 0, "mint SBT first");
+        bytes32 skillKey = keccak256(abi.encodePacked(skillName));
+        uint8 currentLevel = _skillLevels[msg.sender][skillKey];
+        require(currentLevel < MAX_LEVEL, "Max level reached");
+
+        _skillLevels[msg.sender][skillKey] = currentLevel + 1;
+        emit SkillUpdated(msg.sender, skillName, currentLevel + 1);
+    }
+
     function _mint(address to, uint256 id) internal {
         require(to != address(0), "mint to zero address");
         require(_balanceOf[to] == 0, "user already has an SBT");
@@ -79,7 +101,6 @@ contract ERC721SBT is IERC721 {
 
         _balanceOf[to] = 1;
         _ownerOf[id] = to;
-
         emit Transfer(address(0), to, id);
     }
 
