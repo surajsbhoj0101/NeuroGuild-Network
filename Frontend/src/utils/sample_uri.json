@@ -1,0 +1,38 @@
+{
+  "name": "Suraj Bhoj — Skill Profile",
+  "description": "Soulbound NFT representing verified skills and levels of the user across multiple domains.",
+ 
+  "attributes": [
+    {
+      "trait_type": "Total Skills",
+      "value": 4
+    },
+    {
+      "trait_type": "Skills",
+      "value": [
+        {
+          "name": "Solidity",
+          "level": "Advanced",
+          "badge": "ipfs://bafkreiexamplebadge1"
+        },
+        {
+          "name": "React.js",
+          "level": "Intermediate",
+          "badge": "ipfs://bafkreiexamplebadge2"
+        },
+        {
+          "name": "Python",
+          "level": "Intermediate",
+          "badge": "ipfs://bafkreiexamplebadge3"
+        },
+        {
+          "name": "Blockchain Architecture",
+          "level": "Advanced",
+          "badge": "ipfs://bafkreiexamplebadge4"
+        }
+      ]
+    }
+  ],
+  "external_url": "https://mydapp.com/user/0xA12f...B9C3",
+  "created_at": "2025-10-22T18:45:00Z"
+}

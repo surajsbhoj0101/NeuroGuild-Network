@@ -18,7 +18,7 @@ import BrowseJobs from './pages/BrowseJobs.jsx';
 import MyProfile from './pages/MyProfile.jsx';
 import Setting from './pages/Setting.jsx';
 import VerifySkillPage from './pages/VerifySkillPage.jsx';
-
+import SbtMint from './pages/SbtMint.jsx';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
@@ -86,6 +86,14 @@ const router = createBrowserRouter([
       <>
         <Navbar />
         <VerifySkillPage /></>
+    )
+  }, {
+    path: "/mint-sbt/:skill",
+    element: (
+      <>
+        <Navbar />
+        <SbtMint />
+      </>
     )
   }
 ]);

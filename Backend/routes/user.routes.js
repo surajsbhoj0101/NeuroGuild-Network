@@ -5,6 +5,7 @@ import { test } from "../controllers/user.controller.js";
 import { getOrCreateUser } from "../controllers/user.controller.js";
 import { fetchQuestions } from "../controllers/user.controller.js";
 import { quizCheckAllCorrect } from "../controllers/user.controller.js";
+import { checkUserPassedQuiz } from "../controllers/user.controller.js";
 
 // import { createUser } from "../controllers/user.controller";
 
@@ -17,4 +18,5 @@ router.get('/',test)
 router.get('/get-or-create/:address',getOrCreateUser)
 router.post('/fetch-questions',fetchQuestions)
 router.post('/submit-quiz',quizCheckAllCorrect)
+router.get('/check-user-passed',checkUserPassedQuiz)
 export default router;

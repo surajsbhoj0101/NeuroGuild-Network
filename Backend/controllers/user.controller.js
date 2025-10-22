@@ -115,7 +115,7 @@ export const fetchQuestions = async (req, res) => {
         const alreadyPassed = await User.findOne({
             walletAddress: address.toLowerCase(),
             skills: {
-                $elemMatch: {
+                $elemMatch: { //It ensures both conditions apply to the same object inside the array.
                     name: skill,
                     quizPassed: true
                 }
@@ -128,14 +128,14 @@ export const fetchQuestions = async (req, res) => {
                 success: false,
                 message: "You already passed this quiz."
             });
-            
+
         }
 
 
         const lastSession = await quizModel.findOne({
             wallet: address.toLowerCase(),
             skill,
-            createdAt: { $gte: new Date(Date.now() - cooldown) }
+            createdAt: { $gte: new Date(Date.now() - cooldown) }//$gte: greater than or equal
         });
 
         if (lastSession) {
@@ -221,7 +221,7 @@ const handleUserSkillPass = async (walletAddress, skillName) => {
             user.skills[skillIndex].quizPassed = true;
         }
 
-        await user.save();
+        await user.save(); //.save() method using this we can change our data before saving it to database
     }
     return user;
 }
@@ -254,7 +254,7 @@ export const quizCheckAllCorrect = async (req, res) => {
             }
         }
 
-        // Store attempt in DB
+
         const attempt = await quizModel.create({
             wallet: walletAddress,
             skill,
@@ -277,5 +277,28 @@ export const quizCheckAllCorrect = async (req, res) => {
         res.status(500).json({ error: "Something went wrong" });
     }
 };
+
+export const checkUserPassedQuiz = async (req, res) => {
+    const skill = req.query.skill;
+    const address = req.query.address;
+    const walletAddress = address.toLowerCase();
+    console.log(address)
+    try {
+        const resp = await User.findOne({
+            walletAddress: address.toLowerCase(),
+            skills: {
+                $elemMatch: { //It ensures both conditions apply to the same object inside the array.
+                    name: skill,
+                    quizPassed: true
+                }
+            }
+        });
+
+        res.status(200).json({ isPassed: true });
+    } catch (error) {
+        console.error(error)
+        res.status(500).json({ error: error });
+    }
+}
 
 
