@@ -21,7 +21,7 @@ contract SkillSBT is ERC721SBT {
         return newTokenId;
     }
 
-    function updateSkill(string memory skillName) external onlyWhiteListed{
+    function updateSkill(string memory skillName) external {
         _updateSkill(skillName);
     }
 
