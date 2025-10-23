@@ -2,6 +2,7 @@ import User from "../models/user.model.js";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import quizModel from "../models/quiz.model.js";
+import { whiteListUser } from "../services/whitelist_user_for_sbt.js";
 
 dotenv.config();
 export const test = async (req, res) => {
@@ -121,6 +122,8 @@ export const fetchQuestions = async (req, res) => {
                 }
             }
         });
+
+        console.log("Checked already passed")
 
         if (alreadyPassed) {
             console.log("You already passed this quiz");
@@ -261,16 +264,20 @@ export const quizCheckAllCorrect = async (req, res) => {
             questions: latestQuiz.questions, // optional: store questions too
             passed: allCorrect,
         });
-
+        let isWhiteListed = false;
         if (allCorrect) {
             const updatedUser = await handleUserSkillPass(address, skill);
             console.log("User updated or created:", updatedUser);
+            const whiteList = await whiteListUser(address);
+            isWhiteListed = whiteList.whiteListSuccess;
+            console.log("WhiteListed ?", isWhiteListed)
         }
 
 
         res.status(200).json({
             message: allCorrect ? "All answers are correct " : "Some answers are wrong ",
-            isPassed: allCorrect
+            isPassed: allCorrect,
+            isWhiteListed: isWhiteListed
         });
     } catch (error) {
         console.error(error);
@@ -294,7 +301,11 @@ export const checkUserPassedQuiz = async (req, res) => {
             }
         });
 
-        res.status(200).json({ isPassed: true });
+        if (resp) {
+            res.status(200).json({ isPassed: true });
+        } else {
+            res.status(200).json({ isPassed: false });
+        }
     } catch (error) {
         console.error(error)
         res.status(500).json({ error: error });

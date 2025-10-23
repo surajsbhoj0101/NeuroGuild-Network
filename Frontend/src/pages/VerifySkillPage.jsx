@@ -21,7 +21,7 @@ function VerifySkillPage() {
   const [answers, setAnswers] = useState({});
   const [current, setCurrent] = useState(0);
 
-  const totalTime = 60;
+  const totalTime = 130;
   const [timeLeft, setTimeLeft] = useState(totalTime);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [score, setScore] = useState(0);
@@ -47,7 +47,7 @@ function VerifySkillPage() {
   }, [isConnected, navigate, address]);
 
   async function getQuizQuestions() {
-    if(!skillTokenizable.includes(skill)){
+    if (!skillTokenizable.includes(skill)) {
       setRedNotice(true);
       setNotice("This Skill is not tokenizable")
       setTimeout(() => {
@@ -144,14 +144,14 @@ function VerifySkillPage() {
         answers: finalAnswers,
       });
 
-      if (res.data.isPassed) {
+      if (res.data.isPassed && res.data.isWhiteListed) {
         setIsPassed(true);
         setRedNotice(false);
-        setNotice(" Congratulations! You passed the quiz");
+        setNotice(" Congratulations! You passed the quiz and WhiteListed");
       } else {
         setIsPassed(false);
         setRedNotice(true);
-        setNotice(" You did not pass the quiz");
+        setNotice(" You did not pass the quiz or not able to WhiteListed");
       }
     } catch (err) {
       console.error("Submit error:", err);

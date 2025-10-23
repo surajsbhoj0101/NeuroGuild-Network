@@ -48,17 +48,18 @@ function SbtMint() {
                     params: { skill, address },
 
                 });
+                if (!res.data.isPassed) {
+                    setRedNotice(true);
+                    setNotice("First pass the Quiz")
+                    setTimeout(() => {
+                        navigate('/')
+
+                    }, 2000);
+                }
+
 
             } catch (error) {
                 console.log(error);
-                setRedNotice(true);
-                setNotice("First pass the Quiz")
-                setTimeout(() => {
-                    navigate('/')
-
-                }, 2000);
-
-
 
             }
         }
@@ -77,9 +78,7 @@ function SbtMint() {
         return () => clearTimeout(id);
     }, [notice]);
 
-    useEffect(() => {
 
-    }, [isPassed])
 
     return (
         <div className="min-h-screen relative overflow-hidden dark:bg-[#0f111d] bg-[#0f1422] text-white">
