@@ -2,6 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {Test} from "forge-std/Test.sol";
+
 import {DeploySkillSBT} from "../script/DeploySkillSBT.s.sol";
 import {SkillSBT} from "../src/SkillSBT.sol";
 
@@ -23,12 +24,11 @@ contract MySkillTest is Test {
 
     function testMint() public {
         mySkillSbt.addToWhitelist(address(this));
-        string memory skillName = "Javascript";
+    
 
-        uint tokenId = mySkillSbt.mint(uri, skillName);
+        uint tokenId = mySkillSbt.mint();
 
-        string memory storedUri = mySkillSbt.tokenUri(tokenId);
-        assertEq(uri, storedUri);
+        
 
         uint balance = mySkillSbt.balanceOf(address(this));
         assertEq(balance, 1);
@@ -36,7 +36,7 @@ contract MySkillTest is Test {
 
     function test_RevertIfMintNotWhitelisted() public {
         vm.expectRevert("not whitelisted");
-        mySkillSbt.mint("uri", "Javascript");
+        mySkillSbt.mint();
     }
 
     function testMintWithPrank() public {
@@ -44,27 +44,11 @@ contract MySkillTest is Test {
 
         vm.prank(mySkillSbt.admin());
         mySkillSbt.addToWhitelist(bob);
-        string memory skillName = "Javascript";
         vm.prank(bob);
-        mySkillSbt.mint("skillURI", skillName);
+        mySkillSbt.mint();
 
         assertEq(mySkillSbt.balanceOf(bob), 1);
     }
 
-    function testUpdate() public {
-        address bob = address(2);
-        string memory skillName = "Javascript";
-        vm.prank(mySkillSbt.admin());
-       
-       mySkillSbt.addToWhitelist(bob);
-        vm.prank(bob);
-        mySkillSbt.mint("skillURI", skillName);
-
-        assertEq(mySkillSbt.balanceOf(bob), 1);
-        vm.prank(bob);
-        mySkillSbt.updateSkill(skillName);
-
-        vm.prank(bob);
-        assertEq(mySkillSbt.skillLevels(skillName), 2);
-    }
+   
 }
