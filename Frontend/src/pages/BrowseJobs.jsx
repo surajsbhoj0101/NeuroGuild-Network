@@ -150,15 +150,15 @@ function BrowseJobs() {
                 </div>
             )}
 
-            <div className="pointer-events-none absolute right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
-        <div className="pointer-events-none absolute left-[5%] bottom-[1%] w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
+            <div className="pointer-events-none absolute right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
+        <div className="pointer-events-none absolute left-[5%] bottom-[1%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
 
             <SideBar />
             
             <div className='flex w-full flex-col lg:flex-row'>
                 <div className='filters w-full lg:w-1/2 '>
                     <h1 style={orbitronStyle} className='text-3xl  text-white font-bold px-6 mb-4'>Filters</h1>
-                    <div className='bg-[#161c32] dark:bg-[#0f111d]  border-1 border-[#14a19f]/20 m-4 rounded-md shadow-lg px-1 py-1'>
+                    <div className='bg-[#161c32] dark:bg-[#0f111d]  border border-[#14a19f]/20 m-4 rounded-md shadow-lg px-1 py-1'>
                         <h1 style={robotoStyle} className='text-lg text-white font-bold mb-1  px-2'>Skill Tags</h1>
                         <div className='skills-filter flex flex-wrap  px-4 border-b border-gray-700 pb-4'>
                             {skills.map((skill, idx) => (
@@ -205,7 +205,7 @@ function BrowseJobs() {
 
 
                     </div>
-                    <div className='bg-[#161c32] dark:bg-[#0f111d]  border-1 border-white/20 m-4 rounded-lg shadow-lg py-1'>
+                    <div className='bg-[#161c32] dark:bg-[#0f111d]  border border-white/20 m-4 rounded-lg shadow-lg py-1'>
                         <h1 style={robotoStyle} className='text-lg text-white font-bold mb-1  px-2 '>Sort By</h1>
                         <div className='sort-by-filter flex flex-wrap px-4 pb-4'>
                             {["Relevance", "Date Posted", "Budget"].map((sort, idx) => (
@@ -228,7 +228,7 @@ function BrowseJobs() {
                         </div>
                     </div>
 
-                    <div className='bg-[#161c32] flex justify-between items-center dark:bg-[#0f111d]  border-1 border-white/20 m-4 rounded-lg shadow-lg p-4'>
+                    <div className='bg-[#161c32] flex justify-between items-center dark:bg-[#0f111d]  border border-white/20 m-4 rounded-lg shadow-lg p-4'>
                         <div className='flex gap-3'>
                             <button
                                 className='

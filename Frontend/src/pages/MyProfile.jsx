@@ -14,8 +14,9 @@ export default function MyProfile() {
   const navigate = useNavigate();
   const [notice, setNotice] = useState(null);
   const [redNotice, setRedNotice] = useState(false);
-
-
+  const [sbt, setSbt] = useState(null)
+  const [isLoading, setIsLoading] = useState(false);
+  const [minted, setMinted] = useState([])
 
 
   const [profile, setProfile] = useState({
@@ -25,7 +26,6 @@ export default function MyProfile() {
   });
 
   const [skills, setSkills] = useState([]);
-  const [sbts, setSbts] = useState([]);
   const [newSkill, setNewSkill] = useState('');
   const [showSkillInput, setShowSkillInput] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -93,24 +93,10 @@ export default function MyProfile() {
         setProfile(mapUserToProfile(user));
 
         const userSkills = mapUserToSkills(user);
-        // BUG FIX: Set skills state to an array of strings (skill names).
-        setSkills(userSkills.map(s => s.name)); //creates a new array containing only the names
-
-        /*  
-          let arr = [1,2,3,4]
-          let a = arr.filter(a => a%2 == 0 ).map(a=>a*2);
-          [ 4, 8 ]
-         */
-        const loadedSbts = userSkills
-          .filter(skill => skill.minted)
-          .map(skill => ({
-            id: skill.tokenId || skill.sbtAddress || skill.name,
-            name: `${skill.name} Certification`,
-            issuer: 'SkillChain Protocol',
-            date: new Date().toISOString().split('T')[0], // Placeholder
-            level: 'Beginner' // Placeholder
-          }));
-        setSbts(loadedSbts);
+        
+        // --- CHANGE 1 ---
+        // Store the full skill objects, not just the names
+        setSkills(userSkills);
 
       } else {
         setEditMode(true);
@@ -135,20 +121,26 @@ export default function MyProfile() {
   };
 
 
+  // --- CHANGE 2.A ---
+  // Updated addSkill to work with objects
   const addSkill = () => {
-    const skill = newSkill.trim();
-    if (skill && !skills.includes(skill)) {
-      setSkills([...skills, skill]); //first spread using ...skills the add skill
+    const skillName = newSkill.trim();
+    // Check if a skill with this *name* already exists
+    if (skillName && !skills.some(s => s.name === skillName)) {
+      // Add a new *skill object*
+      setSkills([...skills, { name: skillName, minted: false, active: true }]);
       setNewSkill('');
       setShowSkillInput(false);
       setRedNotice(false);
-      setNotice(`'${skill}' was added. Remember to save your profile.`);
+      setNotice(`'${skillName}' was added. Remember to save your profile.`);
       setTimeout(() => setNotice(null), 6000);
     }
   };
 
-  const removeSkill = (skillToRemove) => {
-    setSkills(skills.filter(s => s !== skillToRemove));
+  // --- CHANGE 2.B ---
+  // Updated removeSkill to work with objects
+  const removeSkill = (skillNameToRemove) => {
+    setSkills(skills.filter(s => s.name !== skillNameToRemove));
   };
 
   const handleInputChange = (field, value) => {
@@ -157,7 +149,6 @@ export default function MyProfile() {
 
   const completion = calculateProfileCompletion();
 
-  // BUG FIX: Refactored logic to be more robust.
   const updateUserData = async () => {
     // If we are NOT in edit mode, the button's job is to ENTER edit mode.
     if (!editMode) {
@@ -181,8 +172,10 @@ export default function MyProfile() {
           github: profile.github, linkedIn: profile.linkedin,
           twitter: profile.twitter, website: profile.website,
         },
-        // BUG FIX: Correctly map the array of skill strings to the required payload format.
-        skills: skills.map(skillName => ({ name: skillName }))
+        
+        // --- CHANGE 3 ---
+        // Map the array of skill *objects* to the required payload format
+        skills: skills.map(skillObj => ({ name: skillObj.name }))
       };
 
       await axios.put(`http://localhost:5000/update-profile/${address}`, payload);
@@ -200,9 +193,45 @@ export default function MyProfile() {
   };
 
   const mintSBTForSkill = (skill) => {
-
     navigate(`/verify-skill/${skill}`)
   };
+
+
+
+
+  useEffect(() => {
+    if (!address) return;
+
+    async function getSbt() {
+      setIsLoading(true);
+
+      try {
+        const response = await axios.post("http://localhost:5000/fetch-sbt/", { address });
+        const data = response.data;
+
+        if (data.success && data.sbt) {
+          setSbt(data.sbt);
+          console.log(sbt)
+        } else {
+          setSbt(null); // No SBT found or no URI
+          console.log(data.message || "No SBT found for this address.");
+        }
+      } catch (err) {
+        console.error("Error fetching SBT:", err.message);
+        // setError is not defined, so I'm commenting it out.
+        // setError("Failed to fetch SBT data."); 
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    getSbt();
+  }, [address]);
+
+
+
+
+  const sbts = sbt?.skills || []; // extract skill array safely
 
   return (
     <>
@@ -224,8 +253,8 @@ export default function MyProfile() {
 
 
       <div className='dark:bg-[#0f111d] pt-6 flex bg-[#161c32] w-full min-h-screen  '>
-        <div className="pointer-events-none absolute right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
-        <div className="pointer-events-none absolute left-[20%] top-[1%] w-[120px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
+        <div className="pointer-events-none absolute right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
+        <div className="pointer-events-none absolute left-[20%] top-[1%] w-[120px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
         <div className="hidden md:block">
           <SideBar />
         </div>
@@ -257,7 +286,7 @@ export default function MyProfile() {
             </div>
             <div className='w-full bg-[#0f111d] rounded-full h-3 overflow-hidden'>
               <div
-                className='bg-gradient-to-r from-[#14a19f] to-[#1ecac7] h-full transition-all duration-500 relative'
+                className='bg-linear-to-r from-[#14a19f] to-[#1ecac7] h-full transition-all duration-500 relative'
                 style={{ width: `${completion}%` }}
               >
                 <div className='absolute inset-0 bg-white/20 animate-pulse'></div>
@@ -267,6 +296,7 @@ export default function MyProfile() {
 
           <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
             <div className='lg:col-span-2 space-y-6'>
+              {/* ... Basic Information Card ... (No Changes) */}
               <div className='bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20'>
                 <h2 style={orbitronStyle} className='text-white text-xl font-bold mb-4 tracking-wide'>
                   Basic Information
@@ -374,6 +404,8 @@ export default function MyProfile() {
                   </div>
                 </div>
               </div>
+              
+              {/* ... Professional Details Card ... (No Changes) */}
               <div className='bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20'>
                 <h2 style={orbitronStyle} className='text-white text-xl font-bold mb-4 tracking-wide'>
                   Professional Details
@@ -413,7 +445,7 @@ export default function MyProfile() {
                       <select
                         value={profile.availability}
                         onChange={(e) => handleInputChange('availability', e.target.value)}
-                        className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                        className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a1f] outline-none'
                         style={robotoStyle}
                       >
                         <option value='available'>Available</option>
@@ -431,6 +463,8 @@ export default function MyProfile() {
                   </div>
                 </div>
               </div>
+
+              {/* ... Social Links Card ... (No Changes) */}
               <div className='bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20'>
                 <h2 style={orbitronStyle} className='text-white text-xl font-bold mb-4 tracking-wide'>Social Links</h2>
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
@@ -483,7 +517,7 @@ export default function MyProfile() {
                         type='text'
                         value={profile.website}
                         onChange={(e) => handleInputChange('website', e.target.value)}
-                        className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                        className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a1F]/30 focus:border-[#14a19f] outline-none'
                         style={robotoStyle}
                       />
                     ) : (
@@ -492,6 +526,8 @@ export default function MyProfile() {
                   </div>
                 </div>
               </div>
+
+              {/* --- Skills Card (Changes inside) --- */}
               <div className='bg-[#1a2139] min-h-40 relative overflow-auto dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20 '>
                 <div className='flex  justify-between items-center mb-4'>
                   <h2 style={orbitronStyle} className='text-white text-xl font-bold tracking-wide'>Skills</h2>
@@ -522,7 +558,9 @@ export default function MyProfile() {
                         {newSkill && (
                           <ul className='absolute top-full mt-1 left-0 right-0 bg-[#141620] border border-[#14a19f]/30 rounded-lg max-h-40 overflow-y-auto z-50 shadow-lg'>
                             {skillTokenizable
-                              .filter(skill => !skills.includes(skill) && skill.toLowerCase().includes(newSkill.toLowerCase()))
+                              // --- CHANGE 4 ---
+                              // Updated filter to check against skill *objects*
+                              .filter(skill => !skills.some(s => s.name === skill) && skill.toLowerCase().includes(newSkill.toLowerCase()))
                               .map((skill, idx) => (
                                 <li
                                   key={idx}
@@ -542,8 +580,11 @@ export default function MyProfile() {
                     </div>
                   </div>
                 )}
+
+                {/* --- CHANGE 5 --- */}
+                {/* Updated skills mapping and button logic */}
                 <div className='flex flex-wrap gap-3'>
-                  {skills.length > 0 ? skills.map((skill, idx) => (
+                  {skills.length > 0 ? skills.map((skillObj, idx) => (
                     <div
                       key={idx}
                       className="group relative flex flex-col bg-slate-800 dark:bg-[#1a1f2b]/80 backdrop-blur-md rounded-xl p-4 w-52 border border-transparent hover:border-[#14a19f] hover:shadow-[0_0_20px_#14a19f33] transition-all duration-300 shadow-md"
@@ -553,15 +594,15 @@ export default function MyProfile() {
                         <p
                           className="text-gray-100 font-extrabold text-lg leading-snug truncate"
                           style={robotoStyle}
-                          title={skill}
+                          title={skillObj.name}
                         >
-                          {skill}
+                          {skillObj.name}
                         </p>
                         {editMode && (
                           <button
-                            onClick={() => removeSkill(skill)}
+                            onClick={() => removeSkill(skillObj.name)}
                             className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                            aria-label={`Remove skill: ${skill}`}
+                            aria-label={`Remove skill: ${skillObj.name}`}
                           >
                             <X size={18} />
                           </button>
@@ -569,29 +610,44 @@ export default function MyProfile() {
                       </div>
 
                       {/* Tokenizable Badge */}
-                      {skillTokenizable.includes(skill) ? <p className="text-[10px] text-[#14a19f] font-mono mb-3 uppercase tracking-wide">
+                      {skillTokenizable.includes(skillObj.name) ? <p className="text-[10px] text-[#14a19f] font-mono mb-3 uppercase tracking-wide">
                         Tokenizable Skill
-                      </p> : <p className="text-[10px] text-[#14a19f] font-mono mb-3 uppercase tracking-wide">
-                        Non  Tokenizable Skill
+                      </p> : <p className="text-[10px] text-gray-500 font-mono mb-3 uppercase tracking-wide">
+                        Non-Tokenizable
                       </p>}
 
-                      {/* Mint SBT Button */}
-                      {skillTokenizable.includes(skill) ? <button
-                        onClick={() => mintSBTForSkill(skill)}
-                        className="flex items-center justify-center gap-2 w-full mt-auto text-sm font-bold bg-gradient-to-r from-[#14a19f] to-[#1ecac7] text-[#0f111d] py-2.5 rounded-lg hover:scale-105 hover:shadow-[0_0_15px_#1ecac7] transition-all duration-300 shadow-md"
-                        style={robotoStyle}
-                      >
-                        Mint SBT <Award size={16} />
-                      </button> : <button
-                        disabled={true}
-                        className="flex items-center justify-center gap-2 w-full mt-auto text-sm font-bold bg-gradient-to-r from-gray-800 to-gray-900 text-[#0f111d] py-2.5 rounded-lg  "
-                        style={robotoStyle}
-                      >
-                        Mint SBT <Award size={16} />
-                      </button>}
-
-                      {/* Optional Glow Overlay */}
-                      {/* <span className="absolute -inset-px rounded-xl bg-gradient-to-r from-[#14a19f]/30 to-[#1ecac7]/30 opacity-0 group-hover:opacity-20 transition-opacity duration-300 pointer-events-none"></span> */}
+                      {/* Mint SBT Button Logic */}
+                      {skillTokenizable.includes(skillObj.name) ? (
+                        // --- IS TOKENIZABLE ---
+                        skillObj.minted ? (
+                          // Is MINTED
+                          <button
+                            disabled={true}
+                            className="flex items-center justify-center gap-2 w-full mt-auto text-sm font-bold bg-green-500/20 text-green-400 py-2.5 rounded-lg"
+                            style={robotoStyle}
+                          >
+                            Already Minted <Check size={16} />
+                          </button>
+                        ) : (
+                          // Is NOT MINTED
+                          <button
+                            onClick={() => mintSBTForSkill(skillObj.name)}
+                            className="flex items-center justify-center gap-2 w-full mt-auto text-sm font-bold bg-linear-to-r from-[#14a19f] to-[#1ecac7] text-[#0f111d] py-2.5 rounded-lg hover:scale-105 hover:shadow-[0_0_15px_#1ecac7] transition-all duration-300 shadow-md"
+                            style={robotoStyle}
+                          >
+                            Mint SBT <Award size={16} />
+                          </button>
+                        )
+                      ) : (
+                        // --- IS NOT TOKENIZABLE ---
+                        <button
+                          disabled={true}
+                          className="flex items-center justify-center gap-2 w-full mt-auto text-sm font-bold bg-gray-700/50 text-gray-500 py-2.5 rounded-lg"
+                          style={robotoStyle}
+                        >
+                          Not Tokenizable <Award size={16} />
+                        </button>
+                      )}
                     </div>
 
                   )) : (
@@ -600,40 +656,63 @@ export default function MyProfile() {
                 </div>
               </div>
             </div>
-            <div className='lg:col-span-1'>
-              <div className='bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20 sticky top-6'>
-                <div className='flex items-center gap-2 mb-6'>
-                  <Award className='text-[#14a19f]' size={24} />
-                  <h2 style={orbitronStyle} className='text-white text-xl font-bold tracking-wide'>Soul Bound Tokens</h2>
+
+            {/* ... SBT Column ... (No Changes) */}
+            <div className="lg:col-span-1">
+              <div className="bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20 sticky top-6">
+                <div className="flex items-center gap-2 mb-6">
+                  <Award className="text-[#14a19f]" size={24} />
+                  <h2 style={orbitronStyle} className="text-white text-xl font-bold tracking-wide">
+                    Soul Bound Tokens
+                  </h2>
                 </div>
-                <div className='space-y-4'>
-                  {sbts.length > 0 ? sbts.map((sbt) => (
-                    <div
-                      key={sbt.id}
-                      className='dark:bg-[#0f111d] bg-[#141a2c] p-4 rounded-lg border border-[#14a19f]/30 hover:border-[#14a19f] transition-colors group'
-                    >
-                      <div className='flex items-start justify-between mb-2'>
-                        <div className='flex-1'>
-                          <h3 className='text-white font-semibold text-sm mb-1' style={robotoStyle}>{sbt.name}</h3>
-                          <p className='text-gray-400 text-xs mb-2' style={robotoStyle}>Issued by {sbt.issuer}</p>
+
+                <div className="space-y-4">
+                  {isLoading ? (
+                    <div className="text-center py-8 text-gray-400 text-sm">Loading your SBT...</div>
+                  ) : sbts.length > 0 ? (
+                    sbts.map((skill, index) => (
+                      <div
+                        key={index}
+                        className="dark:bg-[#0f111d] bg-[#141a2c] p-4 rounded-lg border border-[#14a19f]/30 hover:border-[#14a19f] transition-colors group"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <h3 className="text-white font-semibold text-sm mb-1" style={robotoStyle}>
+                              {skill.name}
+                            </h3>
+                            <p className="text-gray-400 text-xs mb-2" style={robotoStyle}>
+                              Issued by {skill.badge.issuer}
+                            </p>
+                          </div>
+                          <Award className="text-[#14a19f] group-hover:scale-110 transition-transform" size={20} />
                         </div>
-                        <Award className='text-[#14a19f] group-hover:scale-110 transition-transform' size={20} />
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500" style={robotoStyle}>
+                            {skill.badge.date}
+                          </span>
+                          <span
+                            className={`text-xs px-2 py-1 rounded ${skill.level === "Master"
+                              ? "bg-purple-500/20 text-purple-400"
+                              : skill.level === "Expert"
+                                ? "bg-blue-500/20 text-blue-400"
+                                : skill.level === "Advanced"
+                                  ? "bg-green-500/20 text-green-400"
+                                  : "bg-gray-500/20 text-gray-400"
+                              }`}
+                            style={robotoStyle}
+                          >
+                            {skill.level}
+                          </span>
+                        </div>
                       </div>
-                      <div className='flex items-center justify-between'>
-                        <span className='text-xs text-gray-500' style={robotoStyle}>{sbt.date}</span>
-                        <span className={`text-xs px-2 py-1 rounded ${sbt.level === 'Master' ? 'bg-purple-500/20 text-purple-400' :
-                          sbt.level === 'Expert' ? 'bg-blue-500/20 text-blue-400' :
-                            sbt.level === 'Advanced' ? 'bg-green-500/20 text-green-400' :
-                              'bg-gray-500/20 text-gray-400'
-                          }`} style={robotoStyle}>
-                          {sbt.level}
-                        </span>
-                      </div>
-                    </div>
-                  )) : (
-                    <div className='text-center py-8'>
-                      <Award className='text-gray-600 mx-auto mb-3' size={48} />
-                      <p className='text-gray-500 text-sm' style={robotoStyle}>No SBTs earned yet. Add skills to earn certificates!</p>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <Award className="text-gray-600 mx-auto mb-3" size={48} />
+                      <p className="text-gray-500 text-sm" style={robotoStyle}>
+                        No SBTs earned yet. Add skills to earn certificates!
+                      </p>
                     </div>
                   )}
                 </div>

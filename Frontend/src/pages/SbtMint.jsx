@@ -158,8 +158,8 @@ function SbtMint() {
         <div className="min-h-screen relative overflow-hidden dark:bg-[#0f111d] bg-[#0f1422] text-white">
             <Snowfall snowflakeCount={60} />
             {/* decorative background blobs */}
-            <div className="pointer-events-none absolute -left-32 -top-32 w-[520px] h-[520px] rounded-full bg-gradient-to-br from-[#122033] via-[#0f2540] to-[#08101a] opacity-40 blur-3xl mix-blend-screen"></div>
-            <div className="pointer-events-none absolute right-[-120px] top-48 w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
+            <div className="pointer-events-none absolute -left-32 -top-32 w-[520px] h-[520px] rounded-full bg-linear-to-br from-[#122033] via-[#0f2540] to-[#08101a] opacity-40 blur-3xl mix-blend-screen"></div>
+            <div className="pointer-events-none absolute right-[-120px] top-48 w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
 
 
             {/* Notice */}
@@ -188,7 +188,7 @@ function SbtMint() {
                     <div className="flex flex-col gap-6">
                         <h1
                             style={orbitronStyle}
-                            className="text-4xl md:text-6xl font-extrabold leading-tight bg-gradient-to-r from-[#1be4e0] to-blue-500 bg-clip-text text-transparent"
+                            className="text-4xl md:text-6xl font-extrabold leading-tight bg-linear-to-r from-[#1be4e0] to-blue-500 bg-clip-text text-transparent"
                         >
                             You’ve Earned It — Now Prove It.
                         </h1>
@@ -211,7 +211,7 @@ function SbtMint() {
                                 className={`px-8 w-full py-4 rounded-xl text-white font-bold tracking-widest transition-all duration-300 transform
                 ${isProcessing
                                         ? "bg-gray-400 cursor-not-allowed shadow-none"
-                                        : "bg-gradient-to-r from-[#1be4e0] to-blue-500 shadow-[0_0_25px_rgba(27,228,224,0.5)] hover:shadow-[0_0_40px_rgba(27,228,224,0.8)] hover:scale-105"
+                                        : "bg-linear-to-r from-[#1be4e0] to-blue-500 shadow-[0_0_25px_rgba(27,228,224,0.5)] hover:shadow-[0_0_40px_rgba(27,228,224,0.8)] hover:scale-105"
                                     }`}
                             >
                                 {isProcessing ? (

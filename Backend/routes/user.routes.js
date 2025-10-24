@@ -9,6 +9,7 @@ import { checkUserPassedQuiz } from "../controllers/user.controller.js";
 // import { checkUserVerified } from "../controllers/user.controller.js";
 import { upgradeSkill } from "../controllers/user.controller.js";
 import { isAlreadyMint } from "../controllers/user.controller.js";
+import { fetchSbt } from "../controllers/user.controller.js";
 
 // import { createUser } from "../controllers/user.controller";
 
@@ -25,5 +26,6 @@ router.get('/check-user-passed', checkUserPassedQuiz)
 // router.get('/check-user-verified', checkUserVerified)
 router.put('/upgrade-skill', upgradeSkill)
 router.post('/is-already-mint',isAlreadyMint);
+router.post('/fetch-sbt',fetchSbt)
 
 export default router;

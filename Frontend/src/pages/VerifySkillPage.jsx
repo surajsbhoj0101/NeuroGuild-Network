@@ -26,6 +26,7 @@ function VerifySkillPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [score, setScore] = useState(0);
   const [isPassed, setIsPassed] = useState(false);
+  const [quizId, setQuizId] = useState(null);
 
   const total = questions.length;
   const progress = ((current + 1) / total) * 100;
@@ -62,6 +63,7 @@ function VerifySkillPage() {
 
       if (response.data.success) {
         setQuestions(response.data.questions);
+        setQuizId(response.data.quizId);
         setIsLoading(false);
       }
     } catch (error) {
@@ -142,6 +144,7 @@ function VerifySkillPage() {
         address,
         skill,
         answers: finalAnswers,
+        quizId: quizId
       });
 
       if (res.data.isPassed && res.data.isWhiteListed) {
@@ -208,7 +211,7 @@ function VerifySkillPage() {
                 </p>
                 <button
                   onClick={() => navigate(`/mint-sbt/${skill}`)}
-                  className="mt-4 px-6 py-2 bg-gradient-to-r from-[#14a19f] to-[#1ecac7] text-[#081220] font-semibold rounded-md hover:opacity-90 transition-all"
+                  className="mt-4 px-6 py-2 bg-linear-to-r from-[#14a19f] to-[#1ecac7] text-[#081220] font-semibold rounded-md hover:opacity-90 transition-all"
                 >
                   Mint SBT
                 </button>
@@ -221,7 +224,7 @@ function VerifySkillPage() {
                 </p>
                 <button
                   onClick={() => navigate("/")}
-                  className="mt-4 px-6 py-2 bg-gradient-to-r from-[#14a19f] to-[#1ecac7] text-[#081220] font-semibold rounded-md hover:opacity-90 transition-all"
+                  className="mt-4 px-6 py-2 bg-linear-to-r from-[#14a19f] to-[#1ecac7] text-[#081220] font-semibold rounded-md hover:opacity-90 transition-all"
                 >
                   Go Home
                 </button>
@@ -234,8 +237,8 @@ function VerifySkillPage() {
       {/* MAIN QUIZ UI */}
       <div className="dark:bg-[#0f111d] pt-6 space-y-4 flex flex-col bg-[#161c32] overflow-hidden relative min-h-screen">
         {/* Background gradients */}
-        <div className="pointer-events-none absolute -left-32 -top-32 w-[520px] h-[520px] rounded-full bg-gradient-to-br from-[#122033] via-[#0f2540] to-[#08101a] opacity-40 blur-3xl mix-blend-screen"></div>
-        <div className="pointer-events-none absolute right-[-120px] top-48 w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
+        <div className="pointer-events-none absolute -left-32 -top-32 w-[520px] h-[520px] rounded-full bg-linear-to-br from-[#122033] via-[#0f2540] to-[#08101a] opacity-40 blur-3xl mix-blend-screen"></div>
+        <div className="pointer-events-none absolute right-[-120px] top-48 w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
 
         {/* Title */}
         <div className="flex justify-center border-white/10">
@@ -250,33 +253,33 @@ function VerifySkillPage() {
             <div className="w-[65%] flex flex-col space-y-4 min-h-[580px] animate-pulse">
               {/* Skeleton placeholders */}
               <div className="w-full flex justify-between">
-                <div className="h-4 w-32 bg-gradient-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded"></div>
-                <div className="h-4 w-24 bg-gradient-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded"></div>
+                <div className="h-4 w-32 bg-linear-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded"></div>
+                <div className="h-4 w-24 bg-linear-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded"></div>
               </div>
               <div className="w-full bg-[#0f111d] rounded-full h-2 overflow-hidden border border-[#1a2537]">
-                <div className="h-full w-[30%] bg-gradient-to-r from-[#14a19f]/30 to-[#1ecac7]/30"></div>
+                <div className="h-full w-[30%] bg-linear-to-r from-[#14a19f]/30 to-[#1ecac7]/30"></div>
               </div>
               <div className="dark:bg-[#0f111d] bg-transparent border dark:border-[#1a2537] border-white/10 rounded-xl shadow-md flex flex-col justify-between h-full p-4">
                 <div className="flex justify-between items-center w-full mb-3">
-                  <div className="h-6 w-20 bg-gradient-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded-full"></div>
-                  <div className="h-6 w-16 bg-gradient-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded-full"></div>
-                  <div className="h-6 w-20 bg-gradient-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded-full"></div>
+                  <div className="h-6 w-20 bg-linear-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded-full"></div>
+                  <div className="h-6 w-16 bg-linear-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded-full"></div>
+                  <div className="h-6 w-20 bg-linear-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded-full"></div>
                 </div>
                 <div className="px-4 py-2">
-                  <div className="h-5 w-[90%] bg-gradient-to-r from-[#14a19f]/15 to-[#1ecac7]/15 rounded mb-2"></div>
-                  <div className="h-5 w-[70%] bg-gradient-to-r from-[#14a19f]/15 to-[#1ecac7]/15 rounded"></div>
+                  <div className="h-5 w-[90%] bg-linear-to-r from-[#14a19f]/15 to-[#1ecac7]/15 rounded mb-2"></div>
+                  <div className="h-5 w-[70%] bg-linear-to-r from-[#14a19f]/15 to-[#1ecac7]/15 rounded"></div>
                 </div>
                 <div className="mt-4 flex flex-col space-y-3 px-4 pb-6">
                   {[...Array(4)].map((_, idx) => (
                     <div
                       key={idx}
-                      className="h-12 w-full rounded-lg bg-gradient-to-r from-[#14a19f]/10 to-[#1ecac7]/10 border dark:border-[#1a2537] border-white/10"
+                      className="h-12 w-full rounded-lg bg-linear-to-r from-[#14a19f]/10 to-[#1ecac7]/10 border dark:border-[#1a2537] border-white/10"
                     ></div>
                   ))}
                 </div>
                 <div className="mt-auto flex justify-between flex-row-reverse px-4 pb-4">
-                  <div className="h-10 w-24 bg-gradient-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded-md"></div>
-                  <div className="h-10 w-24 bg-gradient-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded-md"></div>
+                  <div className="h-10 w-24 bg-linear-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded-md"></div>
+                  <div className="h-10 w-24 bg-linear-to-r from-[#14a19f]/20 to-[#1ecac7]/20 rounded-md"></div>
                 </div>
               </div>
             </div>
@@ -294,7 +297,7 @@ function VerifySkillPage() {
               </div>
               <div className="w-full dark:bg-[#0a0f1b] bg-[#0f111d] rounded-full h-2 overflow-hidden border border-[#1a2537]">
                 <div
-                  className="bg-gradient-to-r from-[#14a19f] to-[#1ecac7] h-full transition-all duration-500 relative"
+                  className="bg-linear-to-r from-[#14a19f] to-[#1ecac7] h-full transition-all duration-500 relative"
                   style={{ width: `${progress}%` }}
                 >
                   <div className="absolute inset-0 bg-[#14a19f]/10 animate-pulse"></div>
@@ -308,7 +311,7 @@ function VerifySkillPage() {
               >
                 {/* Header */}
                 <div className="flex justify-between items-center w-full px-4 py-2 mb-3 rounded-xl bg-transparent dark:bg-[#0f111d] border border-[#1a2537]">
-                  <span className="bg-gradient-to-r from-[#14a19f] to-[#1ecac7] dark:text-[#081220] text-white font-bold px-3 py-1 rounded-full text-[15px] tracking-wide">
+                  <span className="bg-linear-to-r from-[#14a19f] to-[#1ecac7] dark:text-[#081220] text-white font-bold px-3 py-1 rounded-full text-[15px] tracking-wide">
                     {questions[current].points} points
                   </span>
                   <span className="flex items-center gap-2 text-[15px] text-white dark:text-[#1ecac7]">
@@ -335,8 +338,8 @@ function VerifySkillPage() {
                       onClick={() => handleAnswerSelect(current, opt)}
                       disabled={isSubmitted}
                       className={`w-full text-left px-4 py-3 rounded-lg transition-all border ${answers[current] === opt.charAt(0)
-                        ? "bg-gradient-to-r from-[#14a19f]/30 to-[#1ecac7]/30 border-[#1ecac7]"
-                        : "bg-transparent hover:bg-gradient-to-r hover:from-[#14a19f]/10 hover:to-[#1ecac7]/10 border-white/10 text-[#bfc9d6]"
+                        ? "bg-linear-to-r from-[#14a19f]/30 to-[#1ecac7]/30 border-[#1ecac7]"
+                        : "bg-transparent hover:bg-linear-to-r hover:from-[#14a19f]/10 hover:to-[#1ecac7]/10 border-white/10 text-[#bfc9d6]"
                         }`}
                     >
                       {opt}
@@ -350,7 +353,7 @@ function VerifySkillPage() {
                     <button
                       onClick={prevQuestion}
                       disabled={isSubmitted}
-                      className="px-6 py-2 rounded-md border border-[#1a2537] hover:bg-gradient-to-r hover:from-[#14a19f]/10 hover:to-[#1ecac7]/10 transition-all text-[#bfc9d6]"
+                      className="px-6 py-2 rounded-md border border-[#1a2537] hover:bg-linear-to-r hover:from-[#14a19f]/10 hover:to-[#1ecac7]/10 transition-all text-[#bfc9d6]"
                     >
                       Previous
                     </button>
@@ -359,7 +362,7 @@ function VerifySkillPage() {
                     <button
                       onClick={nextQuestion}
                       disabled={isSubmitted}
-                      className="ml-auto px-6 py-2 rounded-md bg-gradient-to-r from-[#14a19f] to-[#1ecac7] text-[#081220] font-semibold hover:opacity-90 transition-all"
+                      className="ml-auto px-6 py-2 rounded-md bg-linear-to-r from-[#14a19f] to-[#1ecac7] text-[#081220] font-semibold hover:opacity-90 transition-all"
                     >
                       Next
                     </button>
@@ -367,7 +370,7 @@ function VerifySkillPage() {
                     <button
                       onClick={handleSubmit}
                       disabled={isSubmitted}
-                      className="ml-auto px-6 py-2 rounded-md bg-gradient-to-r from-[#14a19f] to-[#1ecac7] text-[#081220] font-semibold hover:opacity-90 transition-all"
+                      className="ml-auto px-6 py-2 rounded-md bg-linear-to-r from-[#14a19f] to-[#1ecac7] text-[#081220] font-semibold hover:opacity-90 transition-all"
                     >
                       Submit
                     </button>

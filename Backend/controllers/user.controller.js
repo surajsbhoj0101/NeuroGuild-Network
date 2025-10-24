@@ -85,19 +85,21 @@ export const getUser = async (req, res) => {
 export const updateUser = async (req, res) => {
 
     const { address } = req.params;
-
     const updateData = req.body;
 
     console.log("Address:", address);
 
     try {
-
         const walletAddress = address.toLowerCase();
 
+     
+        const { skills, isVerified, ...otherUpdates } = updateData;
+
+      
 
         const updatedUser = await User.findOneAndUpdate(
             { walletAddress: walletAddress },
-            { $set: updateData },
+            { $set: otherUpdates }, 
             { new: true }
         );
 
@@ -189,7 +191,8 @@ export const fetchQuestions = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            questions: storedQuestions
+            questions: storedQuestions,
+            quizId: newSession._id  // <-- ADD THIS
         });
 
     } catch (error) {
@@ -237,14 +240,16 @@ const handleUserSkillPass = async (walletAddress, skillName) => {
 
 
 export const quizCheckAllCorrect = async (req, res) => {
-    const { address, skill, answers, autoSubmitted } = req.body;
+    const { address, skill, answers, quizId } = req.body;
     const walletAddress = address.toLowerCase();
 
     try {
 
-        const latestQuiz = await quizModel
-            .findOne({ wallet: walletAddress, skill })
-            .sort({ createdAt: -1 });
+        const latestQuiz = await quizModel.findById(quizId); // <-- CHANGE THIS
+
+        if (!latestQuiz) {
+            return res.status(404).json({ error: "No quiz session found" });
+        }
 
         if (!latestQuiz) {
             return res.status(404).json({ error: "No quiz found for this user and skill" });
@@ -352,6 +357,7 @@ export const upgradeSkill = async (req, res) => {
     try {
         const wl = await checkAlreadyWhiteListed(address);
         if (!wl) {
+
             return res.status(404).json({ error: "User is not whitelisted for SBT" });
         }
 
@@ -417,9 +423,10 @@ export const upgradeSkill = async (req, res) => {
         if (!isUpdated) {
             return res.status(500).json({ error: "Skill update failed" });
         }
+        const walletAddress = address.toLowerCase()
         console.log("Done updating")
         await User.findOneAndUpdate(
-            { walletAddress: address },
+            { walletAddress: walletAddress },
             {
                 $set: {
                     "skills.$[elem].sbtAddress": "0x02211C2b17547BB25e20444f3A1d736445c8bCF1",
@@ -485,6 +492,62 @@ export const isAlreadyMint = async (req, res) => {
         return res.status(500).json({ error: error })
     }
 }
+
+export const fetchSbt = async (req, res) => {
+    const { address } = req.body;
+
+    try {
+        const isMinted = await checkUserAlreadyMinted(address);
+
+
+        if (!isMinted?.isminted) {
+            return res.status(404).json({
+                success: false,
+                message: "User has not minted an SBT yet."
+            });
+        }
+
+        const tokenId = isMinted.tokenId;
+        if (!tokenId) {
+            return res.status(400).json({
+                success: false,
+                message: "Token ID not found for this address."
+            });
+        }
+
+
+        const tokenUri = await getTokenUri(tokenId);
+
+
+        if (!tokenUri || tokenUri === false) {
+            return res.status(200).json({
+                success: true,
+                sbt: null,
+                message: "No token URI found for this token."
+            });
+        }
+
+
+        const json = await getJsonFromIpfs(tokenUri);
+
+
+        return res.status(200).json({
+            success: true,
+            sbt: json || null,
+            message: "SBT data fetched successfully."
+        });
+
+    } catch (error) {
+        console.error("fetchSbt error:", error.message);
+
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch SBT data.",
+            error: error.message
+        });
+    }
+};
 
 
 
