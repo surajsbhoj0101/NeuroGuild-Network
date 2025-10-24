@@ -2,7 +2,13 @@ import User from "../models/user.model.js";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import quizModel from "../models/quiz.model.js";
-import { whiteListUser } from "../services/whitelist_user_for_sbt.js";
+import { checkAlreadyWhiteListed, whiteListUser } from "../services/whitelist_user_for_sbt.js";
+import { getTokenUri } from "../services/get_token_uri.js";
+import axios from "axios";
+import { uploadToIpfs } from "../services/upload_to_pinata.js";
+import { checkUserAlreadyMinted } from "../services/check_user_already_mint.js"
+import { updateHolderSkill } from "../services/update_user_skill.js"
+
 
 dotenv.config();
 export const test = async (req, res) => {
@@ -311,5 +317,174 @@ export const checkUserPassedQuiz = async (req, res) => {
         res.status(500).json({ error: error });
     }
 }
+
+export async function getJsonFromIpfs(uri) {
+    try {
+        if (!uri) {
+            console.error("No URI provided to fetch from IPFS");
+            return false;
+        }
+
+        console.log("Fetching from IPFS:", uri);
+        const url = uri.replace("ipfs://", "https://ipfs.io/ipfs/");
+
+        const response = await axios.get(url, {
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+                    "(KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+            }
+        });
+
+        const json = response.data;
+
+        console.log("JSON fetched:", json);
+        return json;
+
+    } catch (error) {
+        console.error("Error fetching JSON from IPFS:", error.message);
+        return false;
+    }
+}
+
+export const upgradeSkill = async (req, res) => {
+    const { address, skill, cid } = req.body;
+
+    try {
+        const wl = await checkAlreadyWhiteListed(address);
+        if (!wl) {
+            return res.status(404).json({ error: "User is not whitelisted for SBT" });
+        }
+
+        const isMinted = await checkUserAlreadyMinted(address);
+        if (!isMinted.isminted) {
+            return res.status(404).json({ error: "User already minted SBT" });
+        }
+
+        const tokenId = isMinted.tokenId;
+        let uri;
+        console.log(tokenId)
+        const tokenUri = await getTokenUri(tokenId);
+        console.log('got uri ', tokenUri)
+        if (tokenUri) {
+            const json = await getJsonFromIpfs(tokenUri);
+
+            json.skills.push({
+                name: skill,
+                level: "Intermediate",
+                badge: {
+                    title: `${skill} skill`,
+                    image: cid,
+                    issuer: "NeuroGuild Network",
+                    date: new Date().toISOString().split("T")[0]
+                },
+                skill_image: cid
+            });
+
+            const uriCid = await uploadToIpfs(json);
+            uri = `ipfs://${uriCid}`;
+        } else {
+            const json = {
+                name: "SkillSBT",
+                description: "SoulBound Token representing verified skills and badges.",
+                image: "ipfs://bafybeif4pnqwxql4u6cfw3ngmxlbv73zlsgxmf6gwai5un5nedbddcfvzi",
+                attributes: [
+                    {
+                        trait_type: "Skills",
+                        value: "Verified Technical Skills"
+                    }
+                ],
+                skills: [
+                    {
+                        name: skill,
+                        level: "Intermediate",
+                        badge: {
+                            title: `${skill} skill`,
+                            image: cid,
+                            issuer: "NeuroGuild Network",
+                            date: new Date().toISOString().split("T")[0]
+                        },
+                        skill_image: cid
+                    }
+                ]
+            };
+
+            const uriCid = await uploadToIpfs(json);
+            uri = `ipfs://${uriCid}`;
+
+        }
+        console.log(uri)
+        const isUpdated = await updateHolderSkill(skill, address, uri);
+        if (!isUpdated) {
+            return res.status(500).json({ error: "Skill update failed" });
+        }
+        console.log("Done updating")
+        await User.findOneAndUpdate(
+            { walletAddress: address },
+            {
+                $set: {
+                    "skills.$[elem].sbtAddress": "0x02211C2b17547BB25e20444f3A1d736445c8bCF1",
+                    "skills.$[elem].quizPassed": true,
+                    "skills.$[elem].minted": true,
+                    "skills.$[elem].active": true,
+                    isVerified: true
+                }
+            },
+            {
+                arrayFilters: [{ "elem.name": skill }], // match skill name
+                new: true
+            }
+        );
+
+        console.log("done")
+        res.status(200).json({ success: true, message: "Skill update successful" });
+
+    } catch (error) {
+        console.log("upgradeSkill error:", error);
+        res.status(500).json({ error: error.message || error });
+    }
+};
+
+// export const checkUserVerified = async (req, res) => {
+//     try {
+
+//         const address = req.query.address;
+//         if (!address) {
+//             return res.status(400).json({ error: "Address is required" });
+//         }
+
+//         const walletAddress = address.toLowerCase();
+//         console.log(walletAddress)
+
+//         const user = await User.findOne({
+//             walletAddress: walletAddress,
+//             isVerified: true
+//         });
+
+//         if (!user) {
+
+//             return res.status(200).json({ isVerified: false });
+//         }
+
+
+//         return res.status(200).json({ isVerified: true });
+
+//     } catch (error) {
+//         console.error("Error checking user verification:", error);
+//         return res.status(500).json({ error: "Server error" });
+//     }
+// };
+
+export const isAlreadyMint = async (req, res) => {
+    const { address } = req.body;
+    try {
+        const isMinted = await checkUserAlreadyMinted(address);
+        console.log(isMinted)
+        return res.status(200).json({ isMintedSuccess: isMinted.isminted })
+    } catch (error) {
+        console.log("Error checking is minted: ", error)
+        return res.status(500).json({ error: error })
+    }
+}
+
 
 

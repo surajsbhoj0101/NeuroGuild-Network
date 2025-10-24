@@ -4,10 +4,10 @@ import { ERC721SBT } from "../abis/ERC721SBT.js";
 dotenv.config();
 
 const provider = new JsonRpcProvider(process.env.RPC_URL)
-const contractAddress = "0x005d1b16508852b71c79083df67fbbea3352047a";
+const contractAddress = process.env.CONTRACT_ADDRESS;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 
-async function checkAlreadyWhiteListed(address) {
+export async function checkAlreadyWhiteListed(address) {
     try {
         const contract = new Contract(contractAddress, ERC721SBT, provider)
         const isWhiteListed = await contract.isWhiteListed(address);
@@ -45,5 +45,5 @@ export const whiteListUser = async (address) => {
     }
 }
 
-console.log( await whiteListUser("0x41223c7D104B2d9922A35f66B93bc4E8fE7B8995"))
+console.log(await whiteListUser("0xb3C8Ec7c00Ca69e2B456382C46711153f80854e0"))
 

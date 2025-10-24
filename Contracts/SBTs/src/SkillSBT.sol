@@ -24,7 +24,7 @@ contract SkillSBT is IERC721 {
 
    
     address public admin;
-    uint8 public constant MAX_LEVEL = 2;
+    uint8 public constant MAX_LEVEL = 1;
 
     uint256 private _currentTokenId;
 
