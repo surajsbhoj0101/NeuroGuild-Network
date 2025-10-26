@@ -56,7 +56,7 @@ function VerifySkillPage() {
       }, 3000);
     }
     try {
-      const response = await axios.post("http://localhost:5000/fetch-questions", {
+      const response = await axios.post("http://localhost:5000/api/freelancer/fetch-questions", {
         address,
         skill,
       });
@@ -140,7 +140,7 @@ function VerifySkillPage() {
 
   const submitQuiz = async (finalAnswers) => {
     try {
-      const res = await axios.post("http://localhost:5000/submit-quiz", {
+      const res = await axios.post("http://localhost:5000/api/freelancer/submit-quiz", {
         address,
         skill,
         answers: finalAnswers,
@@ -414,4 +414,3 @@ function VerifySkillPage() {
 }
 
 export default VerifySkillPage;
-

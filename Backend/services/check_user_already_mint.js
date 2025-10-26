@@ -25,6 +25,6 @@ export const checkUserAlreadyMinted = async (address) => {
     }
 };
 
-// (async () => {
-//     await checkUserAlreadyMinted("0x41223c7D104B2d9922A35f66B93bc4E8fE7B8995");
-// })();
+(async () => {
+    await checkUserAlreadyMinted("0x41223c7D104B2d9922A35f66B93bc4E8fE7B8995");
+})();

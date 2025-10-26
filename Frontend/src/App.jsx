@@ -16,21 +16,26 @@ const orbitronStyle = { fontFamily: "Orbitron, sans-serif" };
 const robotoStyle = { fontFamily: "Roboto, sans-serif" };
 
 export default function App() {
+
   const { address, isConnected } = useAccount();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!isConnected || !address) return;
 
-    const fetchOrCreateUser = async () => {
+    const getUser = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/get-or-create/${address}`);
+        const response = await axios.post(`http://localhost:5000/api/auth/get-user`, { address });
 
-        if (response.data.newUser) {
-          console.log(" Welcome, new user!");
+        if (response.data.isFound) {
+          const user = response.data.user
+          localStorage.setItem("userId", user._id)
+          setTimeout(() => {
+            setRedNotice(false);
+            setNotice("User found Redirecting...");
+          }, 1500);
+
           navigate('/my-profile')
-        } else {
-          console.log("👤 Existing user loaded");
         }
 
       } catch (error) {
@@ -38,23 +43,54 @@ export default function App() {
       }
     };
 
-    fetchOrCreateUser();
+    getUser();
   }, [isConnected, address]);
 
 
-  const [toast, setToast] = useState(null);
+
+  const [notice, setNotice] = useState(null);
+  const [redNotice, setRedNotice] = useState(false);
   useEffect(() => {
-    if (!toast) return;
-    const id = setTimeout(() => setToast(null), 3500);
+    if (!notice) return;
+    const id = setTimeout(() => setNotice(null), 3500);
     return () => clearTimeout(id);
-  }, [toast]);
-  const showToast = (msg) => setToast({ msg, id: Date.now() });
-  const handleCheckConnection = (e) => {
-    if (!isConnected) {
-      e.preventDefault();
-      showToast("Please connect your wallet to proceed.");
+  }, [notice]);
+
+
+  async function handleCreateUser(role) {
+    if (!address || !isConnected) {
+      setRedNotice(true);
+      setNotice("Connect wallet first!!");
+      return;
     }
-  };
+
+    try {
+      console.log(role)
+      const response = await axios.post('http://localhost:5000/api/auth/create-user', {
+        address,
+        role
+      });
+
+      const user = response.data.user; 
+
+      if (user && user.userId) {
+        localStorage.setItem("userId", user._id);
+      }
+
+      setTimeout(() => {
+        setRedNotice(false);
+        setNotice("User Creation successful. Redirecting...");
+      }, 1500);
+
+      navigate('/my-profile')
+
+    } catch (error) {
+      console.error("Error creating user:", error);
+      setRedNotice(true);
+      setNotice("User creation failed!");
+    }
+  }
+
 
   return (
     <div className="min-h-screen relative overflow-hidden dark:bg-[#0f111d] bg-[#0f1422] text-white">
@@ -63,14 +99,14 @@ export default function App() {
       <div className="pointer-events-none absolute -left-32 -top-32 w-[520px] h-[520px] rounded-full bg-gradient-to-br from-[#122033] via-[#0f2540] to-[#08101a] opacity-40 blur-3xl mix-blend-screen"></div>
       <div className="pointer-events-none absolute right-[-120px] top-48 w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
 
-      {/* toast */}
-      {toast && (
-        <div className="fixed right-4 top-6 z-50">
-          <div className="flex items-center gap-3 bg-[#14a19f] text-white px-4 py-2 rounded shadow-lg">
-            <div className="text-sm">{toast.msg}</div>
+      {/* notice */}
+      {notice && (
+        <div className="fixed top-4 right-4 z-50 animate-pulse">
+          <div className={`flex items-center gap-3 bg-[#14a19f] text-white px-4 py-2 rounded shadow-lg border border-[#1ecac7]/30 ${redNotice ? 'bg-red-600 border-red-700' : 'bg-[#14a19f] border-[#1ecac7]/30'} `}>
+            <div className="text-sm">{notice}</div>
             <button
-              onClick={() => setToast(null)}
-              className="ml-2 text-xs text-white/90 px-2 py-1 rounded hover:opacity-90"
+              onClick={() => setNotice(null)}
+              className="ml-2 text-xs text-white/90 px-2 py-1 rounded hover:opacity-90 transition-opacity"
             >
               Dismiss
             </button>
@@ -90,28 +126,36 @@ export default function App() {
             NeuroGuild gives projects and freelancers a secure, composable and privacy-focused marketplace.
           </p>
 
-          <div className="flex flex-wrap gap-3 items-center">
-            <Link
-              to="/browse-jobs"
-              onClick={handleCheckConnection}
-              className="px-6 py-3 bg-[#14a19f] hover:bg-cyan-700 rounded-md text-white shadow-md transform hover:-translate-y-0.5 transition"
-              style={robotoStyle}
-            >
-              Browse Gigs
-            </Link>
+          <div className="flex  flex-col gap-3 ">
+            <p style={robotoStyle} className="mt-2 text-gray-300 max-w-xl">
+              How do you want to get started
+            </p>
 
-            <Link
-              to="/post-job"
-              onClick={handleCheckConnection}
-              className="px-5 py-3 bg-transparent border border-gray-700 hover:border-gray-600 rounded-md text-white"
-              style={robotoStyle}
-            >
-              Post a Job
-            </Link>
+            <div className="flex-wrap flex items-center gap-3">
+              <Link
+                to="/browse-jobs"
+                onClick={() => { handleCreateUser("Freelancer") }}
+                className="px-6 py-3 bg-[#14a19f] hover:bg-cyan-700 rounded-md text-white shadow-md transform hover:-translate-y-0.5 transition"
+                style={robotoStyle}
+              >
+                Browse Gigs
+              </Link>
 
-            <div className="ml-2 text-sm text-gray-400" style={robotoStyle}>
-              {isConnected ? `Connected: ${address?.slice(0, 6)}...${address?.slice(-4)}` : "Wallet not connected"}
+              <Link
+                to="/post-job"
+                onClick={() => { handleCreateUser("client") }}
+                className="px-5 py-3 bg-transparent border border-gray-700 hover:border-gray-600 rounded-md text-white"
+                style={robotoStyle}
+              >
+                Post a Job
+              </Link>
+
+              <div className="ml-2 text-sm text-gray-400" style={robotoStyle}>
+                {isConnected ? `Connected: ${address?.slice(0, 6)}...${address?.slice(-4)}` : "Wallet not connected"}
+              </div>
             </div>
+
+
           </div>
 
           <ul className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -151,7 +195,7 @@ export default function App() {
 
         {/* mock preview card */}
         <aside className="w-full">
-          <div className="rounded-2xl p-6 bg-gradient-to-br from-[#081220] to-[#0b1624] shadow-2xl border border-[#162036] transform hover:scale-[1.01] transition">
+          <div className="rounded-2xl p-6 bg-linear-to-br from-[#081220] to-[#0b1624] shadow-2xl border border-[#162036] transform hover:scale-[1.01] transition">
             <div className="flex items-start gap-4">
               <div className="w-15 h-15 rounded-lg overflow-hidden  flex items-center justify-center">
                 <div className="text-white font-bold" style={orbitronStyle}>

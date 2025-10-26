@@ -3,7 +3,10 @@ import express from "express";
 // import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
-import userRoutes from "./routes/user.routes.js";
+import authRoutes from "./routes/auth.routes.js";
+// import clientRoutes from "./routes/client.routes.js"
+import freelancerRoutes from "./routes/freelancer.routes.js"
+
 
 // dotenv.config();
 const app = express();
@@ -15,7 +18,16 @@ app.use(express.json());
 connectDB();
 
 // routes
-app.use(userRoutes);
+app.use('/api/auth', authRoutes);
+
+// Client/Job Poster 
+// app.use('/api/client', clientRoutes);
+
+// Freelancer 
+app.use('/api/freelancer', freelancerRoutes);
+
+// Job/Listing Endpoints 
+// app.use('/api/jobs', jobRoutes);
 
 // start server
 const PORT = 5000;

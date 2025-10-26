@@ -57,7 +57,7 @@ function SbtMint() {
 
         async function checkAlreadyMint() {
             try {
-                const res = await axios.post('http://localhost:5000/is-already-mint', {
+                const res = await axios.post('http://localhost:5000/api/freelancer/is-already-mint', {
                     address,
                 });
 
@@ -72,7 +72,7 @@ function SbtMint() {
 
         async function checkUserExists() {
             try {
-                const res = await axios.get('http://localhost:5000/check-user-passed', {
+                const res = await axios.get('http://localhost:5000/api/freelancer/check-user-passed', {
                     params: { skill, address },
                 });
 
@@ -129,7 +129,7 @@ function SbtMint() {
 
             }
 
-            const res = await axios.put('http://localhost:5000/upgrade-skill', {
+            const res = await axios.put('http://localhost:5000/api/freelancer/upgrade-skill', {
                 address,
                 skill,
                 cid

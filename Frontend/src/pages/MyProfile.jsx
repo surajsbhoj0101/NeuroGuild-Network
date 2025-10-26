@@ -86,28 +86,43 @@ export default function MyProfile() {
 
   const loadProfileData = async () => {
     if (!address) return;
+
+    const storedUserId = localStorage.getItem("userId");
+    if (!storedUserId) {
+      setTimeout(() => {
+        setRedNotice(true);
+        setNotice("Redirecting home, userId not found!!");
+      }, 1600);
+      navigate('/');
+      return;
+    }
+
     try {
-      const response = await axios.get(`http://localhost:5000/get-user/${address}`);
-      if (response.data.success && response.data.user) {
-        const user = response.data.user;
+      const response = await axios.post(
+        "http://localhost:5000/api/freelancer/get-freelancer",
+        {
+          address,
+          userId: storedUserId,
+        }
+      );
+
+      if (response.data.success && response.data.freelancer) {
+        const user = response.data.freelancer;
         setProfile(mapUserToProfile(user));
 
         const userSkills = mapUserToSkills(user);
-        
-        // --- CHANGE 1 ---
-        // Store the full skill objects, not just the names
         setSkills(userSkills);
-
       } else {
         setEditMode(true);
       }
     } catch (e) {
       console.error("Error loading profile:", e);
       setRedNotice(true);
-      setNotice("Failed to load the profile")
+      setNotice("Failed to load the profile");
       setEditMode(true);
     }
   };
+
 
   const calculateProfileCompletion = () => {
     const fields = [
@@ -121,13 +136,11 @@ export default function MyProfile() {
   };
 
 
-  // --- CHANGE 2.A ---
-  // Updated addSkill to work with objects
   const addSkill = () => {
     const skillName = newSkill.trim();
-    // Check if a skill with this *name* already exists
+
     if (skillName && !skills.some(s => s.name === skillName)) {
-      // Add a new *skill object*
+
       setSkills([...skills, { name: skillName, minted: false, active: true }]);
       setNewSkill('');
       setShowSkillInput(false);
@@ -137,8 +150,7 @@ export default function MyProfile() {
     }
   };
 
-  // --- CHANGE 2.B ---
-  // Updated removeSkill to work with objects
+
   const removeSkill = (skillNameToRemove) => {
     setSkills(skills.filter(s => s.name !== skillNameToRemove));
   };
@@ -150,13 +162,11 @@ export default function MyProfile() {
   const completion = calculateProfileCompletion();
 
   const updateUserData = async () => {
-    // If we are NOT in edit mode, the button's job is to ENTER edit mode.
     if (!editMode) {
       setEditMode(true);
       return;
     }
 
-    // If we ARE in edit mode, the button's job is to SAVE.
     try {
       if (!address) return;
       const payload = {
@@ -172,13 +182,12 @@ export default function MyProfile() {
           github: profile.github, linkedIn: profile.linkedin,
           twitter: profile.twitter, website: profile.website,
         },
-        
-        // --- CHANGE 3 ---
-        // Map the array of skill *objects* to the required payload format
+
+
         skills: skills.map(skillObj => ({ name: skillObj.name }))
       };
 
-      await axios.put(`http://localhost:5000/update-profile/${address}`, payload);
+      await axios.put(`http://localhost:5000/api/freelancer/update-profile`, { payload, address });
       setRedNotice(false)
       setNotice("Profile updated successfully");
 
@@ -206,7 +215,7 @@ export default function MyProfile() {
       setIsLoading(true);
 
       try {
-        const response = await axios.post("http://localhost:5000/fetch-sbt/", { address });
+        const response = await axios.post("http://localhost:5000/api/freelancer/fetch-sbt/", { address });
         const data = response.data;
 
         if (data.success && data.sbt) {
@@ -218,8 +227,7 @@ export default function MyProfile() {
         }
       } catch (err) {
         console.error("Error fetching SBT:", err.message);
-        // setError is not defined, so I'm commenting it out.
-        // setError("Failed to fetch SBT data."); 
+
       } finally {
         setIsLoading(false);
       }
@@ -235,7 +243,7 @@ export default function MyProfile() {
 
   return (
     <>
-      {/* ... The rest of your JSX remains unchanged ... */}
+
       {notice && (
         <div className="fixed top-4 right-4 z-50 animate-pulse">
           <div className={`flex items-center gap-3 bg-[#14a19f] text-white px-4 py-2 rounded shadow-lg border border-[#1ecac7]/30 ${redNotice ? 'bg-red-600 border-red-700' : 'bg-[#14a19f] border-[#1ecac7]/30'} `}>
@@ -296,14 +304,14 @@ export default function MyProfile() {
 
           <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
             <div className='lg:col-span-2 space-y-6'>
-              {/* ... Basic Information Card ... (No Changes) */}
+
               <div className='bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20'>
                 <h2 style={orbitronStyle} className='text-white text-xl font-bold mb-4 tracking-wide'>
                   Basic Information
                 </h2>
                 <div className='space-y-4'>
                   <div className='flex flex-col sm:flex-row-reverse items-center gap-6'>
-                    <div className='flex-shrink-0'>
+                    <div className='shrink'>
                       <img
                         src={`https://api.dicebear.com/7.x/bottts/svg?seed=${address}`}
                         alt="Profile Avatar"
@@ -404,8 +412,7 @@ export default function MyProfile() {
                   </div>
                 </div>
               </div>
-              
-              {/* ... Professional Details Card ... (No Changes) */}
+
               <div className='bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20'>
                 <h2 style={orbitronStyle} className='text-white text-xl font-bold mb-4 tracking-wide'>
                   Professional Details
@@ -464,7 +471,6 @@ export default function MyProfile() {
                 </div>
               </div>
 
-              {/* ... Social Links Card ... (No Changes) */}
               <div className='bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20'>
                 <h2 style={orbitronStyle} className='text-white text-xl font-bold mb-4 tracking-wide'>Social Links</h2>
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
@@ -517,7 +523,7 @@ export default function MyProfile() {
                         type='text'
                         value={profile.website}
                         onChange={(e) => handleInputChange('website', e.target.value)}
-                        className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a1F]/30 focus:border-[#14a19f] outline-none'
+                        className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
                         style={robotoStyle}
                       />
                     ) : (
@@ -527,7 +533,7 @@ export default function MyProfile() {
                 </div>
               </div>
 
-              {/* --- Skills Card (Changes inside) --- */}
+
               <div className='bg-[#1a2139] min-h-40 relative overflow-auto dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20 '>
                 <div className='flex  justify-between items-center mb-4'>
                   <h2 style={orbitronStyle} className='text-white text-xl font-bold tracking-wide'>Skills</h2>
@@ -558,8 +564,7 @@ export default function MyProfile() {
                         {newSkill && (
                           <ul className='absolute top-full mt-1 left-0 right-0 bg-[#141620] border border-[#14a19f]/30 rounded-lg max-h-40 overflow-y-auto z-50 shadow-lg'>
                             {skillTokenizable
-                              // --- CHANGE 4 ---
-                              // Updated filter to check against skill *objects*
+
                               .filter(skill => !skills.some(s => s.name === skill) && skill.toLowerCase().includes(newSkill.toLowerCase()))
                               .map((skill, idx) => (
                                 <li
@@ -581,15 +586,14 @@ export default function MyProfile() {
                   </div>
                 )}
 
-                {/* --- CHANGE 5 --- */}
-                {/* Updated skills mapping and button logic */}
+
                 <div className='flex flex-wrap gap-3'>
                   {skills.length > 0 ? skills.map((skillObj, idx) => (
                     <div
                       key={idx}
                       className="group relative flex flex-col bg-slate-800 dark:bg-[#1a1f2b]/80 backdrop-blur-md rounded-xl p-4 w-52 border border-transparent hover:border-[#14a19f] hover:shadow-[0_0_20px_#14a19f33] transition-all duration-300 shadow-md"
                     >
-                      {/* Skill Header */}
+
                       <div className="flex justify-between items-center mb-2">
                         <p
                           className="text-gray-100 font-extrabold text-lg leading-snug truncate"
@@ -609,16 +613,15 @@ export default function MyProfile() {
                         )}
                       </div>
 
-                      {/* Tokenizable Badge */}
+
                       {skillTokenizable.includes(skillObj.name) ? <p className="text-[10px] text-[#14a19f] font-mono mb-3 uppercase tracking-wide">
                         Tokenizable Skill
                       </p> : <p className="text-[10px] text-gray-500 font-mono mb-3 uppercase tracking-wide">
                         Non-Tokenizable
                       </p>}
 
-                      {/* Mint SBT Button Logic */}
                       {skillTokenizable.includes(skillObj.name) ? (
-                        // --- IS TOKENIZABLE ---
+
                         skillObj.minted ? (
                           // Is MINTED
                           <button
@@ -629,7 +632,7 @@ export default function MyProfile() {
                             Already Minted <Check size={16} />
                           </button>
                         ) : (
-                          // Is NOT MINTED
+
                           <button
                             onClick={() => mintSBTForSkill(skillObj.name)}
                             className="flex items-center justify-center gap-2 w-full mt-auto text-sm font-bold bg-linear-to-r from-[#14a19f] to-[#1ecac7] text-[#0f111d] py-2.5 rounded-lg hover:scale-105 hover:shadow-[0_0_15px_#1ecac7] transition-all duration-300 shadow-md"
@@ -639,7 +642,7 @@ export default function MyProfile() {
                           </button>
                         )
                       ) : (
-                        // --- IS NOT TOKENIZABLE ---
+
                         <button
                           disabled={true}
                           className="flex items-center justify-center gap-2 w-full mt-auto text-sm font-bold bg-gray-700/50 text-gray-500 py-2.5 rounded-lg"
@@ -657,7 +660,7 @@ export default function MyProfile() {
               </div>
             </div>
 
-            {/* ... SBT Column ... (No Changes) */}
+
             <div className="lg:col-span-1">
               <div className="bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20 sticky top-6">
                 <div className="flex items-center gap-2 mb-6">

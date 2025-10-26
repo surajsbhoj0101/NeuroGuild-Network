@@ -1,7 +1,7 @@
-import User from "../models/user.model.js";
+import Freelancer from "../models/freelancer_models/freelancers.model.js";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
-import quizModel from "../models/quiz.model.js";
+import quizModel from "../models/freelancer_models/quiz.model.js";
 import { checkAlreadyWhiteListed, whiteListUser } from "../services/whitelist_user_for_sbt.js";
 import { getTokenUri } from "../services/get_token_uri.js";
 import axios from "axios";
@@ -15,96 +15,48 @@ export const test = async (req, res) => {
     res.send("Hello")
 }
 
-export const getOrCreateUser = async (req, res) => {
-    const { address } = req.params;
 
+export const getFreelancer = async (req, res) => {
+    const { address, userId } = req.body;
+    const walletAddress = address.toLowerCase();
     try {
-        let newUser = false;
-        const walletAddress = address.toLowerCase();
+        const freelancer = await Freelancer.findOne({ walletAddress });
 
-        let user = await User.findOne({ walletAddress });
-
-        if (!user) {
-            user = await User.create({
-                walletAddress,
-                BasicInformation: {
-                    name: "New User",
-                    title: "",
-                    bio: "",
-                    location: "",
-                    email: "",
-                },
-                ProfessionalDetails: {
-                    hourlyRate: "",
-                    experience: "",
-                    availability: "available",
-                },
-                SocialLinks: {
-                    github: "",
-                    twitter: "",
-                    linkedIn: "",
-                    website: "",
-                },
-            });
-
-            console.log(`New user created: ${walletAddress}`);
-            newUser = true;
-        } else {
-            console.log(`Existing user found: ${walletAddress}`);
+        if (!freelancer) {
+            console.log("Freelancer not found");
+            return res.status(404).json({ success: false, message: "Freelancer not found" });
         }
 
-        res.status(200).json({ success: true, user, newUser });
+        res.status(200).json({ success: true, freelancer: freelancer });
     } catch (error) {
-        console.error("Error in getOrCreateUser:", error);
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
-
-
-
-export const getUser = async (req, res) => {
-    const { address } = req.params;
-
-    try {
-        const walletAddress = address.toLowerCase();
-        let user = await User.findOne({ walletAddress });
-
-        if (!user) {
-            console.log("User not found")
-            return res.status(404).json({ success: false, message: "User not found" });
-        }
-
-        res.status(200).json({ success: true, user });
-    } catch (error) {
-        console.error(error);
+        console.error("Error fetching freelancer:", error);
         res.status(500).json({ success: false, message: "Server error" });
     }
 };
 
 
-export const updateUser = async (req, res) => {
 
-    const { address } = req.params;
-    const updateData = req.body;
+export const updateFreelancer = async (req, res) => {
+
+
+    const { payload, address } = req.body;
 
     console.log("Address:", address);
 
     try {
         const walletAddress = address.toLowerCase();
 
-     
-        const { skills, isVerified, ...otherUpdates } = updateData;
+        //solved a big bug here
+        const { skills, isVerified, ...otherUpdates } = payload;
 
-      
-
-        const updatedUser = await User.findOneAndUpdate(
+        const updatedUser = await Freelancer.findOneAndUpdate(
             { walletAddress: walletAddress },
-            { $set: otherUpdates }, 
+            { $set: otherUpdates },
             { new: true }
         );
 
         if (!updatedUser) {
-            return res.status(404).json({ success: false, message: "User not found" });
+            return res.status(404).json({ success: false, message: "Freelancer not found" });
         }
 
         console.log("Done");
@@ -121,7 +73,7 @@ export const fetchQuestions = async (req, res) => {
     try {
         const cooldown = 24 * 60 * 60 * 1000;
 
-        const alreadyPassed = await User.findOne({
+        const alreadyPassed = await Freelancer.findOne({
             walletAddress: address.toLowerCase(),
             skills: {
                 $elemMatch: { //It ensures both conditions apply to the same object inside the array.
@@ -208,10 +160,10 @@ const handleUserSkillPass = async (walletAddress, skillName) => {
     const wallet = walletAddress.toLowerCase();
 
     // Try to find the user
-    let user = await User.findOne({ walletAddress: wallet });
+    let user = await Freelancer.findOne({ walletAddress: wallet });
 
     if (!user) {
-        user = await User.create({
+        user = await Freelancer.create({
             walletAddress: wallet,
             skills: [
                 {
@@ -278,7 +230,7 @@ export const quizCheckAllCorrect = async (req, res) => {
         let isWhiteListed = false;
         if (allCorrect) {
             const updatedUser = await handleUserSkillPass(address, skill);
-            console.log("User updated or created:", updatedUser);
+            console.log("Freelancer updated or created:", updatedUser);
             const whiteList = await whiteListUser(address);
             isWhiteListed = whiteList.whiteListSuccess;
             console.log("WhiteListed ?", isWhiteListed)
@@ -302,7 +254,7 @@ export const checkUserPassedQuiz = async (req, res) => {
     const walletAddress = address.toLowerCase();
     console.log(address)
     try {
-        const resp = await User.findOne({
+        const resp = await Freelancer.findOne({
             walletAddress: address.toLowerCase(),
             skills: {
                 $elemMatch: { //It ensures both conditions apply to the same object inside the array.
@@ -358,12 +310,12 @@ export const upgradeSkill = async (req, res) => {
         const wl = await checkAlreadyWhiteListed(address);
         if (!wl) {
 
-            return res.status(404).json({ error: "User is not whitelisted for SBT" });
+            return res.status(404).json({ error: "Freelancer is not whitelisted for SBT" });
         }
 
         const isMinted = await checkUserAlreadyMinted(address);
         if (!isMinted.isminted) {
-            return res.status(404).json({ error: "User already minted SBT" });
+            return res.status(404).json({ error: "Freelancer already minted SBT" });
         }
 
         const tokenId = isMinted.tokenId;
@@ -425,7 +377,7 @@ export const upgradeSkill = async (req, res) => {
         }
         const walletAddress = address.toLowerCase()
         console.log("Done updating")
-        await User.findOneAndUpdate(
+        await Freelancer.findOneAndUpdate(
             { walletAddress: walletAddress },
             {
                 $set: {
@@ -462,7 +414,7 @@ export const upgradeSkill = async (req, res) => {
 //         const walletAddress = address.toLowerCase();
 //         console.log(walletAddress)
 
-//         const user = await User.findOne({
+//         const user = await Freelancer.findOne({
 //             walletAddress: walletAddress,
 //             isVerified: true
 //         });
@@ -503,7 +455,7 @@ export const fetchSbt = async (req, res) => {
         if (!isMinted?.isminted) {
             return res.status(404).json({
                 success: false,
-                message: "User has not minted an SBT yet."
+                message: "Freelancer has not minted an SBT yet."
             });
         }
 
