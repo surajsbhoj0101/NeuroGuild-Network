@@ -7,11 +7,11 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount, useWalletClient } from "wagmi";
 import Snowfall from "react-snowfall";
 import axios from "axios";
-import "../index.css";
+import "../../index.css";
 import { useParams } from "react-router-dom";
-import { skillsData } from "../utils/skillData";
-import skillTokenizable from "../utils/tokenizableSkills";
-import { mintSbt } from "../utils/mint_sbt";
+import { skillsData } from "../../utils/skillData";
+import skillTokenizable from "../../utils/tokenizableSkills";
+import { mintSbt } from "../../utils/mint_sbt";
 import { BrowserProvider } from 'ethers'
 
 const orbitronStyle = { fontFamily: "Orbitron, sans-serif" };

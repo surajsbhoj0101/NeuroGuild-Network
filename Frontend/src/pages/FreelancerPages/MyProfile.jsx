@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAccount } from 'wagmi';
-import SideBar from '../components/SideBar';
+import SideBar from '../../components/SideBar';
 import axios from "axios";
-import skillTokenizable from '../utils/tokenizableSkills';
+import skillTokenizable from '../../utils/tokenizableSkills';
 import { Award, Plus, X, Check, User, Mail, MapPin, Github, Linkedin, Twitter, Globe } from 'lucide-react';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
@@ -54,7 +54,7 @@ export default function MyProfile() {
     hourlyRate: user.ProfessionalDetails?.hourlyRate || '',
     experience: user.ProfessionalDetails?.experience || '',
     availability: user.ProfessionalDetails?.availability || 'available',
-    avatarUrl: user.avatarUrl || ''
+    avatarUrl: user.BasicInformation?.avatarUrl || ''
   });
 
   useEffect(() => {
@@ -172,7 +172,7 @@ export default function MyProfile() {
       const payload = {
         BasicInformation: {
           name: profile.displayName, title: profile.title, bio: profile.bio,
-          location: profile.location, email: profile.email,
+          location: profile.location, email: profile.email, avatarUrl: profile.avatarUrl,
         },
         ProfessionalDetails: {
           hourlyRate: profile.hourlyRate, experience: profile.experience,
@@ -186,7 +186,7 @@ export default function MyProfile() {
 
         skills: skills.map(skillObj => ({ name: skillObj.name }))
       };
-
+      console.log(payload)
       await axios.put(`http://localhost:5000/api/freelancer/update-profile`, { payload, address });
       setRedNotice(false)
       setNotice("Profile updated successfully");
@@ -312,11 +312,13 @@ export default function MyProfile() {
                 <div className='space-y-4'>
                   <div className='flex flex-col sm:flex-row-reverse items-center gap-6'>
                     <div className='shrink'>
-                      <img
-                        src={`https://api.dicebear.com/7.x/bottts/svg?seed=${address}`}
-                        alt="Profile Avatar"
-                        className='w-24 h-24 rounded-full object-cover border-2 border-[#14a19f]'
-                      />
+                      <div className='shrink'>
+                        <img
+                          src={profile.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${address}`}
+                          alt="Profile Avatar"
+                          className='w-24 h-24 rounded-full object-cover border-2 border-[#14a19f]'
+                        />
+                      </div>
                     </div>
                     <div className='flex-1 w-full text-center sm:text-left'>
                       <div>

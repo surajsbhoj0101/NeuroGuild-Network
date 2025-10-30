@@ -6,6 +6,7 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.routes.js";
 // import clientRoutes from "./routes/client.routes.js"
 import freelancerRoutes from "./routes/freelancer.routes.js"
+import clientRoutes from "./routes/client.routes.js"
 
 
 // dotenv.config();
@@ -21,7 +22,7 @@ connectDB();
 app.use('/api/auth', authRoutes);
 
 // Client/Job Poster 
-// app.use('/api/client', clientRoutes);
+app.use('/api/client', clientRoutes);
 
 // Freelancer 
 app.use('/api/freelancer', freelancerRoutes);

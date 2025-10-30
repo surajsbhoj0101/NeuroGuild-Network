@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAccount } from 'wagmi'
-import SideBar from '../components/SideBar'
+import SideBar from '../../components/SideBar'
 
-import "../index.css"
+import "../../index.css"
 
 function BrowseJobs() {
   

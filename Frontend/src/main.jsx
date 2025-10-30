@@ -13,12 +13,14 @@ import '@fontsource/orbitron/400.css';
 import '@fontsource/orbitron/700.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/700.css';
-import Dashboard from './pages/Dashboard.jsx';
-import BrowseJobs from './pages/BrowseJobs.jsx';
-import MyProfile from './pages/MyProfile.jsx';
-import Setting from './pages/Setting.jsx';
-import VerifySkillPage from './pages/VerifySkillPage.jsx';
-import SbtMint from './pages/SbtMint.jsx';
+import Dashboard from './pages/FreelancerPages/Dashboard.jsx';
+import BrowseJobs from './pages/FreelancerPages/BrowseJobs.jsx';
+import MyProfile from './pages/FreelancerPages/MyProfile.jsx';
+import Setting from './pages/FreelancerPages/Setting.jsx';
+import VerifySkillPage from './pages/FreelancerPages/VerifySkillPage.jsx';
+import SbtMint from './pages/FreelancerPages/SbtMint.jsx';
+import ClientProfile from './pages/ClientPages/ClientProfile.jsx';
+import PostJobs from './pages/ClientPages/PostJobs.jsx';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
@@ -44,7 +46,7 @@ const router = createBrowserRouter([
     )
   },
   {
-    path: "/dashboard",
+    path: "/freelancer/dashboard",
     element: (
       <>
         <Snowfall snowflakeCount={60} />
@@ -62,7 +64,7 @@ const router = createBrowserRouter([
       </>
     )
   }, {
-    path: "/my-profile",
+    path: "/freelancer/my-profile",
     element: (
       <>
         <Snowfall snowflakeCount={60} />
@@ -72,7 +74,7 @@ const router = createBrowserRouter([
     )
   },
   , {
-    path: "/settings",
+    path: "/freelancer/settings",
     element: (
       <>
         <Snowfall snowflakeCount={60} />
@@ -93,6 +95,24 @@ const router = createBrowserRouter([
       <>
         <Navbar />
         <SbtMint />
+      </>
+    )
+  },
+  {
+    path: "/client/my-profile",
+    element: (
+      <>
+        <Navbar />
+        <ClientProfile />
+      </>
+    )
+  },
+  {
+    path: "/post-job",
+    element: (
+      <>
+        <Navbar />
+        <PostJobs />
       </>
     )
   }

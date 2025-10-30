@@ -4,28 +4,64 @@ import { MdSpaceDashboard } from "react-icons/md";
 import { BsBriefcase } from "react-icons/bs";
 import { FaRegUser } from "react-icons/fa";
 import { IoSettingsOutline } from "react-icons/io5";
+import { useAccount } from "wagmi"
+import axios from "axios";
 
 function SideBar() {
   const [activeIndex, setActiveIndex] = useState(0);
   const location = useLocation();
+  const { isConnected, address } = useAccount()
+  const [role, setRole] = useState(null)
+
+  useEffect(() => {
+    if (!isConnected || !address || role) return;
+
+    const getUser = async () => {
+      try {
+        const response = await axios.post(`http://localhost:5000/api/auth/get-user`, { address });
+
+        console.log(response)
+        if (response.data.isFound) {
+          setRole(response.data.user.role)
+         
+        }
+
+      } catch (error) {
+        console.error("Error fetching or creating user:", error);
+      }
+    };
+
+    getUser();
+  }, [isConnected, address, role]);
 
   const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
   const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
-  const menuItems = [
-    { name: "Dashboard", icon: <MdSpaceDashboard />, link: "/Dashboard" },
-    { name: "Browse Jobs", icon: <BsBriefcase />, link: "/browse-jobs" },
-    { name: "My Profile", icon: <FaRegUser />, link: "/my-profile" },
-    { name: "Settings", icon: <IoSettingsOutline />, link: "/settings" },
+
+  const clientMenu = [
+    { name: "Dashboard", icon: <MdSpaceDashboard />, link: "/client/dashboard" },
+    { name: "Post Jobs", icon: <BsBriefcase />, link: "/post-job" },
+    { name: "My Profile", icon: <FaRegUser />, link: "/client/my-profile" },
+    { name: "Settings", icon: <IoSettingsOutline />, link: "/client/settings" },
   ];
 
- 
+  const freelancerMenu = [
+    { name: "Dashboard", icon: <MdSpaceDashboard />, link: "/freelancer/dashboard" },
+    { name: "Browse Jobs", icon: <BsBriefcase />, link: "/browse-jobs" },
+    { name: "My Profile", icon: <FaRegUser />, link: "/freelancer/my-profile" },
+    { name: "Settings", icon: <IoSettingsOutline />, link: "/freelancer/settings" },
+  ];
+
+
+  const menuItems = role === "Freelancer" ? freelancerMenu : clientMenu;
+
+
   useEffect(() => {
     const idx = menuItems.findIndex(item => {
       if (!item.link || item.link === "#") return false;
       return location.pathname === item.link || location.pathname.startsWith(item.link);
     });
     if (idx !== -1 && idx !== activeIndex) setActiveIndex(idx);
-  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [location.pathname, menuItems]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <aside className="h-screen sticky top-0 w-fit border-r border-[#262f55] bg-gradient-to-r from-[#191f37] to-[#161c32] flex flex-col dark:border-[#161b2c] dark:bg-none dark:bg-[#0f121e]">

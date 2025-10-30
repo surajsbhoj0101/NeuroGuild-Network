@@ -24,7 +24,7 @@ export const createUser = async (req, res) => {
     const walletAddress = address.toLowerCase();
 
     try {
-        console.log(role)
+        console.log("the role is",role)
         let user = await User.findOne({ wallets: walletAddress });
 
         if (user) {
@@ -42,8 +42,8 @@ export const createUser = async (req, res) => {
                 user: newUser._id,
                 walletAddress: walletAddress
             });
-
         } else {
+            console.log("Creating Client")
             await Client.create({
                 user: newUser._id,
                 walletAddress: walletAddress

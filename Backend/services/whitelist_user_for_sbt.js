@@ -45,5 +45,5 @@ export const whiteListUser = async (address) => {
     }
 }
 
-console.log(await whiteListUser("0xb3C8Ec7c00Ca69e2B456382C46711153f80854e0"))
+// console.log(await whiteListUser("0xb3C8Ec7c00Ca69e2B456382C46711153f80854e0"))
 

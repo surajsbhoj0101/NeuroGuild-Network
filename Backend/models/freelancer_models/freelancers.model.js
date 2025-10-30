@@ -18,13 +18,17 @@ const freelancerSchema = new mongoose.Schema(
             index: true
         },
         BasicInformation: {
-            name: { type: String, default:"New User" },
+            name: { type: String, default: "New User" },
             title: { type: String },
             bio: { type: String },
             location: { type: String },
             email: {
                 type: String,
                 match: [/.+\@.+\..+/, 'Please enter a valid email'],
+            }
+            ,
+            avatarUrl: {
+                type: String
             }
         },
         ProfessionalDetails: {

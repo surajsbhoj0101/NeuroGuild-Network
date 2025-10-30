@@ -35,7 +35,7 @@ export default function App() {
             setNotice("User found Redirecting...");
           }, 1500);
 
-          navigate('/my-profile')
+          const role = user.role == 'Freelancer' ? navigate('/freelancer/my-profile') : navigate('/client/my-profile')
         }
 
       } catch (error) {
@@ -46,8 +46,6 @@ export default function App() {
     getUser();
   }, [isConnected, address]);
 
-
-
   const [notice, setNotice] = useState(null);
   const [redNotice, setRedNotice] = useState(false);
   useEffect(() => {
@@ -55,7 +53,6 @@ export default function App() {
     const id = setTimeout(() => setNotice(null), 3500);
     return () => clearTimeout(id);
   }, [notice]);
-
 
   async function handleCreateUser(role) {
     if (!address || !isConnected) {
@@ -71,18 +68,15 @@ export default function App() {
         role
       });
 
-      const user = response.data.user; 
-
-      if (user && user.userId) {
-        localStorage.setItem("userId", user._id);
-      }
+      const user = response.data.user;
 
       setTimeout(() => {
         setRedNotice(false);
         setNotice("User Creation successful. Redirecting...");
       }, 1500);
 
-      navigate('/my-profile')
+      const r = role.toLowercase()
+      navigate(`${r}/my-profile`);
 
     } catch (error) {
       console.error("Error creating user:", error);

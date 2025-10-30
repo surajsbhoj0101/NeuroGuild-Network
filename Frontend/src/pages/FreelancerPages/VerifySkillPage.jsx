@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from "axios";
 import { useAccount } from 'wagmi';
 import { Timer } from 'lucide-react';
-import skillTokenizable from '../utils/tokenizableSkills';
+import skillTokenizable from '../../utils/tokenizableSkills';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
