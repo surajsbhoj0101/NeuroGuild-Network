@@ -32,7 +32,7 @@ function ClientProfile() {
         tagline: user.companyDetails?.tagline ?? '',
         bio: user.companyDetails?.bio ?? '',
         location: user.companyDetails?.location ?? '',
-        publicEmail: user.companyDetails?.email ?? '',
+        publicEmail: user.companyDetails?.publicEmail ?? '',
         website: user.companyDetails?.website ?? '',
         logoUrl: user.companyDetails?.logoUrl ?? ''
     });
@@ -183,7 +183,7 @@ function ClientProfile() {
                 </div>
 
 
-                <div className='flex-1 px-6 pb-8 max-w-7xl mx-auto w-full relative z-10'>
+                <div className='flex-1  px-6 pb-8 max-w-7xl mx-auto w-full relative z-10'>
                     <div className='mb-8'>
                         <div className='flex justify-between items-center'>
                             <p style={orbitronStyle} className='text-white text-3xl tracking-widest font-extrabold mb-1'>
@@ -199,7 +199,7 @@ function ClientProfile() {
                         </div>
                     </div>
 
-                    <div className='bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 mb-6 border border-[#14a19f]/20'>
+                    <div className='w-full backdrop-blur-sm  rounded-lg p-6 mb-6 border border-[#14a19f]/20'>
                         <div className='flex justify-between items-center mb-3'>
                             <p style={robotoStyle} className='text-white text-lg font-semibold'>
                                 Profile Completion
@@ -221,7 +221,7 @@ function ClientProfile() {
                     <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
                         <div className='lg:col-span-2 space-y-6'>
 
-                            <div className='bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20'>
+                            <div className='backdrop-blur-sm rounded-lg p-6 border border-[#14a19f]/20'>
                                 <h2 style={orbitronStyle} className='text-white text-xl font-bold mb-4 tracking-wide'>
                                     Company Details
                                 </h2>
@@ -243,11 +243,11 @@ function ClientProfile() {
                                                         type='text'
                                                         value={profile.companyName}
                                                         onChange={(e) => handleInputChange('companyName', e.target.value)}
-                                                        className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                                                        className='w-full backdrop-blur-lg  text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
                                                         style={robotoStyle}
                                                     />
                                                 ) : (
-                                                    <p className='text-white text-lg' style={robotoStyle}>{profile.companyName || 'Not set'}</p>
+                                                    <p className='text-white font-bold text-lg' style={robotoStyle}>{profile.companyName || 'Not set'}</p>
                                                 )}
                                             </div>
                                             <div className='mt-4'>
@@ -257,7 +257,7 @@ function ClientProfile() {
                                                         type='text'
                                                         value={profile.tagline}
                                                         onChange={(e) => handleInputChange('tagline', e.target.value)}
-                                                        className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                                                        className='w-full backdrop-blur-lg text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
                                                         style={robotoStyle}
                                                     />
                                                 ) : (
@@ -274,7 +274,7 @@ function ClientProfile() {
                                                 value={profile.logoUrl}
                                                 placeholder='https://example.com/image.png'
                                                 onChange={(e) => handleInputChange('logoUrl', e.target.value)}
-                                                className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                                                className='w-full backdrop-blur-lg text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
                                                 style={robotoStyle}
                                             />
                                         </div>
@@ -286,7 +286,7 @@ function ClientProfile() {
                                                 value={profile.bio}
                                                 onChange={(e) => handleInputChange('bio', e.target.value)}
                                                 rows={4}
-                                                className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none resize-none'
+                                                className='w-full backdrop-blur-lg text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none resize-none'
                                                 style={robotoStyle}
                                             />
                                         ) : (
@@ -303,7 +303,7 @@ function ClientProfile() {
                                                     type='text'
                                                     value={profile.location}
                                                     onChange={(e) => handleInputChange('location', e.target.value)}
-                                                    className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                                                    className='w-full backdrop-blur-lg text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
                                                     style={robotoStyle}
                                                 />
                                             ) : (
@@ -319,7 +319,7 @@ function ClientProfile() {
                                                     type='text'
                                                     value={profile.publicEmail}
                                                     onChange={(e) => handleInputChange('publicEmail', e.target.value)}
-                                                    className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                                                    className='w-full backdrop-blur-lg text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
                                                     style={robotoStyle}
                                                 />
                                             ) : (
@@ -336,7 +336,7 @@ function ClientProfile() {
                                                     type='text'
                                                     value={profile.website}
                                                     onChange={(e) => handleInputChange('website', e.target.value)}
-                                                    className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                                                    className='w-full backdrop-blur-lg text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
                                                     style={robotoStyle}
                                                 />
                                             ) : (

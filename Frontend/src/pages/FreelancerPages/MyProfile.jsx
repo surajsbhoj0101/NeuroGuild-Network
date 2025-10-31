@@ -283,7 +283,7 @@ export default function MyProfile() {
             </div>
           </div>
 
-          <div className='bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 mb-6 border border-[#14a19f]/20'>
+          <div className='backdrop-blur-sm rounded-lg p-6 mb-6 border border-[#14a19f]/20'>
             <div className='flex justify-between items-center mb-3'>
               <p style={robotoStyle} className='text-white text-lg font-semibold'>
                 Profile Completion
@@ -305,7 +305,7 @@ export default function MyProfile() {
           <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
             <div className='lg:col-span-2 space-y-6'>
 
-              <div className='bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20'>
+              <div className='backdrop-blur-sm rounded-lg p-6 border border-[#14a19f]/20'>
                 <h2 style={orbitronStyle} className='text-white text-xl font-bold mb-4 tracking-wide'>
                   Basic Information
                 </h2>
@@ -328,7 +328,7 @@ export default function MyProfile() {
                             type='text'
                             value={profile.displayName}
                             onChange={(e) => handleInputChange('displayName', e.target.value)}
-                            className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                            className='w-full backdrop-blur-lg text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
                             style={robotoStyle}
                           />
                         ) : (
@@ -342,7 +342,7 @@ export default function MyProfile() {
                             type='text'
                             value={profile.title}
                             onChange={(e) => handleInputChange('title', e.target.value)}
-                            className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                            className='w-full backdrop-blur-sm text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
                             style={robotoStyle}
                           />
                         ) : (
@@ -359,7 +359,7 @@ export default function MyProfile() {
                         value={profile.avatarUrl}
                         placeholder='https://example.com/image.png'
                         onChange={(e) => handleInputChange('avatarUrl', e.target.value)}
-                        className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                        className='w-full backdrop-blur-sm text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
                         style={robotoStyle}
                       />
                     </div>
@@ -371,7 +371,7 @@ export default function MyProfile() {
                         value={profile.bio}
                         onChange={(e) => handleInputChange('bio', e.target.value)}
                         rows={4}
-                        className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none resize-none'
+                        className='w-full backdrop-blur-sm text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none resize-none'
                         style={robotoStyle}
                       />
                     ) : (
@@ -388,7 +388,7 @@ export default function MyProfile() {
                           type='text'
                           value={profile.location}
                           onChange={(e) => handleInputChange('location', e.target.value)}
-                          className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                          className='w-full backdrop-blur-sm] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
                           style={robotoStyle}
                         />
                       ) : (
@@ -404,7 +404,7 @@ export default function MyProfile() {
                           type='email'
                           value={profile.email}
                           onChange={(e) => handleInputChange('email', e.target.value)}
-                          className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                          className='w-full backdrop-blur-sm text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
                           style={robotoStyle}
                         />
                       ) : (
@@ -415,7 +415,7 @@ export default function MyProfile() {
                 </div>
               </div>
 
-              <div className='bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20'>
+              <div className='backdrop-blur-sm rounded-lg p-6 border border-[#14a19f]/20'>
                 <h2 style={orbitronStyle} className='text-white text-xl font-bold mb-4 tracking-wide'>
                   Professional Details
                 </h2>
@@ -427,7 +427,7 @@ export default function MyProfile() {
                         type='number'
                         value={profile.hourlyRate}
                         onChange={(e) => handleInputChange('hourlyRate', e.target.value)}
-                        className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                        className='w-full backdrop-blur-sm text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
                         style={robotoStyle}
                       />
                     ) : (
@@ -441,7 +441,7 @@ export default function MyProfile() {
                         type='text'
                         value={profile.experience}
                         onChange={(e) => handleInputChange('experience', e.target.value)}
-                        className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                        className='w-full backdrop-blur-sm text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
                         style={robotoStyle}
                       />
                     ) : (
@@ -454,7 +454,7 @@ export default function MyProfile() {
                       <select
                         value={profile.availability}
                         onChange={(e) => handleInputChange('availability', e.target.value)}
-                        className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a1f] outline-none'
+                        className='w-full dark:bg-[#0f111d] bg-[#14a19f]  text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a1f] outline-none'
                         style={robotoStyle}
                       >
                         <option value='available'>Available</option>
@@ -473,7 +473,7 @@ export default function MyProfile() {
                 </div>
               </div>
 
-              <div className='bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20'>
+              <div className='backdrop-blur-sm rounded-lg p-6 border border-[#14a19f]/20'>
                 <h2 style={orbitronStyle} className='text-white text-xl font-bold mb-4 tracking-wide'>Social Links</h2>
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                   <div>
@@ -483,7 +483,7 @@ export default function MyProfile() {
                         type='text'
                         value={profile.github}
                         onChange={(e) => handleInputChange('github', e.target.value)}
-                        className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                        className='w-full backdrop-blur-sm text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
                         style={robotoStyle}
                       />
                     ) : (
@@ -497,7 +497,7 @@ export default function MyProfile() {
                         type='text'
                         value={profile.linkedin}
                         onChange={(e) => handleInputChange('linkedin', e.target.value)}
-                        className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                        className='w-full backdrop-blur-sm text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
                         style={robotoStyle}
                       />
                     ) : (
@@ -511,7 +511,7 @@ export default function MyProfile() {
                         type='text'
                         value={profile.twitter}
                         onChange={(e) => handleInputChange('twitter', e.target.value)}
-                        className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                        className='w-full backdrop-blur-sm text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
                         style={robotoStyle}
                       />
                     ) : (
@@ -525,7 +525,7 @@ export default function MyProfile() {
                         type='text'
                         value={profile.website}
                         onChange={(e) => handleInputChange('website', e.target.value)}
-                        className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                        className='w-full backdrop-blur-sm text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
                         style={robotoStyle}
                       />
                     ) : (
@@ -536,7 +536,7 @@ export default function MyProfile() {
               </div>
 
 
-              <div className='bg-[#1a2139] min-h-40 relative overflow-auto dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20 '>
+              <div className='backdrop-blur-sm min-h-40 relative overflow-auto  rounded-lg p-6 border border-[#14a19f]/20 '>
                 <div className='flex  justify-between items-center mb-4'>
                   <h2 style={orbitronStyle} className='text-white text-xl font-bold tracking-wide'>Skills</h2>
                   {editMode && (
@@ -559,7 +559,7 @@ export default function MyProfile() {
                           value={newSkill}
                           onChange={(e) => setNewSkill(e.target.value)}
                           placeholder='Select a skill'
-                          className='w-full bg-[#0f111d] text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                          className='w-full backdrop-blur-sm text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
                           style={robotoStyle}
                           autoFocus
                         />
@@ -664,7 +664,7 @@ export default function MyProfile() {
 
 
             <div className="lg:col-span-1">
-              <div className="bg-[#1a2139] dark:bg-[#070d1a] rounded-lg p-6 border border-[#14a19f]/20 sticky top-6">
+              <div className="backdrop-blur-sm rounded-lg p-6 border border-[#14a19f]/20 sticky top-6">
                 <div className="flex items-center gap-2 mb-6">
                   <Award className="text-[#14a19f]" size={24} />
                   <h2 style={orbitronStyle} className="text-white text-xl font-bold tracking-wide">
@@ -679,7 +679,7 @@ export default function MyProfile() {
                     sbts.map((skill, index) => (
                       <div
                         key={index}
-                        className="dark:bg-[#0f111d] bg-[#141a2c] p-4 rounded-lg border border-[#14a19f]/30 hover:border-[#14a19f] transition-colors group"
+                        className="dark:bg-[#0f111d]/10 backdrop-blur-lg bg-[#141a2c]/10 p-4 rounded-lg border  border-[#14a19f]/30 hover:border-[#14a19f] transition-colors group"
                       >
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">

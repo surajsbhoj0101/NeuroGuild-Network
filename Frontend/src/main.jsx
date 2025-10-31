@@ -111,6 +111,7 @@ const router = createBrowserRouter([
     path: "/post-job",
     element: (
       <>
+        <Snowfall snowflakeCount={60} />
         <Navbar />
         <PostJobs />
       </>
