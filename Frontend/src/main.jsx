@@ -102,6 +102,7 @@ const router = createBrowserRouter([
     path: "/client/my-profile",
     element: (
       <>
+        <Snowfall snowflakeCount={60} />
         <Navbar />
         <ClientProfile />
       </>

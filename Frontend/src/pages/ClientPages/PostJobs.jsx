@@ -4,147 +4,226 @@ import { useAccount } from 'wagmi';
 import SideBar from '../../components/SideBar';
 import axios from "axios";
 import "../../index.css"
+import { funkiMainnet } from 'viem/chains';
 
 function PostJobs() {
     const { isConnected, address } = useAccount();
     const navigate = useNavigate();
-    const [notice, setNotice] = useState(null);
-    const [redNotice, setRedNotice] = useState(false);
     const timeoutRef = useRef(null);
 
-    const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
-    const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
+    const [enhancing, setEnhancing] = useState(false)
+    const [applying, setApplying] = useState(false);
 
-    const [jobDetails, setJobDetails] = useState({
-        title: '',
-        jobDescription: '',
+    const [notice, setNotice] = useState(null);
+    const [redNotice, setRedNotice] = useState(false);
+
+    const orbitronStyle = { fontFamily: "Orbitron, sans-serif" };
+    const robotoStyle = { fontFamily: "Roboto, sans-serif" };
+
+    const initialJobDetails = {
+        title: "",
+        jobDescription: "",
         skills: [],
-        experienceLevel: '',
-        budgetType: 'fixed',
-        budget: '',
-        deadline: '',
-    });
+        experienceLevel: "",
+        budgetType: "fixed",
+        budget: "",
+        deadline: "",
+    };
 
-    const [skillInput, setSkillInput] = useState('');
+
+    // USER RAW JOB DETAILS
+    const [jobDetails, setJobDetails] = useState(initialJobDetails);
+
+
+    const [enhanced, setEnhanced] = useState(null);
+
+
+    const PreviewJobDetails = enhanced ?? jobDetails;
+
+    const [skillInput, setSkillInput] = useState("");
     const DESCRIPTION_MAX = 800;
+
 
     useEffect(() => {
         if (!isConnected) {
             setRedNotice(true);
             setNotice("Wallet not connected — redirecting to home...");
-            timeoutRef.current = setTimeout(() => navigate('/'), 1600);
+            timeoutRef.current = setTimeout(() => navigate("/"), 1600);
         } else if (address) {
             setNotice(null);
         }
-        return () => {
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-                timeoutRef.current = null;
-            }
-        };
+        return () => clearTimeout(timeoutRef.current);
     }, [isConnected, navigate, address]);
 
-    const handleInputChange = useCallback((field, value) => {
-        if (field === 'jobDescription') {
+
+    const handleInputChange = (field, value) => {
+        if (field === "jobDescription") {
             const trimmed = value.slice(0, DESCRIPTION_MAX);
-            setJobDetails(prev => ({ ...prev, jobDescription: trimmed }));
+            setJobDetails((prev) => ({ ...prev, jobDescription: trimmed }));
             return;
         }
-        setJobDetails(prev => ({ ...prev, [field]: value }));
-    }, []);
-
-    const sanitizeSkill = (raw) => {
-        return raw.trim().replace(/\s+/g, ' ');
+        setJobDetails((prev) => ({ ...prev, [field]: value }));
     };
 
-    const addSkill = useCallback((e) => {
-        if (e && e.preventDefault) e.preventDefault();
-        const val = sanitizeSkill(skillInput);
-        if (!val) return;
-        // avoid duplicates (case-insensitive)
-        const exists = jobDetails.skills.some(s => s.toLowerCase() === val.toLowerCase());
-        if (exists) {
-            setNotice('Skill already added');
-            setRedNotice(true);
-            timeoutRef.current = setTimeout(() => setNotice(null), 1200);
-            setSkillInput('');
-            return;
-        }
-        setJobDetails(prev => ({ ...prev, skills: [...prev.skills, val] }));
-        setSkillInput('');
-    }, [skillInput, jobDetails.skills]);
 
-    const removeSkill = useCallback((skill) => {
-        setJobDetails(prev => ({ ...prev, skills: prev.skills.filter(s => s !== skill) }));
-    }, []);
+    const sanitizeSkill = (raw) => raw.trim().replace(/\s+/g, " ");
 
-    const submitJob = useCallback(async () => {
-        // basic validation
+    // ADD SKILL
+    const addSkill = useCallback(
+        (e) => {
+            if (e?.preventDefault) e.preventDefault();
+            const val = sanitizeSkill(skillInput);
+            if (!val) return;
+
+            const exists = jobDetails.skills.some(
+                (s) => s.toLowerCase() === val.toLowerCase()
+            );
+            if (exists) {
+                setNotice("Skill already added");
+                setRedNotice(true);
+                timeoutRef.current = setTimeout(() => setNotice(null), 1200);
+                setSkillInput("");
+                return;
+            }
+
+            setJobDetails((prev) => ({
+                ...prev,
+                skills: [...prev.skills, val],
+            }));
+            setSkillInput("");
+        },
+        [skillInput, jobDetails.skills]
+    );
+
+    const removeSkill = (skill) => {
+        setJobDetails((prev) => ({
+            ...prev,
+            skills: prev.skills.filter((s) => s !== skill),
+        }));
+    };
+
+    // AI ENHANCEMENT
+    const handleAIEnhance = async () => {
+        setEnhancing(true)
         if (!address) {
             setRedNotice(true);
-            setNotice('Wallet address missing');
-            setTimeout(() => setNotice(null), 1400);
-            return false;
+            setNotice("Wallet address missing");
+            return;
         }
         if (!jobDetails.title.trim()) {
             setRedNotice(true);
-            setNotice('Please add a job title');
-            setTimeout(() => setNotice(null), 1400);
-            return false;
+            setNotice("Please add a job title");
+            return;
         }
         if (!jobDetails.jobDescription.trim()) {
             setRedNotice(true);
-            setNotice('Please add a job description');
-            setTimeout(() => setNotice(null), 1400);
-            return false;
-        }
-        if (!jobDetails.skills.length) {
-            setRedNotice(true);
-            setNotice('Please add at least one skill');
-            setTimeout(() => setNotice(null), 1400);
-            return false;
+            setNotice("Please add a job description");
+            return;
         }
 
-        // prepare payload
         const payload = {
             title: jobDetails.title.trim(),
             description: jobDetails.jobDescription.trim(),
             skills: jobDetails.skills,
-            experienceLevel: jobDetails.experienceLevel || 'not-specified',
-            budgetType: jobDetails.budgetType,
+            experienceLevel: jobDetails.experienceLevel || "not-specified",
             budget: jobDetails.budget ? Number(jobDetails.budget) : 0,
             deadline: jobDetails.deadline || null,
+            clientAddress: address,
+        };
+
+        try {
+            const res = await axios.post(
+                "http://localhost:5000/api/jobs/ai-enhancement",
+                { payload }
+            );
+
+            console.log(res.data.enhanced);
+            if (res?.data?.enhanced) {
+                setEnhanced(res.data.enhanced);
+                setNotice("AI enhancement applied (preview only)");
+            } else {
+                setRedNotice(true);
+                setNotice("AI did not return enhancement");
+            }
+        } catch (error) {
+            console.log("AI Enhancement Error:", error);
+            setRedNotice(true);
+            setNotice("Failed to enhance using AI");
+        } finally {
+            setEnhancing(false)
+        }
+    };
+
+
+    const handleApplyPreview = () => {
+        setApplying(true)
+        if (!enhanced) {
+            setNotice("No AI preview to apply");
+            setRedNotice(true);
+            return;
+        }
+        setJobDetails(enhanced);
+        setEnhanced(null);
+        setApplying(false)
+    };
+
+
+    const submitJob = useCallback(async () => {
+        if (!address) {
+            setRedNotice(true);
+            setNotice("Wallet address missing");
+            return;
+        }
+        if (!jobDetails.title.trim()) {
+            setRedNotice(true);
+            setNotice("Please add a job title");
+            return;
+        }
+        if (!jobDetails.jobDescription.trim()) {
+            setRedNotice(true);
+            setNotice("Please add a job description");
+            return;
+        }
+        if (!jobDetails.skills.length) {
+            setRedNotice(true);
+            setNotice("Add at least one skill");
+            return;
+        }
+
+        const payload = {
+            ...jobDetails,
+            budget: Number(jobDetails.budget),
             clientAddress: address,
             createdAt: new Date().toISOString(),
         };
 
         try {
-            const res = await axios.post('http://localhost:5000/api/jobs/create', payload);
+            const res = await axios.post(
+                "http://localhost:5000/api/jobs/create",
+                payload
+            );
+
             if (res?.data?.success) {
                 setRedNotice(false);
-                setNotice('Job posted successfully!');
-                timeoutRef.current = setTimeout(() => {
-                    setNotice(null);
-                    navigate('/dashboard');
-                }, 1400);
-                return true;
+                setNotice("Job posted successfully!");
+                // timeoutRef.current = setTimeout(() => navigate("/dashboard"), 1400);
             } else {
                 setRedNotice(true);
-                setNotice(res?.data?.message || 'Failed to post job');
-                timeoutRef.current = setTimeout(() => setNotice(null), 1800);
-                return false;
+                setNotice(res?.data?.message || "Failed to post job");
             }
         } catch (err) {
-            console.error('Error posting job:', err);
             setRedNotice(true);
-            setNotice('Failed to post job. Please try again.');
-            timeoutRef.current = setTimeout(() => setNotice(null), 1800);
-            return false;
+            setNotice("Failed to post job. Try again.");
         }
     }, [address, jobDetails, navigate]);
 
-    
-    
+    function removeAllDetails() {
+
+
+        setJobDetails(initialJobDetails)
+        PreviewJobDetails = null;
+
+    }
 
     return (
         <>
@@ -353,6 +432,7 @@ function PostJobs() {
 
                             <div className="w-full mb-7 mt-3 backdrop-blur-sm flex items-center justify-between rounded-lg p-6 border border-[#14a19f]/20 space-x-4">
                                 <button
+                                    onClick={removeAllDetails}
                                     className="flex-1 px-4 py-3 rounded-lg border border-[#14a19f]/30 text-gray-300 hover:bg-[#14a19f]/20 hover:border-[#14a19f] transition-colors"
                                 >
                                     Cancel
@@ -378,28 +458,28 @@ function PostJobs() {
 
                                     <div className='flex flex-col '>
                                         <h3 className="text-2xl font-semibold text-[#14a19f]">
-                                            {jobDetails.title || "Untitled Gig"}
+                                            {PreviewJobDetails.title || "Untitled Gig"}
                                         </h3>
 
 
                                         {jobDetails.experienceLevel && (
                                             <span className="text-xs w-fit  px-2 py-1 bg-[#14a19f]/20 border border-[#14a19f]/50 rounded-full text-[#14a19f]">
-                                                {jobDetails.experienceLevel}
+                                                {PreviewJobDetails.experienceLevel}
                                             </span>
                                         )}
                                     </div>
 
                                     {/* Description */}
                                     <p className="text-gray-300 text-sm leading-relaxed">
-                                        {jobDetails.jobDescription || "Job description will appear here..."}
+                                        {PreviewJobDetails.jobDescription || "Job description will appear here..."}
                                     </p>
 
                                     {/* Skills */}
-                                    {jobDetails.skills.length > 0 && (
+                                    {PreviewJobDetails.skills.length > 0 && (
                                         <div>
                                             <p className="font-semibold text-sm mb-1">Required Skills:</p>
                                             <div className="flex flex-wrap gap-2">
-                                                {jobDetails.skills.map((skill, i) => (
+                                                {PreviewJobDetails.skills.map((skill, i) => (
                                                     <span
                                                         key={i}
                                                         className="bg-[#14a19f]/15 text-[#14a19f] text-xs px-2 py-1 border border-[#14a19f]/30 rounded-full"
@@ -412,7 +492,8 @@ function PostJobs() {
                                     )}
 
 
-                                    {jobDetails.deadline && (
+
+                                    {PreviewJobDetails.deadline && (
                                         <div className="text-sm text-gray-400">
                                             <span className="font-semibold text-white">Deadline:</span>{" "}
                                             {jobDetails.deadline}
@@ -420,7 +501,7 @@ function PostJobs() {
                                     )}
 
 
-                                    {jobDetails.budget && (
+                                    {PreviewJobDetails.budget && (
                                         <div className="text-lg font-bold text-[#14a19f]">
                                             Budget: <span className="text-white">${jobDetails.budget}</span>
                                         </div>
@@ -435,18 +516,29 @@ function PostJobs() {
                                     <div className="flex gap-4 mt-4">
                                         <button
                                             className="flex-1 px-4 py-2 rounded-lg border border-[#14a19f]/40 text-[#14a19f] hover:bg-[#14a19f]/20 backdrop-blur-2xl transition"
-                                        // onClick={handleAIEnhance}
+                                            onClick={handleAIEnhance}
+                                            disabled={enhancing || applying}
                                         >
-                                            Enhance With AI
+                                            {enhancing ? (
+                                                <span className="animate-pulse">Enhancing...</span>
+                                            ) : (
+                                                "Enhance With AI"
+                                            )}
                                         </button>
 
                                         <button
-                                            className="flex-1 text-white px-4 py-2 rounded-lg bg-[#14a19f]  font-semibold hover:bg-[#10c5c2] transition"
-                                        // onClick={handleApplyPreview}
+                                            className="flex-1 text-white px-4 py-2 rounded-lg bg-[#14a19f] font-semibold hover:bg-[#10c5c2] transition disabled:opacity-50"
+                                            onClick={handleApplyPreview}
+                                            disabled={enhancing || applying}
                                         >
-                                            Apply Preview
+                                            {applying ? (
+                                                <span className="animate-pulse">Applying...</span>
+                                            ) : (
+                                                "Apply Preview"
+                                            )}
                                         </button>
                                     </div>
+
 
 
                                 </div>
