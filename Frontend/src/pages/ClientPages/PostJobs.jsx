@@ -13,6 +13,8 @@ function PostJobs() {
 
     const [enhancing, setEnhancing] = useState(false)
     const [applying, setApplying] = useState(false);
+    const [submiting, setSubmiting] = useState(false)
+    const [cancelling, setCancelling] = useState(false);
 
     const [notice, setNotice] = useState(null);
     const [redNotice, setRedNotice] = useState(false);
@@ -128,7 +130,6 @@ function PostJobs() {
             experienceLevel: jobDetails.experienceLevel || "not-specified",
             budget: jobDetails.budget ? Number(jobDetails.budget) : 0,
             deadline: jobDetails.deadline || null,
-            clientAddress: address,
         };
 
         try {
@@ -169,6 +170,7 @@ function PostJobs() {
 
 
     const submitJob = useCallback(async () => {
+        setSubmiting(true)
         if (!address) {
             setRedNotice(true);
             setNotice("Wallet address missing");
@@ -191,22 +193,28 @@ function PostJobs() {
         }
 
         const payload = {
-            ...jobDetails,
-            budget: Number(jobDetails.budget),
+            title: jobDetails.title.trim(),
+            description: jobDetails.jobDescription.trim(),
+            skills: jobDetails.skills,
+            experienceLevel: jobDetails.experienceLevel || "not-specified",
+            budget: jobDetails.budget ? Number(jobDetails.budget) : 0,
+            deadline: jobDetails.deadline || null,
             clientAddress: address,
             createdAt: new Date().toISOString(),
         };
 
+        console.log(payload)
+
         try {
             const res = await axios.post(
-                "http://localhost:5000/api/jobs/create",
-                payload
+                "http://localhost:5000/api/jobs/create-job",
+                { payload }
             );
 
             if (res?.data?.success) {
                 setRedNotice(false);
                 setNotice("Job posted successfully!");
-                // timeoutRef.current = setTimeout(() => navigate("/dashboard"), 1400);
+
             } else {
                 setRedNotice(true);
                 setNotice(res?.data?.message || "Failed to post job");
@@ -214,15 +222,16 @@ function PostJobs() {
         } catch (err) {
             setRedNotice(true);
             setNotice("Failed to post job. Try again.");
+        } finally {
+            setSubmiting(false)
         }
     }, [address, jobDetails, navigate]);
 
     function removeAllDetails() {
-
-
-        setJobDetails(initialJobDetails)
-        PreviewJobDetails = null;
-
+        setCancelling(true);
+        setEnhanced(null);
+        setJobDetails(initialJobDetails);
+        setCancelling(false)
     }
 
     return (
@@ -327,7 +336,7 @@ function PostJobs() {
                                     <select
                                         value={jobDetails.experienceLevel}
                                         onChange={(e) => handleInputChange('experienceLevel', e.target.value)}
-                                        className="w-full backdrop-blur-3xl text-white px-4 py-3 rounded-lg border border-[#1a2a38] hover:border-[#14a19f]/30 focus:border-[#14a19f] outline-none shadow-inner"
+                                        className="w-full dark:bg-gray-900 bg-cyan-600 backdrop-blur-md  text-white px-6 py-3 rounded-lg border border-[#1a2a38] hover:border-[#14a19f]/30 hover:bg-gray-800 focus:border-[#14a19f] outline-none shadow-inner"
                                     >
                                         <option value="">Select experience</option>
                                         <option value="beginner">Beginner</option>
@@ -336,7 +345,7 @@ function PostJobs() {
                                     </select>
                                 </div>
 
-                                {/* Deadline */}
+
                                 <div className='flex flex-col'>
                                     <label
                                         className="text-gray-200 text-sm font-semibold flex items-center gap-2"
@@ -433,15 +442,25 @@ function PostJobs() {
                             <div className="w-full mb-7 mt-3 backdrop-blur-sm flex items-center justify-between rounded-lg p-6 border border-[#14a19f]/20 space-x-4">
                                 <button
                                     onClick={removeAllDetails}
+                                    disabled={enhancing || applying || submiting || cancelling}
                                     className="flex-1 px-4 py-3 rounded-lg border border-[#14a19f]/30 text-gray-300 hover:bg-[#14a19f]/20 hover:border-[#14a19f] transition-colors"
                                 >
-                                    Cancel
+                                    {cancelling ? (
+                                        <span className="animate-pulse">Removing...</span>
+                                    ) : (
+                                        "Remove"
+                                    )}
                                 </button>
 
                                 <button
+                                    onClick={submitJob}
+                                    disabled={enhancing || applying || submiting || cancelling}
                                     className="flex-1 px-4 py-3 rounded-lg bg-[#14a19f] text-white font-semibold hover:bg-[#0cc9c6] transition-colors"
                                 >
-                                    Post Job
+                                    {submiting ?
+                                        (<span className="animate-pulse">Submitting...</span>): (
+                                            "Submit"
+                                        )}
                                 </button>
                             </div>
 
@@ -517,7 +536,7 @@ function PostJobs() {
                                         <button
                                             className="flex-1 px-4 py-2 rounded-lg border border-[#14a19f]/40 text-[#14a19f] hover:bg-[#14a19f]/20 backdrop-blur-2xl transition"
                                             onClick={handleAIEnhance}
-                                            disabled={enhancing || applying}
+                                            disabled={enhancing || applying || submiting || cancelling}
                                         >
                                             {enhancing ? (
                                                 <span className="animate-pulse">Enhancing...</span>
@@ -529,7 +548,7 @@ function PostJobs() {
                                         <button
                                             className="flex-1 text-white px-4 py-2 rounded-lg bg-[#14a19f] font-semibold hover:bg-[#10c5c2] transition disabled:opacity-50"
                                             onClick={handleApplyPreview}
-                                            disabled={enhancing || applying}
+                                            disabled={enhancing || applying || submiting || cancelling}
                                         >
                                             {applying ? (
                                                 <span className="animate-pulse">Applying...</span>

@@ -4,9 +4,10 @@ import express from "express";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.routes.js";
-// import clientRoutes from "./routes/client.routes.js"
 import freelancerRoutes from "./routes/freelancer.routes.js"
 import clientRoutes from "./routes/client.routes.js"
+import jobRoutes from "./routes/job.routes.js";
+
 
 
 // dotenv.config();
@@ -28,7 +29,7 @@ app.use('/api/client', clientRoutes);
 app.use('/api/freelancer', freelancerRoutes);
 
 // Job/Listing Endpoints 
-// app.use('/api/jobs', jobRoutes);
+app.use('/api/jobs', jobRoutes);
 
 // start server
 const PORT = 5000;
