@@ -2,6 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import Job from "../models/job_models/job.model.js";
 import User from "../models/user.model.js";
+import jobModel from "../models/job_models/job.model.js";
 
 dotenv.config();
 
@@ -117,5 +118,18 @@ export const createJob = async (req, res) => {
   } catch (error) {
     console.log("Error in creating job", error);
     return res.status(500).json({ success: false, message: "Server error", error });
+  }
+}
+
+export const fetchJobs = async (req, res) => {
+  try {
+    const jobs = await Job.find().populate({
+      path: "clientDetails",
+      select: "companyDetails.logoUrl companyDetails.companyName stats.averageRating "
+    });
+
+    res.status(200).json({ success: true, jobs: jobs })
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Job fetching failed" })
   }
 }

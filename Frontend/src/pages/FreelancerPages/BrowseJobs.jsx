@@ -2,65 +2,56 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAccount } from 'wagmi'
 import SideBar from '../../components/SideBar'
+import axios from "axios"
 
 import "../../index.css"
 
 function BrowseJobs() {
-  
+
     const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
     const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
 
-    const { isConnected } = useAccount();
+    const { isConnected, address } = useAccount();
     const navigate = useNavigate();
 
     // user notice shown when redirecting due to no wallet
     const [notice, setNotice] = useState(null);
+    const [redNotice, setRedNotice] = useState(false);
 
-    const aiPoweredJobMatches = [
-        {
-            id: "proj-001",
-            projectName: "SmartContract Auditor - DAO Governance with Solidity EVM",
-            client: "Suraj Singh",
-            jobType: "Fixed Price",
-            budget: 7500,
-            postedDate: "2025-09-28",
-            skills: ["Solidity", "EVM", "Blockchain", "Smart Contracts", "DAO"],
-            description: "Seeking an experienced Smart Contract auditor to review our new DAO governance module. Must have deep knowledge of Solidity and EVM security vulnerabilities."
-        },
-        {
-            id: "proj-002",
-            projectName: "React Frontend for E-commerce Dashboard",
-            client: "Alice Johnson",
-            jobType: "Hourly",
-            budget: 55,
-            postedDate: "2025-09-25",
-            skills: ["React", "Redux", "TypeScript", "Tailwind CSS", "REST APIs"],
-            description: "We need a skilled React developer to build a responsive and intuitive admin dashboard for our e-commerce platform. State management with Redux is a must."
-        },
-        {
-            id: "proj-003",
-            projectName: "UI/UX Design for a Mobile Fitness App",
-            client: "FitLife Inc.",
-            jobType: "Fixed Price",
-            budget: 4800,
-            postedDate: "2025-09-22",
-            skills: ["Figma", "UI Design", "UX Research", "Prototyping", "Mobile Design"],
-            description: "FitLife is looking for a creative UI/UX designer to craft a user-friendly and visually appealing interface for our upcoming mobile fitness application."
-        },
 
-    ];
 
     const [skills, setSkills] = useState([]);
     const [selectedSkills, setSelectedSkills] = useState([]);
     const [jobType, setJobType] = useState(""); // single select
     const [sortBy, setSortBy] = useState("");   // single select
+    const [jobs, setJobs] = useState([]);
 
     // results shown (applied filters)
-    const [filteredJobs, setFilteredJobs] = useState(aiPoweredJobMatches);
+    const [filteredJobs, setFilteredJobs] = useState([]);
+
+    async function fetchJobs(params) {
+        if (!isConnected || !address)
+            return
+        try {
+            const jobs = await axios.get("http://localhost:5000/api/jobs/fetch-jobs");
+            setFilteredJobs(jobs.data.jobs);
+            setJobs(jobs.data.jobs)
+        } catch (error) {
+            console.log(error);
+            setRedNotice(true);
+            setNotice("Unable to fetch the job")
+        }
+    }
 
     useEffect(() => {
+        fetchJobs();
+        setSkills()
+    }, [address, isConnected])
+
+    useEffect(() => {
+
         const skillSet = new Set();
-        aiPoweredJobMatches.forEach(job => {
+        jobs.forEach(job => {
             job.skills.forEach(skill => skillSet.add(skill));
         });
 
@@ -69,12 +60,13 @@ function BrowseJobs() {
         setSkills(sortedSkills);
 
         // initialize results
-        setFilteredJobs(aiPoweredJobMatches);
-    }, []); // run once
+        setFilteredJobs(jobs);
+    }, [jobs]); // run once
 
     useEffect(() => {
         let t;
         if (!isConnected) {
+            setRedNotice(true)
             setNotice("Wallet not connected — redirecting to home...");
             t = setTimeout(() => {
                 navigate('/');
@@ -84,6 +76,7 @@ function BrowseJobs() {
         }
         return () => clearTimeout(t);
     }, [isConnected, navigate]);
+
 
     function toggleSkill(skill) {
         setSelectedSkills(prevSkills => {
@@ -105,20 +98,20 @@ function BrowseJobs() {
     };
 
     const applyFilters = () => {
-        let results = [...aiPoweredJobMatches];
+        let results = [...jobs];
 
-        if (selectedSkills.length > 0) {
+        if (selectedSkills?.length > 0) {
             results = results.filter(job =>
                 selectedSkills.every(s => job.skills.includes(s))
             );
         }
 
         if (jobType) {
-            results = results.filter(job => job.jobType === jobType);
+            results = results.filter(job => job.budgetType === jobType);
         }
 
         if (sortBy === "Date Posted") {
-            results.sort((a, b) => new Date(b.postedDate) - new Date(a.postedDate));
+            results.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         } else if (sortBy === "Budget") {
             results.sort((a, b) => b.budget - a.budget);
         }
@@ -130,19 +123,21 @@ function BrowseJobs() {
         setSelectedSkills([]);
         setJobType("");
         setSortBy("");
-        setFilteredJobs(aiPoweredJobMatches);
+        setFilteredJobs(jobs);
     };
 
     return (
+
+
         <div className='dark:bg-[#0f111d] pt-6 flex bg-[#161c32] w-full'>
             {/* floating notice */}
             {notice && (
-                <div className="fixed top-4 right-4 z-50">
-                    <div className="flex items-center gap-3 bg-[#14a19f] text-white px-4 py-2 rounded shadow-lg">
+                <div className="fixed top-4 right-4 z-50 animate-pulse">
+                    <div className={`flex items-center gap-3 bg-[#14a19f] text-white px-4 py-2 rounded shadow-lg border border-[#1ecac7]/30 ${redNotice ? 'bg-red-600 border-red-700' : 'bg-[#14a19f] border-[#1ecac7]/30'} `}>
                         <div className="text-sm">{notice}</div>
                         <button
                             onClick={() => setNotice(null)}
-                            className="ml-2 text-xs text-white/90 px-2 py-1 rounded hover:opacity-90"
+                            className="ml-2 text-xs text-white/90 px-2 py-1 rounded hover:opacity-90 transition-opacity"
                         >
                             Dismiss
                         </button>
@@ -151,17 +146,17 @@ function BrowseJobs() {
             )}
 
             <div className="pointer-events-none absolute right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
-        <div className="pointer-events-none absolute left-[5%] bottom-[1%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
+            <div className="pointer-events-none absolute left-[5%] bottom-[1%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
 
             <SideBar />
-            
+
             <div className='flex w-full flex-col lg:flex-row'>
                 <div className='filters w-full lg:w-1/2 '>
                     <h1 style={orbitronStyle} className='text-3xl  text-white font-bold px-6 mb-4'>Filters</h1>
                     <div className='bg-[#161c32] dark:bg-[#0f111d]  border border-[#14a19f]/20 m-4 rounded-md shadow-lg px-1 py-1'>
                         <h1 style={robotoStyle} className='text-lg text-white font-bold mb-1  px-2'>Skill Tags</h1>
                         <div className='skills-filter flex flex-wrap  px-4 border-b border-gray-700 pb-4'>
-                            {skills.map((skill, idx) => (
+                            {skills?.length > 0 && skills.map((skill, idx) => (
                                 <button
                                     key={idx}
                                     onClick={() => toggleSkill(skill)}
@@ -183,7 +178,7 @@ function BrowseJobs() {
                         <div className='py-1'>
                             <h1 style={robotoStyle} className='text-lg text-white font-bold mb-1  px-1 mt-2'>Job Type</h1>
                             <div className='job-type-filter flex flex-wrap  px-4  pb-4'>
-                                {["Fixed Price", "Hourly", "Milestone"].map((type, idx) => (
+                                {["fixed", "Hourly", "Milestone"].map((type, idx) => (
                                     <button
                                         key={idx}
                                         onClick={() => handleJobType(type)}
@@ -266,7 +261,7 @@ function BrowseJobs() {
                         </div>
 
                         <div className='text-sm text-gray-300'>
-                            Showing <span className='font-bold text-white'>{filteredJobs.length}</span> results
+                            Showing <span className='font-bold text-white'>{filteredJobs?.length}</span> results
                         </div>
                     </div>
                 </div>
@@ -274,59 +269,127 @@ function BrowseJobs() {
                 <div className='w-full lg:w-1/2 px-2'>
                     <h1 style={orbitronStyle} className='text-3xl  text-white font-bold px-6 mb-4'>Available Gigs</h1>
                     <div style={robotoStyle} className='jobs-found py-1 space-y-3 px-1'>
-                        {filteredJobs.length === 0 ? (
+                        {filteredJobs?.length === 0 ? (
                             <div className="text-center text-gray-400 py-8">No jobs match your filters.</div>
                         ) : (
                             filteredJobs.map((item, idx) => (
-                                <div key={idx} className="
-                                max-w-lg 
-                                rounded-xl 
-                                relative 
-                                overflow-hidden
-                                dark:bg-[#0f121e] 
-                                p-6 
-                                shadow-lg 
-                                cursor-pointer 
-                                flex 
-                                flex-col 
-                                gap-4
-                                transition-all 
-                                duration-300 
-                                hover:shadow-blue-500/40
-                            ">
-                                    {/* animated border */}
+                                <div
+                                    key={idx}
+                                    className="
+                                                    w-full
+                                                    rounded-xl
+                                                    relative
+                                                    overflow-hidden
+                                                    dark:bg-[#0f121e]
+                                                    p-5
+                                                    shadow-lg
+                                                    cursor-pointer
+                                                    flex
+                                                    flex-col
+                                                    gap-4
+                                                    transition-all
+                                                    duration-300
+                                                    hover:shadow-blue-500/40
+                                                "
+                                >
+
                                     <div className="absolute inset-0 rounded-xl pointer-events-none border-snake"></div>
 
-                                    {/* header: image + title + meta */}
-                                    <div className="flex items-start gap-4 relative z-10">
+
+                                    <div className="
+                                                    flex
+                                                    flex-col
+                                                    sm:flex-row
+                                                    sm:items-start
+                                                    gap-4
+                                                    relative
+                                                    z-10
+                                                ">
                                         <img
-                                            src={`https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=800&q=80`}
-                                            className="w-20 h-24 rounded-md object-cover flex-shrink-0"
+                                            src={
+                                                item?.clientDetails?.companyDetails?.logoUrl ||
+                                                `https://api.dicebear.com/7.x/bottts/svg?seed=${item?.clientAddress}`
+                                            }
+                                            className="w-20 h-20 sm:w-24 sm:h-24 rounded-md object-cover flex-shrink-0 mx-auto sm:mx-0"
                                             alt="Role Visual"
                                         />
-                                        <div className="flex-1 min-w-0">
+
+                                        <div className="flex-1 min-w-0 text-center sm:text-left">
                                             <h3
-                                                className="text-xl font-bold text-slate-100 dark:text-white mb-1"
+                                                className="text-lg sm:text-xl font-bold text-slate-100 dark:text-white mb-1"
                                                 style={orbitronStyle}
                                             >
-                                                {item.projectName}
+                                                {item.title}
                                             </h3>
 
-                                            <div className="flex items-center gap-3 text-sm text-gray-400 truncate" style={robotoStyle}>
-                                                <span className="text-base text-blue-200 font-medium">by <em className="not-italic">{item.client}</em></span>
+                                            <div className="
+                                                            flex
+                                                            flex-wrap
+                                                            items-center
+                                                            justify-center
+                                                            sm:justify-start
+                                                            gap-2
+                                                            text-xs
+                                                            sm:text-sm
+                                                            text-gray-400
+                                                            truncate
+                                                        " style={robotoStyle}>
+
+                                                {/* Company */}
+                                                <span className="text-blue-200 font-medium">
+                                                    by <em className="not-italic">
+                                                        {item?.clientDetails?.companyDetails?.companyName}
+                                                    </em>
+                                                </span>
+
                                                 <span className="opacity-50">•</span>
-                                                <span className="text-xs text-gray-400">Posted: <span className="font-semibold text-gray-200">{item.postedDate}</span></span>
-                                                <span className="ml-auto text-xs px-2 py-0.5 border border-gray-700 rounded-full">{item.jobType}</span>
+
+                                                {/* Posted date */}
+                                                <span className="">
+                                                    Posted:{" "}
+                                                    <span className="font-semibold text-gray-200">
+                                                        {item.createdAt?.slice(0, 10)}
+                                                    </span>
+                                                </span>
+
+                                                <span className="opacity-50">•</span>
+
+                                                {/* Budget */}
+                                                <span className="">
+                                                    Budget:{" "}
+                                                    <span className="font-semibold text-gray-200">
+                                                        ${item.budget}{item.budgetType === "hourly" ? "/hr" : ""}
+                                                    </span>
+                                                </span>
+
+                                                
+                                                <span className="
+                                                    ml-auto sm:ml-2
+                                                    text-xs
+                                                    px-2 py-0.5
+                                                    border
+                                                    border-gray-700
+                                                    rounded-full
+                                                ">
+                                                    {item.budgetType}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* skills row */}
-                                    <div className="flex flex-wrap gap-2 pt-1 z-10">
+                                   
+                                    <div className="flex flex-wrap gap-2 pt-1 z-10 justify-center sm:justify-start">
                                         {item.skills.map((skill, id) => (
                                             <span
                                                 key={id}
-                                                className="inline-block px-3 py-1 text-xs   bg-[#1e2642] text-white rounded-full tracking-wide"
+                                                className="
+                                                    inline-block
+                                                    px-3 py-1 text-xs
+                                                    bg-[#1e2642]
+                                                    text-white
+                                                    rounded-full
+                                                    tracking-wide
+                                                "
                                                 style={robotoStyle}
                                             >
                                                 {skill}

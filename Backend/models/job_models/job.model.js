@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
+import { v4 as uuidv4 } from "uuid";
 
 const JobSchema = new mongoose.Schema({
+    jobId: {
+        type: String,
+        default: uuidv4
+    },
     title: {
         type: String,
         required: true,
@@ -35,15 +40,14 @@ const JobSchema = new mongoose.Schema({
         default: null,
     },
 
-
     clientAddress: {
         type: String,
         required: true,
         index: true,
     },
+
     client: {
-        type: String,
-        ref: 'Users',
+        type: String,     // <-- UUID stored here
         required: true,
     },
 
@@ -58,10 +62,19 @@ const JobSchema = new mongoose.Schema({
         default: 0
     },
 
-    createdAt: {
-        type: Date,
-        default: Date.now,
-    },
 }, { timestamps: true });
+
+
+// VIRTUAL POPULATE 
+JobSchema.virtual("clientDetails", {
+    ref: "Client",            // 
+    localField: "client",     // uuid stored in Job
+    foreignField: "user",     // uuid in Client model
+    justOne: true
+});
+
+JobSchema.set("toObject", { virtuals: true });
+JobSchema.set("toJSON", { virtuals: true });
+
 
 export default mongoose.model("Job", JobSchema);

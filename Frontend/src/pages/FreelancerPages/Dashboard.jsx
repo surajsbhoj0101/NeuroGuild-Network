@@ -4,7 +4,6 @@ import { useAccount } from "wagmi";
 import "../../index.css"
 
 import MyJobsTabs from '../../components/MyJobTabs'
-import AiPoweredJobMatches from '../../components/AiPoweredJobMatches'
 function Dashboard() {
     const [count, setCount] = useState(0)
     const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
@@ -54,14 +53,13 @@ function Dashboard() {
 
                 <SideBar />
 
-                <div className='flex w-full'>
-                    {/* AI-powered job matches section */}
-                    <AiPoweredJobMatches />
+                <div className='flex px-4 p-2 w-full'>
+                   
+                    
 
-                    {/* Center the MyJobsTabs component */}
-                    <div className='flex justify-center w-full'>
+                    
                         <MyJobsTabs />
-                    </div>
+                   
                 </div>
             </div>
 
