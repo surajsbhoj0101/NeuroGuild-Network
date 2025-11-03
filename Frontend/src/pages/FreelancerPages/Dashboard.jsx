@@ -9,8 +9,8 @@ function Dashboard() {
     const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
     const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
     const { isConnected } = useAccount();
-    
-  
+
+
     const [notice, setNotice] = useState(null);
 
     useEffect(() => {
@@ -53,13 +53,8 @@ function Dashboard() {
 
                 <SideBar />
 
-                <div className='flex px-4 p-2 w-full'>
-                   
-                    
-
-                    
-                        <MyJobsTabs />
-                   
+                <div className='flex px-12 p-2 w-full'>
+                    <MyJobsTabs />
                 </div>
             </div>
 

@@ -119,6 +119,10 @@ function BrowseJobs() {
         setFilteredJobs(results);
     };
 
+    const fetchJobPage = (jobId) => {
+        navigate(`/job/${jobId}`);
+    }
+
     const resetFilters = () => {
         setSelectedSkills([]);
         setJobType("");
@@ -150,7 +154,7 @@ function BrowseJobs() {
 
             <SideBar />
 
-            <div className='flex w-full flex-col lg:flex-row'>
+            <div className='flex w-full flex-col lg:flex-row mb-4'>
                 <div className='filters w-full lg:w-1/2 '>
                     <h1 style={orbitronStyle} className='text-3xl  text-white font-bold px-6 mb-4'>Filters</h1>
                     <div className='bg-[#161c32] dark:bg-[#0f111d]  border border-[#14a19f]/20 m-4 rounded-md shadow-lg px-1 py-1'>
@@ -268,12 +272,13 @@ function BrowseJobs() {
 
                 <div className='w-full lg:w-1/2 px-2'>
                     <h1 style={orbitronStyle} className='text-3xl  text-white font-bold px-6 mb-4'>Available Gigs</h1>
-                    <div style={robotoStyle} className='jobs-found py-1 space-y-3 px-1'>
+                    <div style={robotoStyle} className='jobs-found py-1  space-y-3 px-1'>
                         {filteredJobs?.length === 0 ? (
                             <div className="text-center text-gray-400 py-8">No jobs match your filters.</div>
                         ) : (
                             filteredJobs.map((item, idx) => (
                                 <div
+                                    onClick={() => fetchJobPage(item?.jobId)}
                                     key={idx}
                                     className="
                                                     w-full
@@ -362,7 +367,7 @@ function BrowseJobs() {
                                                     </span>
                                                 </span>
 
-                                                
+
                                                 <span className="
                                                     ml-auto sm:ml-2
                                                     text-xs
@@ -377,7 +382,7 @@ function BrowseJobs() {
                                         </div>
                                     </div>
 
-                                   
+
                                     <div className="flex flex-wrap gap-2 pt-1 z-10 justify-center sm:justify-start">
                                         {item.skills.map((skill, id) => (
                                             <span

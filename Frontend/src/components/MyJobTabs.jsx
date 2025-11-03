@@ -123,7 +123,7 @@ const MyJobsTabs = () => {
                 rounded-xl 
                 relative 
                 overflow-hidden
-                dark:bg-[#0f121e] 
+                backdrop-blur-sm
                 p-6 
                 shadow-md 
                 flex 
@@ -174,7 +174,7 @@ const MyJobsTabs = () => {
                 rounded-xl 
                 relative 
                 overflow-hidden
-                dark:bg-[#0f121e] 
+                backdrop-blur-sm
                 p-6 
                 shadow-md 
                 flex 
@@ -223,7 +223,7 @@ const MyJobsTabs = () => {
                 rounded-xl 
                 relative 
                 overflow-hidden
-                dark:bg-[#0f121e] 
+                backdrop-blur-sm
                 p-6 
                 shadow-md 
                 flex 

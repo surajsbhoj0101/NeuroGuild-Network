@@ -125,7 +125,7 @@ export const fetchJobs = async (req, res) => {
   try {
     const jobs = await Job.find().populate({
       path: "clientDetails",
-      select: "companyDetails.logoUrl companyDetails.companyName stats.averageRating "
+      select: "companyDetails.logoUrl companyDetails.companyName stats.averageRating"
     });
 
     res.status(200).json({ success: true, jobs: jobs })
@@ -133,3 +133,23 @@ export const fetchJobs = async (req, res) => {
     res.status(500).json({ success: false, message: "Job fetching failed" })
   }
 }
+
+export const fetchJob = async (req, res) => {
+  const { jobId } = req.params;
+
+  try {
+    const job = await Job.findOne({ jobId }).populate({
+      path: "client",
+      select: "companyDetails.logoUrl companyDetails.companyName stats.averageRating"
+    });
+
+    if (!job) {
+      return res.status(404).json({ isFound: false, message: "Job not found", jobId: jobId });
+    }
+
+    res.status(200).json({ isFound: true, jobDetails: job });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+

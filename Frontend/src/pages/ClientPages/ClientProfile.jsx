@@ -159,7 +159,7 @@ function ClientProfile() {
 
 
     return (
-        <>
+       <>
 
             {notice && (
                 <div className="fixed top-4 right-4 z-50 animate-pulse">

@@ -21,6 +21,7 @@ import VerifySkillPage from './pages/FreelancerPages/VerifySkillPage.jsx';
 import SbtMint from './pages/FreelancerPages/SbtMint.jsx';
 import ClientProfile from './pages/ClientPages/ClientProfile.jsx';
 import PostJobs from './pages/ClientPages/PostJobs.jsx';
+import JobPage from './pages/jobs/jobPage.jsx';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
@@ -115,6 +116,15 @@ const router = createBrowserRouter([
         <Snowfall snowflakeCount={60} />
         <Navbar />
         <PostJobs />
+      </>
+    )
+  }, {
+    path: "/job/:jobId",
+    element: (
+      <>
+        {/* <Snowfall snowflakeCount={60} /> */}
+        <Navbar />
+        <JobPage />
       </>
     )
   }
