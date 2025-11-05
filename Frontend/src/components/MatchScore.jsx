@@ -1,63 +1,70 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Doughnut } from "react-chartjs-2";
+import { Chart as ChartJS, ArcElement, Tooltip } from "chart.js";
+import { useTheme } from "../contexts/ThemeContext";
 
-export default function MatchScore({ score = 72 }) {
-  const [progress, setProgress] = useState(0);
+ChartJS.register(ArcElement, Tooltip);
+
+function MatchScore({ matchPercentage = 70 }) {
+
+  const match = Math.min(Math.max(matchPercentage, 0), 100);
+  const data = [match, 100 - match];
+  const { isDarkMode, toggleDark } = useTheme();
+  const [ring, setRing] = useState()
 
   useEffect(() => {
-    let start = 0;
-    const animation = setInterval(() => {
-      start += 1;
-      if (start <= score) {
-        setProgress(start);
-      } else {
-        clearInterval(animation);
-      }
-    }, 15);
+    if (isDarkMode) {
+      setRing("#0a184b")
+    } else {
+      setRing("#1be4e0")
+    }
+  }, [isDarkMode])
 
-    return () => clearInterval(animation);
-  }, [score]);
 
-  const radius = 70;
-  const stroke = 10;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (progress / 100) * circumference;
+
+  const chartData = {
+    labels: ["Match", "Remaining"],
+    datasets: [
+      {
+        data,
+        backgroundColor: [
+          ring,
+          "rgba(226, 232, 240, 0.3)" // Soft gray for remaining
+        ],
+        borderWidth: 0,
+        cutout: "80%", // Creates ring thickness
+      },
+    ],
+  };
+
+  const chartOptions = {
+    plugins: {
+      tooltip: { enabled: false },
+    },
+    cutout: "70%",
+    responsive: true,
+    maintainAspectRatio: false,
+  };
 
   return (
-    <div className="relative w-48 h-48 flex items-center justify-center">
-      {/* Glow animation */}
-      <div className="absolute w-40 h-40 rounded-full animate-pulse blur-md bg-indigo-500/30"></div>
+    <div className="flex flex-col items-center space-y-2">
+      <h2 className="text-lg font-medium text-gray-300">
+        AI Match Score
+      </h2>
 
-      {/* Background Circle */}
-      <svg width="160" height="160">
-        <circle
-          stroke="#1e293b"
-          fill="transparent"
-          strokeWidth={stroke}
-          r={radius}
-          cx="80"
-          cy="80"
-        />
-        {/* Progress Circle */}
-        <circle
-          stroke="#6366f1"
-          fill="transparent"
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          r={radius}
-          cx="80"
-          cy="80"
-          className="transition-all duration-300"
-          style={{ transform: "rotate(-90deg)", transformOrigin: "50% 50%" }}
-        />
-      </svg>
-
-      {/* Percentage Text */}
-      <div className="absolute flex flex-col items-center">
-        <h1 className="text-3xl font-bold text-white">{progress}%</h1>
-        <p className="text-sm text-gray-300">Match</p>
+      <div className="relative w-32 h-32">
+        <Doughnut data={chartData} options={chartOptions} />
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <h2 className="text-3xl font-bold dark:text-white text-[#14a19f]">{match}%</h2>
+          <p className="text-xs text-gray-400">Profile Match</p>
+        </div>
       </div>
+
+      <p className="text-center text-sm text-gray-400 mt-2">
+        Based on your skills and experience
+      </p>
     </div>
   );
 }
+
+export default MatchScore;

@@ -9,6 +9,7 @@
   0% {
     background-position: 0% 50%;
   }
+
   100% {
     background-position: 200% 50%;
   }
@@ -16,14 +17,29 @@
 
 /* Make date icon white */
 input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: invert(1) brightness(2);
-    cursor: pointer;
-    opacity: 0.9;
+  filter: invert(1) brightness(2);
+  cursor: pointer;
+  opacity: 0.9;
 }
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 10s linear infinite;
+}
+
 
 /* Remove default gray background */
 input[type="date"] {
-    color-scheme: dark;
+  color-scheme: dark;
 }
 
 
@@ -31,8 +47,10 @@ input[type="date"] {
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: inherit; /* Use the parent's border-radius */
-  padding: 2px; /* This is your border-thickness */
+  border-radius: inherit;
+  /* Use the parent's border-radius */
+  padding: 2px;
+  /* This is your border-thickness */
 
   /* The gradient starts and ends with transparent to create a "head" for the snake.
     The background-size is doubled horizontally to allow it to slide across.
@@ -45,7 +63,7 @@ input[type="date"] {
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
-          mask-composite: exclude;
+  mask-composite: exclude;
 
   /* Apply the corrected animation */
   animation: snake-border 3s linear infinite;

@@ -139,7 +139,7 @@ export const fetchJob = async (req, res) => {
 
   try {
     const job = await Job.findOne({ jobId }).populate({
-      path: "client",
+      path: "clientDetails",
       select: "companyDetails.logoUrl companyDetails.companyName stats.averageRating"
     });
 

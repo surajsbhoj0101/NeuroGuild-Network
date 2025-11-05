@@ -188,8 +188,8 @@ export default function App() {
         </div>
 
         {/* mock preview card */}
-        <aside className="w-full">
-          <div className="rounded-2xl p-6 bg-linear-to-br from-[#081220] to-[#0b1624] shadow-2xl border border-[#162036] transform hover:scale-[1.01] transition">
+        <aside onClick={() => { handleCreateUser("Freelancer") }} className="w-full ">
+          <div className="rounded-2xl p-6 backdrop-blur-md shadow-2xl border border-[#162036] transform hover:scale-[1.01] transition">
             <div className="flex items-start gap-4">
               <div className="w-15 h-15 rounded-lg overflow-hidden  flex items-center justify-center">
                 <div className="text-white font-bold" style={orbitronStyle}>
@@ -206,8 +206,7 @@ export default function App() {
                 <p style={robotoStyle} className="text-sm text-gray-300 mt-2">Build a responsive admin dashboard using React, TypeScript and Tailwind — 20 hours estimated.</p>
 
                 <div className="flex items-center gap-2 mt-4">
-                  <div className="px-3 py-2 bg-blue-700 hover:bg-blue-800 rounded text-white text-sm">Apply</div>
-                  <div className="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded text-white text-sm">Save</div>
+
                   <div className="ml-auto text-lg font-extrabold" style={orbitronStyle}>$55/hr</div>
                 </div>
               </div>
