@@ -5,9 +5,9 @@ import { useTheme } from "../contexts/ThemeContext";
 
 ChartJS.register(ArcElement, Tooltip);
 
-function MatchScore({ matchPercentage = 70 }) {
+function MatchScore({ score }) {
 
-  const match = Math.min(Math.max(matchPercentage, 0), 100);
+  const match = Math.min(Math.max(score, 0), 100);
   const data = [match, 100 - match];
   const { isDarkMode, toggleDark } = useTheme();
   const [ring, setRing] = useState()
@@ -29,7 +29,7 @@ function MatchScore({ matchPercentage = 70 }) {
         data,
         backgroundColor: [
           ring,
-          "rgba(226, 232, 240, 0.3)" // Soft gray for remaining
+          "rgba(226, 232, 240, 0.3)" 
         ],
         borderWidth: 0,
         cutout: "80%", // Creates ring thickness

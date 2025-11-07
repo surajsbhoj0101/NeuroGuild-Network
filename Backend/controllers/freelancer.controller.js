@@ -47,7 +47,7 @@ export const updateFreelancer = async (req, res) => {
         const walletAddress = address.toLowerCase();
 
         //solved a big bug here
-        const { skills, isVerified, ...otherUpdates } = payload;
+        const { isVerified, ...otherUpdates } = payload;
 
         const updatedUser = await Freelancer.findOneAndUpdate(
             { walletAddress: walletAddress },

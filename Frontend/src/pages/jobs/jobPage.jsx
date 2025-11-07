@@ -4,15 +4,23 @@ import { useAccount } from 'wagmi';
 import axios from "axios";
 import { useParams } from 'react-router-dom';
 import MatchScore from '../../components/MatchScore';
-import { ScrollText, Star, Clock, Award, Plus, X, Check, User, Mail, MapPin, Github, Linkedin, Twitter, Globe } from 'lucide-react';
+import CustomConnectButton from "../../components/CustomConnectButton"
+import { Lock, ScrollText, Star, Clock, Award, Plus, X, Check, User, Mail, MapPin, Github, Linkedin, Twitter, Globe } from 'lucide-react';
 
 
 function jobPage() {
     const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
     const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
     const [jobDetails, setJobDetails] = useState(null)
+    const { isConnected, address } = useAccount();
+    const navigate = useNavigate();
+
+    const [notice, setNotice] = useState(null);
+    const [redNotice, setRedNotice] = useState(false);
 
     const { jobId } = useParams();
+    const [fetchingScore, setFetchingScore] = useState(true);
+    const [score, setScore] = useState(null)
 
     const fetchJob = async (params) => {
         try {
@@ -28,16 +36,54 @@ function jobPage() {
         }
     }
 
+    const getMatchScore = async () => {
+
+        if (!address) {
+            setRedNotice(true);
+            setNotice("Wallet not connected")
+            return
+        }
+
+        if (!jobId) {
+            setRedNotice(true);
+            setNotice("Job Id not found")
+            return
+        }
+
+
+        try {
+            const score = await axios.post('http://localhost:5000/api/jobs/fetch-ai-score',
+                { address, jobId }
+            )
+
+            setScore(score.data.data?.match_score)
+            console.log(score.data.data?.match_score)
+        } catch (error) {
+            console.log(error)
+        } finally {
+            setFetchingScore(false)
+        }
+    }
+
     useEffect(() => {
-        fetchJob()
+        if (jobId && isConnected) {
+            getMatchScore();
+        }
+    }, [jobId, isConnected]);
+
+
+    useEffect(() => {
+        if (jobId) {
+            fetchJob()
+        }
     }, [jobId])
 
+    function sendToProfile() {
+        navigate('/freelancer/my-profile')
+    }
 
-    const { isConnected, address } = useAccount();
-    const navigate = useNavigate();
 
-    const [notice, setNotice] = useState(null);
-    const [redNotice, setRedNotice] = useState(false);
+
     return (
         <>
             <div className='dark:bg-[#0f111d]  flex bg-[#161c32] w-full'>
@@ -91,7 +137,7 @@ function jobPage() {
 
 
                         <div className="backdrop-blur-md border border-[#14a19f]/10 shadow-2xl p-5 rounded-xl text-gray-200 leading-relaxed">
-                            <h2 className="text-xl font-semibold text-white flex items-center gap-2"><ScrollText size={24} className="text-[#14a19f] dark:text-white"/> Job Description</h2>
+                            <h2 className="text-xl font-semibold text-white flex items-center gap-2"><ScrollText size={24} className="text-[#14a19f] dark:text-white" /> Job Description</h2>
                             <p className='text-gray-200 py-2 leading-relaxed whitespace-pre-wrap'>
                                 {jobDetails?.description}
                             </p>
@@ -125,25 +171,94 @@ function jobPage() {
 
                     <div className="hidden lg:flex  flex-col w-[40%] items-center">
                         <div className="sticky w-4/5 top-3 flex flex-col justify-center space-y-3">
+                            <div className=' '>
 
 
-                            <div className="flex flex-col items-center rounded-xl border border-[#14a19f]/10 px-6 py-4 space-y-6">
-                                <h1 className="text-3xl font-semibold text-white mb-2">
-                                    Apply for this Gig
-                                </h1>
+                                {isConnected ? (
+                                    fetchingScore ? (
 
-                                <div className="backdrop-blur-md border border-[#14a19f]/10 bg-[#161c32]/40 rounded-xl shadow-lg px-14 py-8 flex flex-col items-center">
-                                    <MatchScore />
-                                </div>
+                                        <div className="flex flex-col items-center rounded-xl border border-[#14a19f]/10 px-6 py-6 space-y-4 animate-pulse">
+                                            <div className="h-6 w-48 bg-white/10 rounded-md" />
+                                            <div className="h-28 w-28 rounded-full bg-white/10" />
+                                            <div className="w-full flex gap-4">
+                                                <div className="w-1/2 h-12 bg-white/10 rounded-lg" />
+                                                <div className="w-1/2 h-12 bg-white/10 rounded-lg" />
+                                            </div>
+                                        </div>
+                                    ) : (
 
-                                <div className="w-full flex gap-4">
-                                    <button className="w-1/2 dark:bg-[#0a184b] dark:hover:bg-[#0a184b]/80 bg-[#14a19f] text-white font-semibold py-3 rounded-lg hover:bg-[#14a19f]/70 transition-colors">
-                                        Apply Now
-                                    </button>
-                                    <button className="w-1/2 bg-transparent text-[#14a19f] dark:text-white border border-[#14a19f] dark:border-[#0a184b] font-semibold py-3 rounded-lg hover:bg-[#14a19f]/10 dark:hover:bg-[#0d1c4e] transition-colors">
-                                        Save for Later
-                                    </button>
-                                </div>
+                                        <div className="flex flex-col items-center rounded-xl border border-[#14a19f]/10 px-6 py-4 space-y-6">
+                                            <h1 className="text-3xl font-semibold text-white mb-2">
+                                                Apply for this Gig
+                                            </h1>
+
+                                            <div className="backdrop-blur-md border border-[#14a19f]/10 bg-[#161c32]/40 rounded-xl shadow-lg px-14 py-8 flex flex-col items-center">
+                                                <MatchScore score={score} />
+                                            </div>
+
+                                            <div className="w-full flex gap-4">
+                                                <button className="w-1/2 dark:bg-[#0a184b] dark:hover:bg-[#0a184b]/80 bg-[#14a19f] text-white font-semibold py-3 rounded-lg hover:bg-[#14a19f]/70 transition-colors">
+                                                    Apply Now
+                                                </button>
+                                                <button className="w-1/2 bg-transparent text-[#14a19f] dark:text-white border border-[#14a19f] dark:border-[#0a184b] font-semibold py-3 rounded-lg hover:bg-[#14a19f]/10 dark:hover:bg-[#0d1c4e] transition-colors">
+                                                    Save for Later
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )
+                                ) : (
+                                    <div className="relative">
+
+                                        <div
+                                            aria-hidden="true"
+                                            className="pointer-events-none select-none blur-md"
+                                        >
+                                            <div className="flex relative flex-col items-center rounded-2xl border border-[#14a19f]/10 px-6 py-4 space-y-6 bg-[#0b1022]/50">
+                                                <h1 className="text-3xl font-semibold text-white mb-2">
+                                                    Apply for this Gig
+                                                </h1>
+
+                                                <div className="backdrop-blur-md border border-[#14a19f]/10 bg-[#161c32]/40 rounded-xl shadow-lg px-14 py-8 flex flex-col items-center">
+                                                    <MatchScore />
+                                                </div>
+
+                                                <div className="w-full flex gap-4">
+                                                    <button className="w-1/2 dark:bg-[#0a184b] dark:hover:bg-[#0a184b]/80 bg-[#14a19f] text-white font-semibold py-3 rounded-lg hover:bg-[#14a19f]/70 transition-colors">
+                                                        Apply Now
+                                                    </button>
+                                                    <button className="w-1/2 bg-transparent text-[#14a19f] dark:text-white border border-[#14a19f] dark:border-[#0a184b] font-semibold py-3 rounded-lg hover:bg-[#14a19f]/10 dark:hover:bg-[#0d1c4e] transition-colors">
+                                                        Save for Later
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+
+                                        <div className="absolute inset-0 z-10 flex items-center justify-center p-4">
+                                            <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0b132b]/70 backdrop-blur-xl shadow-2xl p-6 text-center">
+
+                                                <div className="mx-auto mb-4 h-12 w-12 grid place-items-center rounded-full bg-white/10">
+                                                    <Lock className="h-6 w-6 text-white" />
+                                                </div>
+
+                                                <h2 className="text-white text-lg font-semibold">
+                                                    Create your profile to see this
+                                                </h2>
+                                                <p className="mt-1 text-sm text-gray-300">
+                                                    Unlock match score, apply instantly, and save gigs.
+                                                </p>
+
+                                                <div className="mt-5 flex items-center justify-center gap-3">
+                                                    <button onClick={sendToProfile} className="inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold text-white bg-[#14a19f] hover:bg-[#14a19f]/90 transition">
+                                                        Create Profile
+                                                    </button>
+                                                </div>
+
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="border p-3 border-[#14a19f]/10 rounded-xl">

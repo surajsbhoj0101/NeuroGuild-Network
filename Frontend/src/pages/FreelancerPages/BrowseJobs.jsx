@@ -315,7 +315,7 @@ function BrowseJobs() {
                                                 item?.clientDetails?.companyDetails?.logoUrl ||
                                                 `https://api.dicebear.com/7.x/bottts/svg?seed=${item?.clientAddress}`
                                             }
-                                            className="w-20 h-20 sm:w-24 sm:h-24 rounded-md object-cover flex-shrink-0 mx-auto sm:mx-0"
+                                            className="w-20 h-20 sm:w-24 sm:h-24 rounded-md object-cover shrink-0 mx-auto sm:mx-0"
                                             alt="Role Visual"
                                         />
 

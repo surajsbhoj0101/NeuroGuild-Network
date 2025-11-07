@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import Job from "../models/job_models/job.model.js";
 import User from "../models/user.model.js";
 import jobModel from "../models/job_models/job.model.js";
+import Freelancer from "../models/freelancer_models/freelancers.model.js";
 
 dotenv.config();
 
@@ -153,3 +154,86 @@ export const fetchJob = async (req, res) => {
   }
 };
 
+export const fetchAiScore = async (req, res) => {
+  const { address, jobId } = req.body;
+  const walletAddress = address.toLowerCase();
+
+  try {
+    if (!address || !jobId) {
+      return res.status(400).json({
+        success: false,
+        message: "Both address and jobId are required.",
+      });
+    }
+
+    const candidateProfile = await Freelancer.findOne({ walletAddress });
+    const jobDescription = await Job.findOne({ jobId });
+
+    if (!candidateProfile || !jobDescription) {
+      return res.status(404).json({
+        success: false,
+        message: "Candidate or Job not found.",
+      });
+    }
+
+    console.log(candidateProfile)
+    console.log(jobDescription)
+
+    const prompt = `
+      You are an AI recruitment assistant that evaluates how well a candidate fits a specific job. 
+      Analyze the given job description and candidate profile carefully.
+
+      If some details are missing or unclear, consider that while scoring.
+
+      Output a match score (0–100) and a short reasoning summary explaining the key strengths and gaps.
+
+      Job Description:
+      ${JSON.stringify(jobDescription, null, 2)}
+
+      Candidate Profile:
+      ${JSON.stringify(candidateProfile, null, 2)}
+
+      Output format (JSON):
+      {
+        "match_score": 0-100,
+        "strengths": ["skill1", "skill2", ...],
+        "gaps": ["missing_skill1", "missing_experience", ...],
+        "summary": "One-sentence evaluation of the candidate's fit."
+      }
+`;
+    const ai = new GoogleGenAI({ apiKey: process.env.AI_API_KEY });
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+    let resultText = response.text;
+
+
+    resultText = resultText.replace(/```json|```/g, "").trim();
+
+
+    let scoreDetailsJSON;
+    try {
+      scoreDetailsJSON = JSON.parse(resultText);
+    } catch (err) {
+      console.error("AI output error:", resultText);
+      return res.status(500).json({
+        success: false,
+        message: "Invalid AI response format. Please try again.",
+      });
+    }
+
+
+    res.status(200).json({
+      success: true,
+      data: scoreDetailsJSON,
+    });
+  } catch (error) {
+    console.error("fetchAiScore Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+    });
+  }
+};

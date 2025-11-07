@@ -4,7 +4,7 @@ import { useAccount } from 'wagmi';
 import SideBar from '../../components/SideBar';
 import axios from "axios";
 import skillTokenizable from '../../utils/tokenizableSkills';
-import { Award, Plus, X, Check, User, Mail, MapPin, Github, Linkedin, Twitter, Globe } from 'lucide-react';
+import { Lock, Award, Plus, X, Check, User, Mail, MapPin, Github, Linkedin, Twitter, Globe } from 'lucide-react';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
@@ -29,6 +29,7 @@ export default function MyProfile() {
   const [newSkill, setNewSkill] = useState('');
   const [showSkillInput, setShowSkillInput] = useState(false);
   const [editMode, setEditMode] = useState(false);
+
 
 
   const mapUserToSkills = (user) => (
@@ -141,7 +142,15 @@ export default function MyProfile() {
 
     if (skillName && !skills.some(s => s.name === skillName)) {
 
-      setSkills([...skills, { name: skillName, minted: false, active: true }]);
+      const newSkillObject = {
+        name: skillName,
+        minted: false,
+        active: true,
+        sbtAddress: null, // Add this
+        tokenId: null      // Add this
+      };
+
+      setSkills([...skills, newSkillObject]);
       setNewSkill('');
       setShowSkillInput(false);
       setRedNotice(false);
@@ -184,7 +193,7 @@ export default function MyProfile() {
         },
 
 
-        skills: skills.map(skillObj => ({ name: skillObj.name }))
+        skills: skills
       };
       console.log(payload)
       await axios.put(`http://localhost:5000/api/freelancer/update-profile`, { payload, address });
