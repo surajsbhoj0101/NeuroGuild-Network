@@ -3,10 +3,10 @@ pragma solidity ^0.8.28;
 
 import {IERC721} from "./interfaces/IERC721.sol";
 import {IERC165} from "./interfaces/IERC165.sol";
+import {IERC721Metadata} from "./interfaces/IERC721Metadata.sol";
 
 /// @title ERC721 SBT with mutable token URI and admin-only skill updates
-contract SkillSBT is IERC721 {
-    
+contract SkillSBT is IERC721, IERC721Metadata {
     event Transfer(
         address indexed from,
         address indexed to,
@@ -22,9 +22,10 @@ contract SkillSBT is IERC721 {
     event TokenURISet(uint256 indexed tokenId, string uri);
     event AddedToWhitelist(address indexed userAddr);
 
-   
     address public admin;
     uint8 public constant MAX_LEVEL = 1;
+    string public constant name = "NeruroGuild SkillSBT";
+    string public constant symbol = "NG-SBT";
 
     uint256 private _currentTokenId;
 
@@ -33,7 +34,6 @@ contract SkillSBT is IERC721 {
     mapping(uint256 => string) internal _tokenUri;
     mapping(uint256 => address) internal _ownerOf;
     mapping(address => uint8) internal _balanceOf;
-
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "you are not admin");
@@ -50,11 +50,13 @@ contract SkillSBT is IERC721 {
         admin = _admin_;
     }
 
-
-    function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
-        return interfaceId == type(IERC721).interfaceId || interfaceId == type(IERC165).interfaceId;
+    function supportsInterface(
+        bytes4 interfaceId
+    ) external pure returns (bool) {
+        return
+            interfaceId == type(IERC721).interfaceId ||
+            interfaceId == type(IERC165).interfaceId;
     }
-
 
     function ownerOf(uint256 id) external view returns (address owner) {
         owner = _ownerOf[id];
@@ -70,13 +72,16 @@ contract SkillSBT is IERC721 {
         return _whiteList[userAddr];
     }
 
-    function skillLevels(string memory skillName, address userAddr) external view returns (uint8) {
+    function skillLevels(
+        string memory skillName,
+        address userAddr
+    ) external view returns (uint8) {
         require(_balanceOf[userAddr] > 0, "mint SBT first");
         bytes32 skillKey = keccak256(abi.encodePacked(skillName));
         return _skillLevels[userAddr][skillKey];
     }
 
-    function tokenUri(uint256 id) external view returns (string memory) {
+    function tokenURI(uint256 id) public view override returns (string memory) {
         return _tokenUri[id];
     }
 
@@ -104,7 +109,6 @@ contract SkillSBT is IERC721 {
         _updateSkill(skillName, userAddr, tokenId, tokenUri_);
     }
 
-   
     function mint() external onlyWhiteListed returns (uint256) {
         require(_balanceOf[msg.sender] == 0, "already has SBT");
         _currentTokenId++;
@@ -112,7 +116,6 @@ contract SkillSBT is IERC721 {
         _mint(msg.sender, newTokenId);
         return newTokenId;
     }
-
 
     function _getTokenId(address user) internal view returns (uint256) {
         require(_balanceOf[user] > 0, "user has no SBT");
