@@ -14,6 +14,23 @@ contract JobContract is Escrow {
     error NotJobClient();
     error InvalidBidIndex();
     error OnlyBidOnce();
+    error cannotSubmitBidDeadlineExceed();
+    error cannotAcceptBidDeadlineExceed();
+    error NotAssignedFreelancer();
+    error CannotEditAfterExpiry();
+    error WorkAlreadySubmitted();
+    error NotJobParticipant();
+    error DisputePeriodOver();
+    error DisputeAlreadyRaised();
+    error OnlySubmittedJobs();
+    error ReviewPeriodStillActive();
+
+    event DisputeRaised(bytes32 indexed jobId, address indexed by);
+    event DisputeResolved(
+        bytes32 indexed jobId,
+        address winner,
+        uint256 payout
+    );
 
     event JobCreated(
         bytes32 indexed jobId,
@@ -39,11 +56,25 @@ contract JobContract is Escrow {
     );
     event JobStarted(bytes32 indexed jobId, address indexed freelancer);
     event JobCompleted(bytes32 indexed jobId, address indexed freelancer);
+    event BidAccepted(
+        bytes32 indexed jobId,
+        address indexed freelancer,
+        uint256 amount,
+        uint256 bidIndex
+    );
+    event WorkSubmitted(
+        bytes32 indexed jobId,
+        address indexed freelancer,
+        string ipfsProof
+    );
+    event JobCancelled(bytes32 indexed jobId, address indexed client);
 
     enum JobStatus {
         Open,
         InProgress,
+        Submitted,
         Completed,
+        Disputed,
         Cancelled
     }
 
@@ -57,6 +88,8 @@ contract JobContract is Escrow {
         string ipfs;
         string ipfsProof;
         uint256 createdAt;
+        uint256 submittedAt;
+        bool disputed;
     }
 
     struct Bid {
@@ -66,13 +99,26 @@ contract JobContract is Escrow {
         uint256 createdAt;
     }
 
+    address public owner;
     UserRegistry public registry;
+    address public resolver;
     uint256 public totalJobs;
+    uint256 public constant REVIEW_PERIOD = 3 days;
 
     mapping(bytes32 => Job) public jobs;
     mapping(bytes32 => Bid[]) public jobBids;
     mapping(bytes32 => mapping(address => bool)) public hasBid;
     bytes32[] public allJobIds;
+
+    modifier onlyResolver() {
+        require(msg.sender == resolver, "Only resolver");
+        _;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only Owner");
+        _;
+    }
 
     modifier onlyClient() {
         if (!registry.isClient(msg.sender)) revert OnlyClientAllowed();
@@ -91,6 +137,11 @@ contract JobContract is Escrow {
 
     constructor(address _registryAddress, address token) Escrow(token) {
         registry = UserRegistry(_registryAddress);
+        owner = msg.sender;
+    }
+
+    function setResolver(address _resolver) external onlyOwner {
+        resolver = _resolver;
     }
 
     function createJob(
@@ -113,7 +164,9 @@ contract JobContract is Escrow {
             status: JobStatus.Open,
             ipfs: ipfsLink,
             ipfsProof: "",
-            createdAt: block.timestamp
+            createdAt: block.timestamp,
+            submittedAt: 0,
+            disputed: false
         });
 
         allJobIds.push(jobId);
@@ -128,6 +181,8 @@ contract JobContract is Escrow {
     ) external onlyFreelancer onlyOpenJob(jobId) {
         if (bidAmount >= jobs[jobId].budget)
             revert AmountShouldBeGreaterThanOffer();
+        if (jobs[jobId].deadline < block.timestamp)
+            revert cannotSubmitBidDeadlineExceed();
 
         if (hasBid[jobId][msg.sender]) revert OnlyBidOnce();
 
@@ -147,6 +202,8 @@ contract JobContract is Escrow {
 
     function acceptBid(bytes32 jobId, uint256 bidIndex) external onlyClient {
         Job storage job = jobs[jobId];
+        if (job.deadline < block.timestamp)
+            revert cannotAcceptBidDeadlineExceed();
         if (job.client != msg.sender) revert NotJobClient();
         if (job.status != JobStatus.Open) revert OnlyOpenJobs();
 
@@ -154,10 +211,11 @@ contract JobContract is Escrow {
         if (bidIndex >= bids.length) revert InvalidBidIndex();
 
         Bid storage chosenBid = bids[bidIndex];
-
-        _lockFunds(jobId, chosenBid.amount, chosenBid.freelancer);
         job.status = JobStatus.InProgress;
         job.freelancer = chosenBid.freelancer;
+        job.submittedAt = block.timestamp;
+        _lockFunds(jobId, chosenBid.amount, chosenBid.freelancer);
+
         emit JobStarted(jobId, chosenBid.freelancer);
     }
 
@@ -166,13 +224,14 @@ contract JobContract is Escrow {
         string memory ipfsProof
     ) external onlyFreelancer {
         Job storage job = jobs[jobId];
-        if (job.freelancer != msg.sender) revert NotJobClient();
+        if (bytes(job.ipfsProof).length != 0) revert WorkAlreadySubmitted();
+        if (job.freelancer != msg.sender) revert NotAssignedFreelancer();
         if (job.status != JobStatus.InProgress) revert OnlyInProgressJobs();
 
         job.ipfsProof = ipfsProof;
     }
 
-    function jobCompletion(bytes32 jobId) external onlyClient {
+    function acceptWork(bytes32 jobId) external onlyClient {
         Job storage job = jobs[jobId];
         if (job.client != msg.sender) revert NotJobClient();
         if (job.status != JobStatus.InProgress) revert OnlyInProgressJobs();
@@ -182,8 +241,21 @@ contract JobContract is Escrow {
         emit JobCompleted(jobId, job.freelancer);
     }
 
-    function raiseIssue(bytes32 jobId) external onlyClient {
-        //do later
+    function raiseDispute(bytes32 jobId) external {
+        Job storage job = jobs[jobId];
+        if (job.status != JobStatus.Submitted) revert OnlySubmittedJobs();
+        if (job.disputed) revert DisputeAlreadyRaised();
+
+        if (msg.sender != job.client && msg.sender != job.freelancer)
+            revert NotJobParticipant();
+
+        if (block.timestamp > job.submittedAt + REVIEW_PERIOD)
+            revert DisputePeriodOver();
+
+        job.status = JobStatus.Disputed;
+        job.disputed = true;
+
+        emit DisputeRaised(jobId, msg.sender);
     }
 
     function editJobDetails(
@@ -194,6 +266,8 @@ contract JobContract is Escrow {
     ) external onlyClient {
         Job storage job = jobs[jobId];
         if (job.client != msg.sender) revert NotJobClient();
+        if (block.timestamp > job.deadline) revert CannotEditAfterExpiry();
+
         require(jobBids[jobId].length == 0, "Cannot edit with bids");
 
         if (job.status != JobStatus.Open) revert OnlyOpenJobs();
@@ -204,6 +278,48 @@ contract JobContract is Escrow {
         job.ipfs = ipfsLink;
 
         emit JobDetailsUpdated(jobId, msg.sender, budget, deadline, ipfsLink);
+    }
+
+    function cancelJob(bytes32 jobId) external onlyClient {
+        Job storage job = jobs[jobId];
+        if (job.client != msg.sender) revert NotJobClient();
+        if (job.status != JobStatus.Open) revert OnlyOpenJobs();
+        job.status = JobStatus.Cancelled;
+        emit JobCancelled(jobId, msg.sender);
+    }
+
+    function claimAfterReviewPeriod(bytes32 jobId) external onlyFreelancer {
+        Job storage job = jobs[jobId];
+        if (job.status != JobStatus.Submitted) revert OnlySubmittedJobs();
+        if (job.disputed) revert DisputeAlreadyRaised();
+
+        if (block.timestamp <= job.submittedAt + REVIEW_PERIOD)
+            revert ReviewPeriodStillActive();
+
+        _releaseFunds(jobId);
+        job.status = JobStatus.Completed;
+
+        emit JobCompleted(jobId, job.freelancer);
+    }
+
+    function resolveDispute(
+        bytes32 jobId,
+        address winner,
+        uint256 payout
+    ) external onlyResolver {
+        Job storage job = jobs[jobId];
+        require(job.status == JobStatus.Disputed, "Not disputed");
+
+        if (winner == job.freelancer) {
+            _releaseFunds(jobId);
+        } else if (winner == job.client) {
+            _refundClient(jobId);
+        } else {
+            // _partialRelease(jobId, payout); // optional for partial payment
+        }
+
+        job.status = JobStatus.Completed;
+        emit DisputeResolved(jobId, winner, payout);
     }
 
     function getJobStatus(bytes32 jobId) external view returns (JobStatus) {

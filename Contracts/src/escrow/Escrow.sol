@@ -4,9 +4,11 @@ pragma solidity ^0.8.28;
 import {IERC20} from "../../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 contract Escrow {
-    error cannotBeLockedTwice();
+    error cannotLockedTwice();
     error tokenReleaseFailed();
     error tokenLockingToEscrowFailed();
+    error cannotReleaseTwice();
+    error InvalidState();
 
     event FundLocked(
         bytes32 indexed jobId,
@@ -32,10 +34,10 @@ contract Escrow {
     mapping(bytes32 => uint) count;
     mapping(address => uint256) public fundsBy;
 
-    IERC20 usdc;
+    IERC20 public immutable USDC;
 
     constructor(address _usdc) {
-        usdc = IERC20(_usdc);
+        USDC = IERC20(_usdc);
     }
 
     function _lockFunds(
@@ -43,11 +45,8 @@ contract Escrow {
         uint256 amount,
         address freelancer
     ) internal {
-        if (count[jobId] > 0) revert cannotBeLockedTwice();
-        bool success = usdc.transferFrom(msg.sender, address(this), amount);
-        if (!success) {
-            revert tokenLockingToEscrowFailed();
-        }
+        if (escrows[jobId].funded) revert cannotLockedTwice();
+        bool success = USDC.transferFrom(msg.sender, address(this), amount);
         escrows[jobId] = EscrowInfo(
             msg.sender,
             freelancer,
@@ -55,17 +54,30 @@ contract Escrow {
             true,
             false
         );
-        count[jobId] += 1;
+        if (!success) {
+            revert tokenLockingToEscrowFailed();
+        }
+
         emit FundLocked(jobId, amount, msg.sender, freelancer);
     }
 
     function _releaseFunds(bytes32 jobId) internal {
+        if (escrows[jobId].released) revert cannotReleaseTwice();
         EscrowInfo storage e = escrows[jobId];
-        require(e.funded && !e.released, "Invalid state");
-        bool success = usdc.transfer(e.freelancer, e.amount);
+        if (!e.funded || e.released) revert InvalidState();
+        bool success = USDC.transfer(e.freelancer, e.amount);
+        e.released = true;
         if (!success) revert tokenReleaseFailed();
 
-        e.released = true;
         emit FundReleased(jobId, e.amount, e.freelancer);
+    }
+
+    function _refundClient(bytes32 jobId) internal {
+        EscrowInfo storage e = escrows[jobId];
+        if (!e.funded || e.released) revert InvalidState();
+        e.released = true;
+        USDC.transfer(e.client, e.amount);
+
+        emit FundReleased(jobId, e.amount, e.client);
     }
 }
