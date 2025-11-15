@@ -16,6 +16,7 @@ contract JobContract is Escrow {
     error OnlyBidOnce();
     error cannotSubmitBidDeadlineExceed();
     error cannotAcceptBidDeadlineExceed();
+    error cannotSubmitWorkDeadlineExceeded();
     error NotAssignedFreelancer();
     error CannotEditAfterExpiry();
     error WorkAlreadySubmitted();
@@ -24,6 +25,7 @@ contract JobContract is Escrow {
     error DisputeAlreadyRaised();
     error OnlySubmittedJobs();
     error ReviewPeriodStillActive();
+    error ReviewPeroidMustBeGreaterThanOne();
 
     event DisputeRaised(bytes32 indexed jobId, address indexed by);
     event DisputeResolved(
@@ -36,7 +38,8 @@ contract JobContract is Escrow {
         bytes32 indexed jobId,
         address indexed client,
         uint256 budget,
-        uint256 deadline,
+        uint256 bidDeadline,
+        uint256 expireDeadline,
         string ipfs
     );
 
@@ -44,7 +47,8 @@ contract JobContract is Escrow {
         bytes32 indexed jobId,
         address indexed client,
         uint256 budget,
-        uint256 deadline,
+        uint256 bidDeadline,
+        uint256 expireDeadline,
         string ipfs
     );
 
@@ -54,6 +58,8 @@ contract JobContract is Escrow {
         uint256 amount,
         uint256 bidIndex
     );
+
+    event JobExpireDeadlineIncreased(bytes32 indexed jobId,uint256 exceedTimeBy)
     event JobStarted(bytes32 indexed jobId, address indexed freelancer);
     event JobCompleted(bytes32 indexed jobId, address indexed freelancer);
     event BidAccepted(
@@ -75,7 +81,8 @@ contract JobContract is Escrow {
         Submitted,
         Completed,
         Disputed,
-        Cancelled
+        Cancelled,
+        Expired
     }
 
     struct Job {
@@ -83,7 +90,8 @@ contract JobContract is Escrow {
         address client;
         address freelancer;
         uint256 budget;
-        uint256 deadline;
+        uint256 bidDeadline;
+        uint256 expireDeadline;
         JobStatus status;
         string ipfs;
         string ipfsProof;
@@ -101,22 +109,17 @@ contract JobContract is Escrow {
 
     address public owner;
     UserRegistry public registry;
-    address public resolver;
+    address public governance;
     uint256 public totalJobs;
-    uint256 public constant REVIEW_PERIOD = 3 days;
-
+    uint256 public reviewPeriod;
     mapping(bytes32 => Job) public jobs;
     mapping(bytes32 => Bid[]) public jobBids;
     mapping(bytes32 => mapping(address => bool)) public hasBid;
     bytes32[] public allJobIds;
+    uint256 public constant MAX_REPUTATION = 1000;
 
-    modifier onlyResolver() {
-        require(msg.sender == resolver, "Only resolver");
-        _;
-    }
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only Owner");
+    modifier onlyGovernance() {
+        require(msg.sender == governance, "Only governance");
         _;
     }
 
@@ -135,21 +138,35 @@ contract JobContract is Escrow {
         _;
     }
 
-    constructor(address _registryAddress, address token) Escrow(token) {
+    constructor(
+        address _registryAddress,
+        address token,
+        uint8 initialReviewPeriod,
+        address _governance
+    ) Escrow(token) {
         registry = UserRegistry(_registryAddress);
-        owner = msg.sender;
+        reviewPeriod = initialReviewPeriod; //Indays
+        governance = _governance;
     }
 
-    function setResolver(address _resolver) external onlyOwner {
-        resolver = _resolver;
+    function setReviewPeriod(uint8 _reviewPeriod) external onlyGovernance {
+        if (_reviewPeriod <= 1) revert ReviewPeroidMustBeGreaterThanOne();
+        reviewPeriod = _reviewPeriod;
+    }
+
+    function setGovernor(address _governance) external onlyGovernance {
+        governance = _governance;
     }
 
     function createJob(
         string memory ipfsLink,
         uint256 budget,
-        uint256 deadline
+        uint256 bidDeadline,
+        uint256 expireDeadline
     ) external onlyClient {
-        if (deadline <= block.timestamp) revert DeadlineMustBeInFuture();
+        if (bidDeadline <= expireDeadline)
+            revert ExpireDeadlineMustBeGreaterThanBid();
+        if (bidDeadline <= block.timestamp) revert DeadlineMustBeInFuture();
 
         bytes32 jobId = keccak256(
             abi.encodePacked(msg.sender, block.timestamp, totalJobs)
@@ -160,7 +177,8 @@ contract JobContract is Escrow {
             client: msg.sender,
             freelancer: address(0),
             budget: budget,
-            deadline: deadline,
+            bidDeadline: bidDeadline,
+            expireDeadline: expireDeadline,
             status: JobStatus.Open,
             ipfs: ipfsLink,
             ipfsProof: "",
@@ -172,7 +190,14 @@ contract JobContract is Escrow {
         allJobIds.push(jobId);
         totalJobs++;
 
-        emit JobCreated(jobId, msg.sender, budget, deadline, ipfsLink);
+        emit JobCreated(
+            jobId,
+            msg.sender,
+            budget,
+            bidDeadline,
+            expireDeadline,
+            ipfsLink
+        );
     }
 
     function submitBid(
@@ -181,7 +206,7 @@ contract JobContract is Escrow {
     ) external onlyFreelancer onlyOpenJob(jobId) {
         if (bidAmount >= jobs[jobId].budget)
             revert AmountShouldBeGreaterThanOffer();
-        if (jobs[jobId].deadline < block.timestamp)
+        if (jobs[jobId].bidDeadline < block.timestamp)
             revert cannotSubmitBidDeadlineExceed();
 
         if (hasBid[jobId][msg.sender]) revert OnlyBidOnce();
@@ -202,7 +227,7 @@ contract JobContract is Escrow {
 
     function acceptBid(bytes32 jobId, uint256 bidIndex) external onlyClient {
         Job storage job = jobs[jobId];
-        if (job.deadline < block.timestamp)
+        if (job.bidDeadline < block.timestamp)
             revert cannotAcceptBidDeadlineExceed();
         if (job.client != msg.sender) revert NotJobClient();
         if (job.status != JobStatus.Open) revert OnlyOpenJobs();
@@ -233,12 +258,27 @@ contract JobContract is Escrow {
 
     function acceptWork(bytes32 jobId) external onlyClient {
         Job storage job = jobs[jobId];
+        if (job.expireDeadline < block.timestamp)
+            revert cannotSubmitWorkDeadlineExceeded();
         if (job.client != msg.sender) revert NotJobClient();
         if (job.status != JobStatus.InProgress) revert OnlyInProgressJobs();
 
         _releaseFunds(jobId);
         job.status = JobStatus.Completed;
+        _changeRep(job.freelancer, 50);
+        _changeRep(job.client, 50);
         emit JobCompleted(jobId, job.freelancer);
+    }
+
+    function increaseExpireDeadline(
+        bytes32 jobId,
+        uint256 exceedTimeBy
+    ) external onlyClient {
+        Job storage job = jobs[jobId];
+        if (job.client != msg.sender) revert NotJobClient();
+
+        job.expireDeadline += exceedTimeBy;
+        emit JobExpireDeadlineIncreased(jobId, exceedTimeBy);
     }
 
     function raiseDispute(bytes32 jobId) external {
@@ -249,7 +289,7 @@ contract JobContract is Escrow {
         if (msg.sender != job.client && msg.sender != job.freelancer)
             revert NotJobParticipant();
 
-        if (block.timestamp > job.submittedAt + REVIEW_PERIOD)
+        if (block.timestamp > job.submittedAt + reviewPeriod)
             revert DisputePeriodOver();
 
         job.status = JobStatus.Disputed;
@@ -262,22 +302,28 @@ contract JobContract is Escrow {
         bytes32 jobId,
         string memory ipfsLink,
         uint256 budget,
-        uint256 deadline
+        uint256 bidDeadline
     ) external onlyClient {
         Job storage job = jobs[jobId];
         if (job.client != msg.sender) revert NotJobClient();
-        if (block.timestamp > job.deadline) revert CannotEditAfterExpiry();
+        if (block.timestamp > job.bidDeadline) revert CannotEditAfterExpiry();
 
         require(jobBids[jobId].length == 0, "Cannot edit with bids");
 
         if (job.status != JobStatus.Open) revert OnlyOpenJobs();
-        if (deadline <= block.timestamp) revert DeadlineMustBeInFuture();
+        if (bidDeadline <= block.timestamp) revert DeadlineMustBeInFuture();
 
         job.budget = budget;
-        job.deadline = deadline;
+        job.bidDeadline = bidDeadline;
         job.ipfs = ipfsLink;
 
-        emit JobDetailsUpdated(jobId, msg.sender, budget, deadline, ipfsLink);
+        emit JobDetailsUpdated(
+            jobId,
+            msg.sender,
+            budget,
+            bidDeadline,
+            ipfsLink
+        );
     }
 
     function cancelJob(bytes32 jobId) external onlyClient {
@@ -293,7 +339,7 @@ contract JobContract is Escrow {
         if (job.status != JobStatus.Submitted) revert OnlySubmittedJobs();
         if (job.disputed) revert DisputeAlreadyRaised();
 
-        if (block.timestamp <= job.submittedAt + REVIEW_PERIOD)
+        if (block.timestamp <= job.submittedAt + reviewPeriod)
             revert ReviewPeriodStillActive();
 
         _releaseFunds(jobId);
@@ -302,11 +348,15 @@ contract JobContract is Escrow {
         emit JobCompleted(jobId, job.freelancer);
     }
 
+    function _changeRep(address user, uint256 amount) internal {
+        //change reputation of user
+    }
+
     function resolveDispute(
         bytes32 jobId,
         address winner,
         uint256 payout
-    ) external onlyResolver {
+    ) external onlyGovernance {
         Job storage job = jobs[jobId];
         require(job.status == JobStatus.Disputed, "Not disputed");
 
@@ -314,9 +364,7 @@ contract JobContract is Escrow {
             _releaseFunds(jobId);
         } else if (winner == job.client) {
             _refundClient(jobId);
-        } else {
-            // _partialRelease(jobId, payout); // optional for partial payment
-        }
+        } else {}
 
         job.status = JobStatus.Completed;
         emit DisputeResolved(jobId, winner, payout);

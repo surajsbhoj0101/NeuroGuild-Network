@@ -7,13 +7,13 @@ In on-chain governance (like DAO governance), when a proposal is passed (approve
  */
 
 /*
-Proposal created → DAO members vote.
+    Proposal created → DAO members vote.
 
-Proposal succeeds → goes into Timelock (queued).
+    Proposal succeeds → goes into Timelock (queued).
 
-Waiting period (e.g., 2 days, 1 week).
+    Waiting period (e.g., 2 days, 1 week).
 
-Execution → only after Timelock expires.
+    Execution → only after Timelock expires.
 */
 
 // SPDX-License-Identifier: MIT

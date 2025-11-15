@@ -29,7 +29,8 @@ contract GovernanceToken is ERC20Votes, ERC20Permit, Ownable {
     // Required overrides
 
     /* There are two _update both in ERC20 and ERC20votes I need to override them to avoid confusion for solidity 
-     so it is mandatory to override this.*/
+     so it is mandatory to override this.
+    */
     function _update(
         address from,
         address to,
