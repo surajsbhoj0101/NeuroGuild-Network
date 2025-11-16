@@ -23,6 +23,8 @@ import {
     IVotes
 } from "../../../lib/openzeppelin-contracts/contracts/governance/utils/IVotes.sol";
 
+import {IReputationSBT} from "../interfaces/IReputation.sol";
+
 contract GoverContract is
     Governor,
     GovernorCountingSimple,
@@ -30,16 +32,20 @@ contract GoverContract is
     GovernorVotesQuorumFraction,
     GovernorTimelockControl
 {
+    IReputationSBT internal reputation;
     constructor(
         IVotes _token,
-        TimelockController _timelock
+        TimelockController _timelock,
+        address _rep
         //TimelockController timelock = TimelockController(0xABC...); Work like this
     )
         Governor("MyGovernor")
         GovernorVotes(_token)
         GovernorVotesQuorumFraction(4)
         GovernorTimelockControl(_timelock)
-    {}
+    {
+        reputation = IReputationSBT(_rep);
+    }
 
     /*
         Time between proposal creation and voting start.
@@ -96,6 +102,19 @@ contract GoverContract is
         returns (bool)
     {
         return super.proposalNeedsQueuing(proposalId);
+    }
+
+    function getVotes(
+        address voter,
+        uint256 blockNumber
+    ) public view override returns (uint256) {
+        uint256 tokenVotes = super.getVotes(voter, blockNumber);
+
+        // SBT reputation votes
+        uint256 tokenId = reputation.getTokenId(voter);
+        uint256 repVotes = reputation.getScore(tokenId);
+
+        return tokenVotes + repVotes;
     }
 
     /*
