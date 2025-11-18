@@ -4,6 +4,8 @@ pragma solidity ^0.8.28;
 interface IReputationSBT {
     function name() external view returns (string memory);
 
+    function  getScore(uint256 tokenId) external view returns(uint256);
+
     function symbol() external view returns (string memory);
 
     function ownerOf(uint256 tokenId) external view returns (address);

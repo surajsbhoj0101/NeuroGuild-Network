@@ -1,30 +1,44 @@
-// We want to wait for a new vote to be "executed".
-// EveryOne who has the governance token has to 5 tokens.
-// Give time to users to get out if the don't like the governance.
-
-/*
-In on-chain governance (like DAO governance), when a proposal is passed (approved by token holders’ votes), it doesn’t execute immediately. Instead, it usually passes through a Timelock contract.
- */
-
-/*
-    Proposal created → DAO members vote.
-
-    Proposal succeeds → goes into Timelock (queued).
-
-    Waiting period (e.g., 2 days, 1 week).
-
-    Execution → only after Timelock expires.
-*/
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
 import "../../../lib/openzeppelin-contracts/contracts/governance/TimelockController.sol";
 
+/**
+ * @title TimeLock
+ * @dev This contract holds proposals for a minimum delay before execution.
+ *      It is used together with Governor contracts to enforce delayed execution.
+ *
+ * Flow:
+ *  - Proposal Created in Governor
+ *  - Voting Period
+ *  - Proposal Succeeded → Queued in Timelock
+ *  - Min Delay Countdown
+ *  - Executed (only after delay)
+ *
+ *  Timelock ensures:
+ *     • Users who disagree can exit before changes apply.
+ *     • No instant malicious governance action.
+ */
 contract TimeLock is TimelockController {
-    constructor(uint256 minDelay, address[] memory porposers , address[] memory executors, address admin) TimelockController(minDelay, porposers, executors, admin) {
-        
-    }
+    /**
+     * @param minDelay     Minimum delay (in seconds) before a proposal can be executed.
+     * @param proposers    Addresses allowed to propose actions to the timelock.
+     * @param executors    Addresses allowed to execute queued proposals.
+     * @param admin        Optional admin (can be zero address).
+     *                     Admin can grant/renounce roles.
+     *                     Once deployed, admin is usually renounced for decentralization.
+     */
+    constructor(
+        uint256 minDelay,
+        address[] memory proposers,
+        address[] memory executors,
+        address admin
+    )
+        TimelockController(
+            minDelay, // minimum delay
+            proposers, // addresses allowed to propose
+            executors, // addresses allowed to execute
+            admin // admin (can renounce)
+        )
+    {}
 }
-
-

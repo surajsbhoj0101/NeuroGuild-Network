@@ -2,5 +2,13 @@
 src = "src"
 out = "out"
 libs = ["lib"]
+via_ir = true
+optimizer = true
+
+[profile.fs_permissions]
+# This gives read and write access to the deploy.log file
+allow = [
+    { access = "read-write", path = "Deployments/deploy.log" }
+]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

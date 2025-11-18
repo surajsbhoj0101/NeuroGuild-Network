@@ -5,6 +5,7 @@ import {IERC721} from "./interfaces/IERC721.sol";
 import {IERC165} from "./interfaces/IERC165.sol";
 import {IERC721Metadata} from "./interfaces/IERC721Metadata.sol";
 
+
 /// @title ERC721 SBT with mutable token URI and admin-only skill updates
 contract SkillSBT is IERC721, IERC721Metadata {
     event Transfer(
@@ -26,6 +27,7 @@ contract SkillSBT is IERC721, IERC721Metadata {
     uint8 public constant MAX_LEVEL = 1;
     string public constant name = "NeruroGuild SkillSBT";
     string public constant symbol = "NG-SBT";
+ 
 
     uint256 private _currentTokenId;
 

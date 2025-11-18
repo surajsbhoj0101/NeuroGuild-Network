@@ -427,7 +427,7 @@ contract JobContract is Escrow, ReentrancyGuard {
 
     function resolveDispute(
         bytes32 jobId,
-        address winner,
+        address winner
     ) external onlyGovernance nonReentrant {
         Job storage job = jobs[jobId];
 
