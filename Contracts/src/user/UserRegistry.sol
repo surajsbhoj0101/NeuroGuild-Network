@@ -20,8 +20,14 @@ contract UserRegistry {
         _;
     }
 
-    constructor(address _governance) {
+    modifier onlyAdmin(){
+        require(msg.sender ==  admin,"Only Admin");
+        _;
+    }
+
+    constructor(address _governance, address _admin) {
         governance = _governance;
+        admin = _admin;
     }
 
     struct User {
@@ -32,27 +38,28 @@ contract UserRegistry {
     }
 
     address public governance;
+    address public admin;
     mapping(address => User) public users;
 
     function setGovernor(address _resolver) external onlyGovernance {
         governance = _resolver;
     }
 
-    function registerUser(Role _role) external {
-        require(!users[msg.sender].exists, "User already registered");
+    function registerUser(Role _role,address userAddr ) onlyAdmin external {
+        require(!users[userAddr].exists, "User already registered");
 
         if (!(_role == Role.Client || _role == Role.Freelancer)) {
             revert InvalidRole();
         }
 
-        users[msg.sender] = User({
-            wallet: msg.sender,
+        users[userAddr] = User({
+            wallet: userAddr,
             role: _role,
             exists: true,
             blocked: false
         });
 
-        emit UserRegistered(msg.sender, _role);
+        emit UserRegistered(userAddr, _role);
     }
 
     function getUser(address _wallet) external view returns (User memory) {

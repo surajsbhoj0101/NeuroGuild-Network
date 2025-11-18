@@ -88,22 +88,13 @@ export default function MyProfile() {
   const loadProfileData = async () => {
     if (!address) return;
 
-    const storedUserId = localStorage.getItem("userId");
-    if (!storedUserId) {
-      setTimeout(() => {
-        setRedNotice(true);
-        setNotice("Redirecting home, userId not found!!");
-      }, 1600);
-      navigate('/');
-      return;
-    }
+   
 
     try {
       const response = await axios.post(
         "http://localhost:5000/api/freelancer/get-freelancer",
         {
-          address,
-          userId: storedUserId,
+          address
         }
       );
 

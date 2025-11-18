@@ -1,7 +1,7 @@
 import { Contract, parseUnits, Interface } from "ethers";
 import { ERC721SBT } from "../../../Backend/abis/ERC721SBT";
 
-const contractAddress = "0x5516afd99B82e41E4194ca7ff660f4267dcb8C2d";
+const contractAddress = "0x7B95BC680e8425dbC46e49ddDAF5CAEcbbE87A44";
 
 export async function mintSbt(signer) {
     try {

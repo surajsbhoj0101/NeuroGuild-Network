@@ -126,6 +126,19 @@ export const ERC721SBT = [
     },
     {
         "type": "function",
+        "name": "name",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "string",
+                "internalType": "string"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
         "name": "ownerOf",
         "inputs": [
             {
@@ -188,6 +201,19 @@ export const ERC721SBT = [
     },
     {
         "type": "function",
+        "name": "symbol",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "string",
+                "internalType": "string"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
         "name": "tokenIdOf",
         "inputs": [
             {
@@ -207,7 +233,7 @@ export const ERC721SBT = [
     },
     {
         "type": "function",
-        "name": "tokenUri",
+        "name": "tokenURI",
         "inputs": [
             {
                 "name": "id",

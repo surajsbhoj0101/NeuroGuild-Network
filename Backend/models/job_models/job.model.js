@@ -47,7 +47,7 @@ const JobSchema = new mongoose.Schema({
     },
 
     client: {
-        type: String,     // <-- UUID stored here
+        type: String,     
         required: true,
     },
 

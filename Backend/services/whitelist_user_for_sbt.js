@@ -4,7 +4,7 @@ import { ERC721SBT } from "../abis/ERC721SBT.js";
 dotenv.config();
 
 const provider = new JsonRpcProvider(process.env.RPC_URL)
-const contractAddress = process.env.CONTRACT_ADDRESS;
+const contractAddress = process.env.SBT_CONTRACT_ADDRESS;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 
 export async function checkAlreadyWhiteListed(address) {

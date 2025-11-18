@@ -20,10 +20,15 @@ export default function App() {
   const { address, isConnected } = useAccount();
   const navigate = useNavigate();
 
+  const [notice, setNotice] = useState(null);
+  const [redNotice, setRedNotice] = useState(false);
+  const [loadingUser, setLoadingUser] = useState(false);
+
   useEffect(() => {
     if (!isConnected || !address) return;
 
     const getUser = async () => {
+      setLoadingUser(true);
       try {
         const response = await axios.post(`http://localhost:5000/api/auth/get-user`, { address });
 
@@ -40,14 +45,14 @@ export default function App() {
 
       } catch (error) {
         console.error("Error fetching or creating user:", error);
+      } finally {
+        setLoadingUser(false);
       }
     };
 
     getUser();
   }, [isConnected, address]);
 
-  const [notice, setNotice] = useState(null);
-  const [redNotice, setRedNotice] = useState(false);
   useEffect(() => {
     if (!notice) return;
     const id = setTimeout(() => setNotice(null), 3500);
@@ -55,9 +60,11 @@ export default function App() {
   }, [notice]);
 
   async function handleCreateUser(role) {
+    setLoadingUser(true);
     if (!address || !isConnected) {
       setRedNotice(true);
       setNotice("Connect wallet first!!");
+      setLoadingUser(false);
       return;
     }
 
@@ -75,19 +82,27 @@ export default function App() {
         setNotice("User Creation successful. Redirecting...");
       }, 1500);
 
-      const r = role.toLowercase()
-      navigate(`${r}/my-profile`);
-
+      const r = (role || "").toLowerCase();
+      navigate(`/${r}/my-profile`);
     } catch (error) {
       console.error("Error creating user:", error);
       setRedNotice(true);
       setNotice("User creation failed!");
+      setLoadingUser(false);
     }
   }
 
-
   return (
     <div className="min-h-screen relative overflow-hidden dark:bg-[#0f111d] bg-[#0f1422] text-white">
+      {/* loading */}
+      {loadingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-12 h-12 border-4 border-t-[#14a19f] border-gray-700 rounded-full animate-spin"></div>
+            <div className="text-sm text-white">Please wait…</div>
+          </div>
+        </div>
+      )}
       <Snowfall snowflakeCount={60} />
       {/* decorative background blobs */}
       <div className="pointer-events-none absolute -left-32 -top-32 w-[520px] h-[520px] rounded-full bg-gradient-to-br from-[#122033] via-[#0f2540] to-[#08101a] opacity-40 blur-3xl mix-blend-screen"></div>

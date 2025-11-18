@@ -5,13 +5,13 @@ import { ERC721SBT } from "../abis/ERC721SBT.js";
 dotenv.config();
 
 const provider = new JsonRpcProvider(process.env.RPC_URL);
-const contractAddress = process.env.CONTRACT_ADDRESS;
+const contractAddress = process.env.SBT_CONTRACT_ADDRESS;
 
 export async function getTokenUri(tokenId) {
     try {
         const contract = new Contract(contractAddress, ERC721SBT, provider);
 
-        const uri = await contract.tokenUri(tokenId);
+        const uri = await contract.tokenURI(tokenId);
         if (!uri || uri === "") {
             console.log("No URI found for token:", tokenId);
             return false;

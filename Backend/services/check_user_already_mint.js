@@ -5,10 +5,11 @@ import { ERC721SBT } from "../abis/ERC721SBT.js";
 dotenv.config();
 
 const provider = new JsonRpcProvider(process.env.RPC_URL);
-const contractAddress = process.env.CONTRACT_ADDRESS;
+const contractAddress = process.env.SBT_CONTRACT_ADDRESS;
 
 export const checkUserAlreadyMinted = async (address) => {
     try {
+        console.log(contractAddress)
         const contract = new Contract(contractAddress, ERC721SBT, provider);
         const tokenId = await contract.tokenIdOf(address);
         return {

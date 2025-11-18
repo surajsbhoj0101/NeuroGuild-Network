@@ -17,7 +17,7 @@ export const test = async (req, res) => {
 
 
 export const getFreelancer = async (req, res) => {
-    const { address, userId } = req.body;
+    const { address } = req.body;
     const walletAddress = address.toLowerCase();
     try {
         const freelancer = await Freelancer.findOne({ walletAddress });
@@ -344,7 +344,7 @@ export const upgradeSkill = async (req, res) => {
             const json = {
                 name: "SkillSBT",
                 description: "SoulBound Token representing verified skills and badges.",
-                image: "ipfs://bafybeif4pnqwxql4u6cfw3ngmxlbv73zlsgxmf6gwai5un5nedbddcfvzi",
+                image: "https://ipfs.io/ipfs/bafybeif4pnqwxql4u6cfw3ngmxlbv73zlsgxmf6gwai5un5nedbddcfvzi",
                 attributes: [
                     {
                         trait_type: "Skills",

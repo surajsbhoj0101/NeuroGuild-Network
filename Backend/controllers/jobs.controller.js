@@ -87,7 +87,7 @@ ${JSON.stringify(payload)}
     });
   }
 };
-
+//onchain
 export const createJob = async (req, res) => {
   const { payload } = req.body;
 
@@ -121,7 +121,7 @@ export const createJob = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server error", error });
   }
 }
-
+//Graph indexer
 export const fetchJobs = async (req, res) => {
   try {
     const jobs = await Job.find().populate({
@@ -153,7 +153,7 @@ export const fetchJob = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
+//ipfs
 export const fetchAiScore = async (req, res) => {
   const { address, jobId } = req.body;
   const walletAddress = address.toLowerCase();

@@ -55,9 +55,11 @@ contract DeployContracts is Script {
             address(reputationSBT)
         );
 
+       
         timelock.grantRole(timelock.PROPOSER_ROLE(), address(governor));
         timelock.grantRole(timelock.EXECUTOR_ROLE(), address(0));
         timelock.renounceRole(timelock.DEFAULT_ADMIN_ROLE(), msg.sender);
+
         // -----------------------------------------------------
         // 3. Deploy DAO-Controlled Box Contract
         // -----------------------------------------------------
@@ -66,7 +68,10 @@ contract DeployContracts is Script {
         // -----------------------------------------------------
         // 4. Deploy User Registry
         // -----------------------------------------------------
-        UserRegistry userRegistry = new UserRegistry(address(governor));
+        UserRegistry userRegistry = new UserRegistry(
+            address(governor),
+            msg.sender
+        );
 
         // -----------------------------------------------------
         // 5. Deploy Job + Escrow System
