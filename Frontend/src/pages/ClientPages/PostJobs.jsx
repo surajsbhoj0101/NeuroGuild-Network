@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom';
-import { useAccount } from 'wagmi';
+import { useAccount, useWalletClient } from 'wagmi';
 import SideBar from '../../components/SideBar';
 import axios from "axios";
 import "../../index.css"
-import { funkiMainnet } from 'viem/chains';
+import { BrowserProvider } from 'ethers';
+import { postJob } from '../../utils/post_job';
+// import { funkiMainnet } from 'viem/chains';
+
+
 
 function PostJobs() {
     const { isConnected, address } = useAccount();
@@ -15,6 +19,7 @@ function PostJobs() {
     const [applying, setApplying] = useState(false);
     const [submiting, setSubmiting] = useState(false)
     const [cancelling, setCancelling] = useState(false);
+    const { data: walletClient } = useWalletClient();
 
     const [notice, setNotice] = useState(null);
     const [redNotice, setRedNotice] = useState(false);
@@ -30,17 +35,14 @@ function PostJobs() {
         budgetType: "fixed",
         budget: "",
         deadline: "",
+        completion: ""
     };
 
-
-    // USER RAW JOB DETAILS
     const [jobDetails, setJobDetails] = useState(initialJobDetails);
-
 
     const [enhanced, setEnhanced] = useState(null);
 
-
-    const PreviewJobDetails = enhanced ?? jobDetails;
+    const PreviewJobDetails = enhanced ?? jobDetails; //nullish coalesing
 
     const [skillInput, setSkillInput] = useState("");
     const DESCRIPTION_MAX = 800;
@@ -67,8 +69,36 @@ function PostJobs() {
         setJobDetails((prev) => ({ ...prev, [field]: value }));
     };
 
+    async function getSigner(params) {
+        let signer;
+        if (walletClient) {
+            const provider = new BrowserProvider(window.ethereum);
+            signer = await provider.getSigner();
+        }
+        return signer;
+    }
+
 
     const sanitizeSkill = (raw) => raw.trim().replace(/\s+/g, " ");
+
+    /* Normalize dates for HTML date inputs and comparisons */
+    const toDateInputValue = (val) => {
+        if (!val) return "";
+        const d = new Date(val);
+        if (isNaN(d.getTime())) return "";
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        return `${yyyy}-${mm}-${dd}`;
+    };
+
+    const normalizeEnhancedDates = (obj = {}) => {
+        const copy = { ...obj };
+        if (copy.deadline) copy.deadline = toDateInputValue(copy.deadline);
+        if (copy.completion) copy.completion = toDateInputValue(copy.completion);
+        return copy;
+    };
+
 
     // ADD SKILL
     const addSkill = useCallback(
@@ -104,9 +134,9 @@ function PostJobs() {
         }));
     };
 
-    // AI ENHANCEMENT
+
     const handleAIEnhance = async () => {
-        setEnhancing(true)
+
         if (!address) {
             setRedNotice(true);
             setNotice("Wallet address missing");
@@ -123,16 +153,30 @@ function PostJobs() {
             return;
         }
 
+        if (!jobDetails.deadline) {
+            setRedNotice(true);
+            setNotice("Add the Bid deadline")
+            return
+        }
+
+        if (!jobDetails.completion) {
+            setRedNotice(true);
+            setNotice("Add the Completion deadline")
+            return
+        }
+
         const payload = {
             title: jobDetails.title.trim(),
             description: jobDetails.jobDescription.trim(),
             skills: jobDetails.skills,
             experienceLevel: jobDetails.experienceLevel || "not-specified",
-            budget: jobDetails.budget ? Number(jobDetails.budget) : 0,
-            deadline: jobDetails.deadline || null,
+            deadline: jobDetails.deadline,
+            completion: jobDetails.completion,
+            budget:jobDetails.budget
         };
 
         try {
+            setEnhancing(true)
             const res = await axios.post(
                 "http://localhost:5000/api/jobs/ai-enhancement",
                 { payload }
@@ -140,7 +184,9 @@ function PostJobs() {
 
             console.log(res.data.enhanced);
             if (res?.data?.enhanced) {
-                setEnhanced(res.data.enhanced);
+                // normalize date fields so they work with <input type="date">
+                setEnhanced(normalizeEnhancedDates(res.data.enhanced));
+                setRedNotice(false)
                 setNotice("AI enhancement applied (preview only)");
             } else {
                 setRedNotice(true);
@@ -155,22 +201,29 @@ function PostJobs() {
         }
     };
 
-
     const handleApplyPreview = () => {
         setApplying(true)
         if (!enhanced) {
             setNotice("No AI preview to apply");
             setRedNotice(true);
+            setApplying(false)
             return;
         }
-        setJobDetails(enhanced);
+        // apply normalized preview (dates are YYYY-MM-DD)
+        setJobDetails((prev) => ({ ...prev, ...enhanced }));
         setEnhanced(null);
         setApplying(false)
     };
 
 
     const submitJob = useCallback(async () => {
-        setSubmiting(true)
+        const signer = await getSigner();
+        if (!signer) {
+            setRedNotice(true);
+            setNotice("Please connect your wallet first.");
+            return;
+        }
+
         if (!address) {
             setRedNotice(true);
             setNotice("Wallet address missing");
@@ -192,39 +245,128 @@ function PostJobs() {
             return;
         }
 
+        if (!jobDetails.deadline) {
+            setRedNotice(true);
+            setNotice("Add the Bid deadline")
+            return
+        }
+
+        if (!jobDetails.completion) {
+            setRedNotice(true);
+            setNotice("Add the Completion deadline")
+            return
+        }
+
+        const dl = new Date(jobDetails.deadline);
+        const cl = new Date(jobDetails.completion);
+        if (isNaN(dl.getTime()) || isNaN(cl.getTime())) {
+            setRedNotice(true);
+            setNotice("Invalid deadlines. Use YYYY-MM-DD format.");
+            return;
+        }
+        if (dl.getTime() >= cl.getTime()) {
+            setRedNotice(true);
+            setNotice("Job completion deadline must be after bidding deadline");
+            return;
+        }
+
+        // convert date inputs to ISO strings for backend / ipfs
+        const dlISO = !jobDetails.deadline ? null : new Date(jobDetails.deadline).toISOString();
+        const compISO = !jobDetails.completion ? null : new Date(jobDetails.completion).toISOString();
+
         const payload = {
             title: jobDetails.title.trim(),
             description: jobDetails.jobDescription.trim(),
             skills: jobDetails.skills,
             experienceLevel: jobDetails.experienceLevel || "not-specified",
             budget: jobDetails.budget ? Number(jobDetails.budget) : 0,
-            deadline: jobDetails.deadline || null,
+            deadline: dlISO,
+            completion: compISO,
             clientAddress: address,
             createdAt: new Date().toISOString(),
         };
 
         console.log(payload)
 
+
         try {
-            const res = await axios.post(
-                "http://localhost:5000/api/jobs/create-job",
-                { payload }
-            );
+            setSubmiting(true);
 
-            if (res?.data?.success) {
-                setRedNotice(false);
-                setNotice("Job posted successfully!");
+            let jobipfs;
 
-            } else {
+
+            try {
+                const res = await axios.post(
+                    "http://localhost:5000/api/jobs/get-job-ipfs",
+                    { payload }
+                );
+
+                jobipfs = res.data?.ipfs;
+
+                if (!jobipfs || typeof jobipfs !== "string" || jobipfs.trim() === "") {
+                    setRedNotice(true);
+                    setNotice("Failed to upload job metadata to IPFS.");
+                    return;
+                }
+            } catch (error) {
                 setRedNotice(true);
-                setNotice(res?.data?.message || "Failed to post job");
+                setNotice("Unable to upload job metadata.");
+                return;
             }
+
+
+         
+
+            try {
+                const tx = await postJob(
+                    signer,
+                    jobipfs,
+                    jobDetails.budget,
+                    jobDetails.deadline,
+                    jobDetails.completion
+                );
+                if (!tx) {
+                    setRedNotice(true);
+                    setNotice("Blockchain error: job not created.");
+                    return;
+                }
+
+            } catch (err) {
+                console.error("Blockchain transaction failed:", err);
+                setRedNotice(true);
+                setNotice("Transaction failed or rejected.");
+                return;
+            }
+
+
+            try {
+                const res = await axios.post(
+                    "http://localhost:5000/api/jobs/create-job",
+                    { payload }
+                );
+
+                if (res?.data?.success) {
+                    setRedNotice(false);
+                    setNotice("Job posted successfully!");
+                } else {
+                    setRedNotice(true);
+                    setNotice(res?.data?.message || "Failed to save job in backend.");
+                }
+
+            } catch (err) {
+                console.error("Backend save failed:", err);
+                setRedNotice(true);
+                setNotice("Failed to save job in backend.");
+                return;
+            }
+
         } catch (err) {
             setRedNotice(true);
-            setNotice("Failed to post job. Try again.");
+            setNotice("Unexpected error. Try again.");
         } finally {
-            setSubmiting(false)
+            setSubmiting(false);
         }
+
     }, [address, jobDetails, navigate]);
 
     function removeAllDetails() {
@@ -236,6 +378,14 @@ function PostJobs() {
 
     return (
         <>
+            {submiting && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="w-12 h-12 border-4 border-t-[#14a19f] border-gray-700 rounded-full animate-spin"></div>
+                        <div className="text-sm text-white">Please wait…</div>
+                    </div>
+                </div>
+            )}
             {notice && (
                 <div className="fixed top-4 right-4 z-50 animate-pulse">
                     <div className={`flex items-center gap-3 bg-[#14a19f] text-white px-4 py-2 rounded shadow-lg border border-[#1ecac7]/30 ${redNotice ? 'bg-red-600 border-red-700' : 'bg-[#14a19f] border-[#1ecac7]/30'} `}>
@@ -320,7 +470,7 @@ function PostJobs() {
                                 </div>
                             </div>
 
-                            {/* REQUIREMENTS */}
+                            {/* Requirements */}
                             <div className="w-full backdrop-blur-sm flex-col flex space-y-5 rounded-lg p-6 mb-6 border border-[#14a19f]/20">
                                 <h2 style={orbitronStyle} className='text-white text-xl font-bold mb-4 tracking-wide'>
                                     Requirements
@@ -352,13 +502,40 @@ function PostJobs() {
                                         style={robotoStyle}
                                     >
                                         <span className="w-1 h-4 bg-[#14a19f] rounded-full"></span>
-                                        Deadline
+                                        Bid Deadline
                                     </label>
 
                                     <input
                                         type="date"
                                         value={jobDetails.deadline}
                                         onChange={(e) => handleInputChange('deadline', e.target.value)}
+                                        className="
+                                            w-full backdrop-blur-md text-white px-4 py-3 rounded-lg 
+                                            border border-[#1a2a38]
+                                            hover:border-[#14a19f]/30 
+                                            focus:border-[#14a19f] focus:ring-2 focus:ring-[#14a19f]/20 
+                                            outline-none shadow-inner
+                                            transition-all
+                                            [&::-webkit-calendar-picker-indicator]:cursor-pointer
+        "
+                                        style={{ fontFamily: robotoStyle.fontFamily }}
+                                    />
+
+                                </div>
+
+                                <div className='flex flex-col'>
+                                    <label
+                                        className="text-gray-200 text-sm font-semibold flex items-center gap-2"
+                                        style={robotoStyle}
+                                    >
+                                        <span className="w-1 h-4 bg-[#14a19f] rounded-full"></span>
+                                        Completion Deadline
+                                    </label>
+
+                                    <input
+                                        type="date"
+                                        value={jobDetails.completion}
+                                        onChange={(e) => handleInputChange('completion', e.target.value)}
                                         className="
                                             w-full backdrop-blur-md text-white px-4 py-3 rounded-lg 
                                             border border-[#1a2a38]
@@ -458,7 +635,7 @@ function PostJobs() {
                                     className="flex-1 px-4 py-3 rounded-lg bg-[#14a19f] text-white font-semibold hover:bg-[#0cc9c6] transition-colors"
                                 >
                                     {submiting ?
-                                        (<span className="animate-pulse">Submitting...</span>): (
+                                        (<span className="animate-pulse">Submitting...</span>) : (
                                             "Submit"
                                         )}
                                 </button>

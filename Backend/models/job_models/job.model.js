@@ -35,6 +35,10 @@ const JobSchema = new mongoose.Schema({
         required: true,
         min: 0,
     },
+    completion: {
+        type: Date,
+        default: null,
+    },
     deadline: {
         type: Date,
         default: null,
@@ -47,7 +51,7 @@ const JobSchema = new mongoose.Schema({
     },
 
     client: {
-        type: String,     
+        type: String,
         required: true,
     },
 

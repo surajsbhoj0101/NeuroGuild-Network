@@ -94,7 +94,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen relative overflow-hidden dark:bg-[#0f111d] bg-[#0f1422] text-white">
-      {/* loading */}
+      {/* loader */}
       {loadingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="flex flex-col items-center gap-3">

@@ -122,7 +122,7 @@ const router = createBrowserRouter([
     path: "/job/:jobId",
     element: (
       <>
-        {/* <Snowfall snowflakeCount={60} /> */}
+        <Snowfall snowflakeCount={60} />
         <Navbar />
         <JobPage />
       </>
