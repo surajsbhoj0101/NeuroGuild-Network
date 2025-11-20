@@ -31,7 +31,7 @@ export const createUser = async (req, res) => {
         if (user) {
             return res.status(200).json({ user });
         }
-        // "Freelancer", "client"
+      
         let result = false;
         if (role === "client") {
             result = await registerUser(0, walletAddress);

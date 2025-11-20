@@ -27,7 +27,7 @@ export const updateClient = async (req, res) => {
     try {
         const walletAddress = address?.toLowerCase();
 
-        // Prevent unwanted overwrite
+       
         const { stats, ...otherUpdates } = payload;
 
         const updatedUser = await Client.findOneAndUpdate(

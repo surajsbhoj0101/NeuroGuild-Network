@@ -144,7 +144,7 @@ export const fetchQuestions = async (req, res) => {
         res.status(200).json({
             success: true,
             questions: storedQuestions,
-            quizId: newSession._id  // <-- ADD THIS
+            quizId: newSession._id  
         });
 
     } catch (error) {
@@ -159,7 +159,6 @@ export const fetchQuestions = async (req, res) => {
 const handleUserSkillPass = async (walletAddress, skillName) => {
     const wallet = walletAddress.toLowerCase();
 
-    // Try to find the user
     let user = await Freelancer.findOne({ walletAddress: wallet });
 
     if (!user) {
@@ -197,7 +196,7 @@ export const quizCheckAllCorrect = async (req, res) => {
 
     try {
 
-        const latestQuiz = await quizModel.findById(quizId); // <-- CHANGE THIS
+        const latestQuiz = await quizModel.findById(quizId); 
 
         if (!latestQuiz) {
             return res.status(404).json({ error: "No quiz session found" });
@@ -224,7 +223,7 @@ export const quizCheckAllCorrect = async (req, res) => {
         const attempt = await quizModel.create({
             wallet: walletAddress,
             skill,
-            questions: latestQuiz.questions, // optional: store questions too
+            questions: latestQuiz.questions, 
             passed: allCorrect,
         });
         let isWhiteListed = false;
