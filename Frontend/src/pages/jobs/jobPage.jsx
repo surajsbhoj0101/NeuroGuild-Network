@@ -19,6 +19,11 @@ function jobPage() {
     const [redNotice, setRedNotice] = useState(false);
 
     const { jobId } = useParams();
+    const [jobInteraction, setJobInteraction] = useState({
+        isSaved: false,
+        isApplied: false
+    })
+
     const [fetchingScore, setFetchingScore] = useState(true);
     const [score, setScore] = useState(null)
 
@@ -52,16 +57,52 @@ function jobPage() {
 
 
         try {
-            const score = await axios.post('http://localhost:5000/api/jobs/fetch-ai-score',
+            const score = await axios.post('http://localhost:5000/api/jobs/fetch-ai-score-and-job-interaction',
                 { address, jobId }
             )
 
-            setScore(score.data.data?.match_score)
-            console.log(score.data.data?.match_score)
+            setScore(score.data?.aiScore?.match_score)
+            setJobInteraction({
+                isSaved: score.data?.isSaved,
+                isApplied: score.data?.isApplied
+            })
+
         } catch (error) {
             console.log(error)
         } finally {
             setFetchingScore(false)
+        }
+    }
+
+    async function saveJob(params) {
+        if (!address) {
+            setRedNotice(true);
+            setNotice("Wallet not connected")
+            return
+        }
+
+        if (!jobId) {
+            setRedNotice(true);
+            setNotice("Job Id not found")
+            return
+        }
+
+        try {
+            const res = await axios.put('http://localhost:5000/api/jobs/save-job',
+                { address, jobId }
+            )
+
+            if (res.data?.success) {
+                setJobInteraction(prev => ({
+                    ...prev,
+                    isSaved: true,
+                }));
+            }
+
+            setRedNotice(false);
+            setNotice("Job saved successfull")
+        } catch (error) {
+            console.log(error)
         }
     }
 
@@ -197,12 +238,25 @@ function jobPage() {
                                             </div>
 
                                             <div className="w-full flex gap-4">
-                                                <button className="w-1/2 dark:bg-[#0a184b] dark:hover:bg-[#0a184b]/80 bg-[#14a19f] text-white font-semibold py-3 rounded-lg hover:bg-[#14a19f]/70 transition-colors">
-                                                    Apply Now
-                                                </button>
-                                                <button className="w-1/2 bg-transparent text-[#14a19f] dark:text-white border border-[#14a19f] dark:border-[#0a184b] font-semibold py-3 rounded-lg hover:bg-[#14a19f]/10 dark:hover:bg-[#0d1c4e] transition-colors">
-                                                    Save for Later
-                                                </button>
+                                                {jobInteraction.isApplied ? (
+                                                    <button className="w-1/2 bg-transparent text-[#14a19f] dark:text-white border border-[#14a19f] dark:border-[#0a184b] font-semibold py-3 rounded-lg hover:bg-[#14a19f]/10 dark:hover:bg-[#0d1c4e] transition-colors">
+                                                        Applied
+                                                    </button>
+                                                ) : (<button className="w-1/2 bg-transparent text-[#14a19f] dark:text-white border border-[#14a19f] dark:border-[#0a184b] font-semibold py-3 rounded-lg hover:bg-[#14a19f]/10 dark:hover:bg-[#0d1c4e] transition-colors">
+                                                    Apply
+                                                </button>)}
+
+                                                {jobInteraction.isSaved ? (
+                                                    <button className="w-1/2 bg-transparent border-white border text-white font-semibold py-3 rounded-lg transition-colors">
+                                                        Saved
+                                                    </button>
+                                                ) : (<button onClick={saveJob} className="w-1/2 dark:bg-[#0a184b] dark:hover:bg-[#0a184b]/80 bg-[#14a19f] text-white font-semibold py-3 rounded-lg hover:bg-[#14a19f]/70 transition-colors">
+                                                    Save for later
+                                                </button>)}
+
+
+
+
                                             </div>
                                         </div>
                                     )
@@ -249,7 +303,7 @@ function jobPage() {
                                                 </p>
 
                                                 <div className="mt-5 flex items-center justify-center gap-3">
-                                                    <button onClick={sendToProfile} className="inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold text-white bg-[#14a19f] hover:bg-[#14a19f]/90 transition">
+                                                    <button onClick={sendToProfile} className="inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold text-white dark:bg-[#0a184b] bg-[#14a19f] hover:bg-[#14a19f]/90 hover:dark:bg-[#0a184b]/90 transition">
                                                         Create Profile
                                                     </button>
                                                 </div>

@@ -5,6 +5,7 @@ import User from "../models/user.model.js";
 import jobModel from "../models/job_models/job.model.js";
 import Freelancer from "../models/freelancer_models/freelancers.model.js";
 import { uploadToIpfs } from "../services/upload_to_pinata.js";
+import JobInteraction from "../models/job_models/jobInteraction.model.js";
 
 dotenv.config();
 
@@ -197,21 +198,25 @@ export const fetchJob = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-//ipfs
-export const fetchAiScore = async (req, res) => {
-  const { address, jobId } = req.body;
-  const walletAddress = address.toLowerCase();
 
+export const fetchAiScoreAndJobInteraction = async (req, res) => {
   try {
-    if (!address || !jobId) {
+    const { address, jobId } = req.body;
+    const walletAddress = address?.toLowerCase();
+
+
+    if (!walletAddress || !jobId) {
       return res.status(400).json({
         success: false,
         message: "Both address and jobId are required.",
       });
     }
 
-    const candidateProfile = await Freelancer.findOne({ walletAddress });
-    const jobDescription = await Job.findOne({ jobId });
+    const [candidateProfile, jobDescription, interaction] = await Promise.all([
+      Freelancer.findOne({ walletAddress }),
+      Job.findOne({ jobId }),
+      JobInteraction.findOne({ walletAddress, jobId })
+    ]);
 
     if (!candidateProfile || !jobDescription) {
       return res.status(404).json({
@@ -220,16 +225,15 @@ export const fetchAiScore = async (req, res) => {
       });
     }
 
-    console.log(candidateProfile)
-    console.log(jobDescription)
+
+    const isSaved = interaction?.isSaved || false;
+    const isApplied = interaction?.isApplied || false;
 
     const prompt = `
-      You are an AI recruitment assistant that evaluates how well a candidate fits a specific job. 
-      Analyze the given job description and candidate profile carefully.
+      You are an AI recruitment assistant.
+      Evaluate how well a candidate fits the given job description.
 
-      If some details are missing or unclear, consider that while scoring.
-
-      Output a match score (0–100) and a short reasoning summary explaining the key strengths and gaps.
+      Provide a match score from 0 to 100 and explain the key strengths and weaknesses.
 
       Job Description:
       ${JSON.stringify(jobDescription, null, 2)}
@@ -237,47 +241,80 @@ export const fetchAiScore = async (req, res) => {
       Candidate Profile:
       ${JSON.stringify(candidateProfile, null, 2)}
 
-      Output format (JSON):
+      Output JSON format:
       {
-        "match_score": 0-100,
-        "strengths": ["skill1", "skill2", ...],
-        "gaps": ["missing_skill1", "missing_experience", ...],
-        "summary": "One-sentence evaluation of the candidate's fit."
+        "match_score": number,
+        "strengths": ["skill1", ...],
+        "gaps": ["gap1", ...],
+        "summary": "One-sentence summary"
       }
-`;
+    `;
+
+
     const ai = new GoogleGenAI({ apiKey: process.env.AI_API_KEY });
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
     });
-    let resultText = response.text;
 
-
-    resultText = resultText.replace(/```json|```/g, "").trim();
-
+    let resultText = response.text; resultText = resultText.replace(/```json|```/g, "").trim();
 
     let scoreDetailsJSON;
     try {
       scoreDetailsJSON = JSON.parse(resultText);
-    } catch (err) {
-      console.error("AI output error:", resultText);
-      return res.status(500).json({
-        success: false,
-        message: "Invalid AI response format. Please try again.",
-      });
+
+    }
+    catch (err) {
+      console.error("AI output error:", resultText); return res.status(500).json({ success: false, message: "Invalid AI response format. Please try again.", });
     }
 
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      data: scoreDetailsJSON,
+    
+      aiScore: scoreDetailsJSON,
+      isSaved,
+      isApplied
     });
+
   } catch (error) {
     console.error("fetchAiScore Error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Internal server error.",
     });
   }
 };
+
+export const saveJob = async (req, res) => {
+  const { address, jobId } = req.body;
+  const walletAddress = address?.toLowerCase();
+
+  try {
+    const updated = await JobInteraction.findOneAndUpdate(
+      { walletAddress, jobId },
+      {
+        $set: {
+          isSaved: true,
+          savedAt: new Date()
+        }
+      },
+      { upsert: true, new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Job saved successfully",
+      data: updated
+    });
+
+  } catch (error) {
+    console.error("saveJob error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to save job"
+    });
+  }
+};
+

@@ -60,8 +60,6 @@ const freelancerSchema = new mongoose.Schema(
                 quizPassed: { type: Boolean, default: false }                   // Optional if you track on-chain tokenId
             }
         ],
-
-
         isVerified: {
             type: Boolean,
             default: false,
