@@ -316,7 +316,7 @@ function PostJobs() {
 
 
          
-
+            let jobId;
             try {
                 const tx = await postJob(
                     signer,
@@ -325,11 +325,13 @@ function PostJobs() {
                     jobDetails.deadline,
                     jobDetails.completion
                 );
-                if (!tx) {
+                if (!tx.success) {
                     setRedNotice(true);
                     setNotice("Blockchain error: job not created.");
                     return;
                 }
+
+                jobId = tx.jobId;
 
             } catch (err) {
                 console.error("Blockchain transaction failed:", err);
@@ -340,6 +342,7 @@ function PostJobs() {
 
 
             try {
+                payload.jobId = jobId;
                 const res = await axios.post(
                     "http://localhost:5000/api/jobs/create-job",
                     { payload }

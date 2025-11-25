@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom';
-import { useAccount } from 'wagmi';
+import { useAccount, useWalletClient } from 'wagmi';
 import axios from "axios";
 import { useParams } from 'react-router-dom';
 import MatchScore from '../../components/MatchScore';
 import CustomConnectButton from "../../components/CustomConnectButton"
+import { BrowserProvider } from 'ethers';
+import { submitBid } from '../../utils/submitBid';
 import { Lock, ScrollText, Star, Clock, Award, Plus, X, Check, User, Mail, MapPin, Github, Linkedin, Twitter, Globe } from 'lucide-react';
 
 
@@ -14,9 +16,18 @@ function jobPage() {
     const [jobDetails, setJobDetails] = useState(null)
     const { isConnected, address } = useAccount();
     const navigate = useNavigate();
+    const { data: walletClient } = useWalletClient();
+    const [bidData, setBidData] = useState(
+        {
+            proposal: "",
+            amount: ""
+        }
+    )
 
     const [notice, setNotice] = useState(null);
     const [redNotice, setRedNotice] = useState(false);
+    const [isBidding, setIsBidding] = useState(false);
+    const [isSubmittingBid, setSubmitingBid] = useState(false);
 
     const { jobId } = useParams();
     const [jobInteraction, setJobInteraction] = useState({
@@ -26,6 +37,15 @@ function jobPage() {
 
     const [fetchingScore, setFetchingScore] = useState(true);
     const [score, setScore] = useState(null)
+
+    async function getSigner() {
+        let signer;
+        if (walletClient) {
+            const provider = new BrowserProvider(window.ethereum)
+            signer = await provider.getSigner();
+        }
+        return signer;
+    }
 
     const fetchJob = async (params) => {
         try {
@@ -106,12 +126,87 @@ function jobPage() {
         }
     }
 
+    async function handleSubmitBid() {
+
+        if (!address) {
+            setRedNotice(true);
+            setNotice("Wallet not connected");
+            return;
+        }
+
+        if (!jobId) {
+            setRedNotice(true);
+            setNotice("Job Id not found");
+            return;
+        }
+
+        if (!bidData.amount) {
+            setRedNotice(true);
+            setNotice("Amount cannot be empty");
+            return;
+        }
+
+        if (bidData.proposal.length <= 0) {
+            setRedNotice(true);
+            setNotice("Proposal cannot be left empty");
+            return;
+        }
+
+        setSubmitingBid(true)
+        try {
+            const signer = await getSigner();
+
+            const res = await submitBid(signer, bidData.amount, jobId);
+
+            if (!res) {
+                setRedNotice(true);
+                setNotice("Bid submit failed");
+                setSubmitingBid(false);
+                return;
+            }
+        } catch (error) {
+            console.log(error);
+            setRedNotice(true);
+            setNotice("Blockchain submit failed");
+            setSubmitingBid(false);
+            return;
+        }
+
+
+        try {
+            const res = await axios.post(
+                "http://localhost:5000/api/jobs/submit-bid",
+                {
+                    jobId,
+                    amount: bidData.amount,
+                    proposal: bidData.proposal,
+                    address
+                }
+            );
+
+            setRedNotice(false);
+            setNotice("Submit Bid successfull");
+            setJobInteraction(prev => ({
+                ...prev,
+                isApplied: true,
+            }));
+        } catch (error) {
+            console.log(error);
+            setRedNotice(true);
+            setNotice("DB save failed");
+
+        } finally {
+            setSubmitingBid(false);
+            setIsBidding(false);
+        }
+    }
+
+
     useEffect(() => {
         if (jobId && isConnected) {
             getMatchScore();
         }
     }, [jobId, isConnected]);
-
 
     useEffect(() => {
         if (jobId) {
@@ -123,6 +218,13 @@ function jobPage() {
         navigate('/freelancer/my-profile')
     }
 
+    function handleChange(e) {
+        const { name, value } = e.target;
+        setBidData((prev) => ({
+            ...prev,
+            [name]: value
+        }));
+    }
 
 
     return (
@@ -139,6 +241,74 @@ function jobPage() {
                             >
                                 Dismiss
                             </button>
+                        </div>
+                    </div>
+                )}
+
+                {isBidding && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                        <div className="bg-[#0d1224] w-full max-w-md rounded-xl shadow-xl p-6">
+
+
+                            <h2 className="text-xl font-semibold text-white mb-4">
+                                Submit Your Bid
+                            </h2>
+
+                            <div className="space-y-4">
+
+
+                                <div>
+                                    <label className="text-sm font-medium text-gray-300">
+                                        Bid Amount (USD)
+                                    </label>
+                                    <input
+                                        name='amount'
+                                        value={bidData.amount}
+                                        onChange={handleChange}
+                                        type="number"
+
+                                        required
+                                        min={1}
+                                        className="w-full mt-1 p-3 rounded-lg border  dark:border-gray-600 bg-[#0b0f1d]  text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                        placeholder="Enter amount"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="text-sm font-medium text-gray-300">
+                                        Proposal Details
+                                    </label>
+                                    <textarea
+                                        value={bidData.proposal}
+                                        name='proposal'
+                                        onChange={handleChange}
+                                        required
+                                        rows="4"
+                                        className="w-full mt-1 p-3 rounded-lg border border-gray-600 bg-[#0b0f1d]  text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                        placeholder="Describe how you will complete this job..."
+                                    ></textarea>
+                                </div>
+
+                            </div>
+
+                            <div className="flex items-center justify-end mt-6 gap-3">
+                                <button
+                                    disabled={isSubmittingBid}
+                                    onClick={() => setIsBidding(false)}
+                                    className="px-4 py-2 rounded-lg border border-gray-400 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#13182c] transition"
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    disabled={isSubmittingBid}
+                                    onClick={handleSubmitBid}
+                                    className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+                                >
+                                    Submit Bid
+                                </button>
+                            </div>
+
                         </div>
                     </div>
                 )}
@@ -239,24 +409,23 @@ function jobPage() {
 
                                             <div className="w-full flex gap-4">
                                                 {jobInteraction.isApplied ? (
-                                                    <button className="w-1/2 bg-transparent text-[#14a19f] dark:text-white border border-[#14a19f] dark:border-[#0a184b] font-semibold py-3 rounded-lg hover:bg-[#14a19f]/10 dark:hover:bg-[#0d1c4e] transition-colors">
+                                                    <button className="w-1/2 bg-transparent border-white border text-white font-semibold py-3 rounded-lg transition-colors">
                                                         Applied
                                                     </button>
-                                                ) : (<button className="w-1/2 bg-transparent text-[#14a19f] dark:text-white border border-[#14a19f] dark:border-[#0a184b] font-semibold py-3 rounded-lg hover:bg-[#14a19f]/10 dark:hover:bg-[#0d1c4e] transition-colors">
+                                                ) : (<button onClick={() => { setIsBidding(true) }} className="w-1/2 bg-transparent text-[#14a19f] dark:text-white border border-[#14a19f] dark:border-[#0a184b] font-semibold py-3 rounded-lg hover:bg-[#14a19f]/10 dark:hover:bg-[#0d1c4e] transition-colors">
                                                     Apply
-                                                </button>)}
+                                                </button>
+                                                )}
 
                                                 {jobInteraction.isSaved ? (
                                                     <button className="w-1/2 bg-transparent border-white border text-white font-semibold py-3 rounded-lg transition-colors">
                                                         Saved
                                                     </button>
-                                                ) : (<button onClick={saveJob} className="w-1/2 dark:bg-[#0a184b] dark:hover:bg-[#0a184b]/80 bg-[#14a19f] text-white font-semibold py-3 rounded-lg hover:bg-[#14a19f]/70 transition-colors">
-                                                    Save for later
-                                                </button>)}
-
-
-
-
+                                                ) : (
+                                                    <button onClick={saveJob} className="w-1/2 dark:bg-[#0a184b] dark:hover:bg-[#0a184b]/80 bg-[#14a19f] text-white font-semibold py-3 rounded-lg hover:bg-[#14a19f]/70 transition-colors">
+                                                        Save for later
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     )

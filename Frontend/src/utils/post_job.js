@@ -32,20 +32,30 @@ export const postJob = async (signer, ipfs, budget, bidDeadline, expireDeadline)
             return false;
         }
 
-        // Convert budget to BigInt
-        const budgetBn = BigInt(budget);
+        const amountInUsd = Number(budget);  // 12.5 for example
+        const amountInToken = BigInt(Math.round(amountInUsd * 1e6));
+
 
         const contract = new Contract(contractAddress, jobContract, signer);
 
         const tx = await contract.createJob(
             ipfs,
-            budgetBn,
+            amountInToken,
             BigInt(bidSec),
             BigInt(expSec)
         );
 
         const receipt = await tx.wait();
-        return receipt.status === 1;
+        const event = receipt.logs
+            .map(log => contract.interface.parseLog(log))
+            .find(e => e && e.name === "JobCreated");
+
+        const jobId = event?.args?.jobId;
+        return {
+            success: receipt.status === 1,
+            jobId: jobId
+        }
+
     } catch (error) {
         console.error("postJob error:", error);
         return false;

@@ -6,6 +6,7 @@ import jobModel from "../models/job_models/job.model.js";
 import Freelancer from "../models/freelancer_models/freelancers.model.js";
 import { uploadToIpfs } from "../services/upload_to_pinata.js";
 import JobInteraction from "../models/job_models/jobInteraction.model.js";
+import Bid from "../models/job_models/bid.model.js";
 
 dotenv.config();
 
@@ -140,9 +141,6 @@ export const createJob = async (req, res) => {
     const walletAddress = payload.clientAddress.toLowerCase();
     console.log(walletAddress)
 
-
-
-
     const user = await User.findOne({ wallets: walletAddress });
     if (!user) {
       console.log("Unable to find the user")
@@ -258,7 +256,8 @@ export const fetchAiScoreAndJobInteraction = async (req, res) => {
       contents: prompt,
     });
 
-    let resultText = response.text; resultText = resultText.replace(/```json|```/g, "").trim();
+    let resultText = response.text;
+    resultText = resultText.replace(/```json|```/g, "").trim();
 
     let scoreDetailsJSON;
     try {
@@ -269,10 +268,11 @@ export const fetchAiScoreAndJobInteraction = async (req, res) => {
       console.error("AI output error:", resultText); return res.status(500).json({ success: false, message: "Invalid AI response format. Please try again.", });
     }
 
+    console.log()
 
     return res.status(200).json({
       success: true,
-    
+
       aiScore: scoreDetailsJSON,
       isSaved,
       isApplied
@@ -317,4 +317,53 @@ export const saveJob = async (req, res) => {
     });
   }
 };
+
+export const saveBid = async (req, res) => {
+    const { jobId, amount, proposal, address } = req.body;
+
+    if (!jobId || !amount || !proposal || !address) {
+        return res.status(400).json({ success: false, message: "Missing fields" });
+    }
+
+    const walletAddress = address.toLowerCase();
+
+    try {
+       
+        const bid = await Bid.create({
+            jobId: jobId,
+            bidderAddress: walletAddress,
+            bidAmount: amount,
+            proposal: proposal
+        });
+
+        
+        const updated = await JobInteraction.findOneAndUpdate(
+            { walletAddress },
+            {
+                $set: {
+                    isApplied:true,
+                    appliedAt: new Date()
+                }
+            },
+            { upsert: true, new: true }
+        );
+
+       
+        return res.status(201).json({
+            success: true,
+            message: "Bid submitted successfully",
+            bid,
+            interaction: updated
+        });
+
+    } catch (error) {
+        console.error("saveBid error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error",
+            error: error.message
+        });
+    }
+};
+
 

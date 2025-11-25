@@ -40,7 +40,7 @@ const router = createBrowserRouter([
     path: "/",
     element: (
       <>
-        <Snowfall snowflakeCount={60} />
+        {/* <Snowfall snowflakeCount={60} /> */}
         <Navbar />
         <App />
       </>
@@ -50,7 +50,7 @@ const router = createBrowserRouter([
     path: "/freelancer/dashboard",
     element: (
       <>
-        <Snowfall snowflakeCount={60} />
+        {/* <Snowfall snowflakeCount={60} /> */}
         <Navbar />
         <Dashboard />
       </>
@@ -59,7 +59,7 @@ const router = createBrowserRouter([
     path: "/browse-jobs",
     element: (
       <>
-        <Snowfall snowflakeCount={60} />
+        {/* <Snowfall snowflakeCount={60} /> */}
         <Navbar />
         <BrowseJobs />
       </>
@@ -68,7 +68,7 @@ const router = createBrowserRouter([
     path: "/freelancer/my-profile",
     element: (
       <>
-        <Snowfall snowflakeCount={60} />
+        {/* <Snowfall snowflakeCount={60} /> */}
         <Navbar />
         <MyProfile />
       </>
@@ -78,7 +78,7 @@ const router = createBrowserRouter([
     path: "/freelancer/settings",
     element: (
       <>
-        <Snowfall snowflakeCount={60} />
+        {/* <Snowfall snowflakeCount={60} /> */}
         <Navbar />
         <Setting />
       </>
@@ -113,7 +113,7 @@ const router = createBrowserRouter([
     path: "/post-job",
     element: (
       <>
-        <Snowfall snowflakeCount={60} />
+        {/* <Snowfall snowflakeCount={60} /> */}
         <Navbar />
         <PostJobs />
       </>
@@ -122,7 +122,7 @@ const router = createBrowserRouter([
     path: "/job/:jobId",
     element: (
       <>
-        <Snowfall snowflakeCount={60} />
+        {/* <Snowfall snowflakeCount={60} /> */}
         <Navbar />
         <JobPage />
       </>

@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 const JobSchema = new mongoose.Schema({
     jobId: {
         type: String,
-        default: uuidv4
+        required: true
     },
     title: {
         type: String,
