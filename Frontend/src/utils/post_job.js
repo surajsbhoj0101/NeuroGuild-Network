@@ -1,4 +1,4 @@
-import { jobContract } from "./JobContract";
+import { jobContract } from "../abis/JobContract";
 import { Contract } from "ethers";
 
 const contractAddress = "0x18e93bc7dD5aFde9c627ff75d05708028123BFB5";
@@ -32,8 +32,9 @@ export const postJob = async (signer, ipfs, budget, bidDeadline, expireDeadline)
             return false;
         }
 
-        const amountInUsd = Number(budget);  // 12.5 for example
+        const amountInUsd = Number(budget);  
         const amountInToken = BigInt(Math.round(amountInUsd * 1e6));
+        console.log(amountInToken)
 
 
         const contract = new Contract(contractAddress, jobContract, signer);

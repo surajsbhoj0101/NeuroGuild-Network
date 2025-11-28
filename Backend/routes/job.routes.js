@@ -6,7 +6,7 @@ import { fetchJob } from "../controllers/jobs.controller.js";
 import { fetchAiScoreAndJobInteraction } from "../controllers/jobs.controller.js";
 import { getJobIpfs } from "../controllers/jobs.controller.js";
 import { saveJob } from "../controllers/jobs.controller.js";
-
+import { saveBid } from "../controllers/jobs.controller.js";
 
 const jobRoutes = express.Router();
 
@@ -17,5 +17,6 @@ jobRoutes.get('/fetch-job/:jobId', fetchJob)
 jobRoutes.post('/fetch-ai-score-and-job-interaction', fetchAiScoreAndJobInteraction)
 jobRoutes.post('/get-job-ipfs',getJobIpfs)
 jobRoutes.put('/save-job',saveJob)
+jobRoutes.put('/submit-bid',saveBid)
 
 export default jobRoutes

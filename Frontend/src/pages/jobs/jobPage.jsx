@@ -174,7 +174,7 @@ function jobPage() {
 
 
         try {
-            const res = await axios.post(
+            const res = await axios.put(
                 "http://localhost:5000/api/jobs/submit-bid",
                 {
                     jobId,
