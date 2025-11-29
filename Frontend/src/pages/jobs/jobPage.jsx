@@ -28,6 +28,12 @@ function jobPage() {
     const [redNotice, setRedNotice] = useState(false);
     const [isBidding, setIsBidding] = useState(false);
     const [isSubmittingBid, setSubmitingBid] = useState(false);
+    const [showClientProfile, setShowClientProfile] = useState(false);
+    const [clientHiringDetails, setClientHiringDetails] = useState({
+        open: "",
+        inProgress: "",
+        Completed: ""
+    })
 
     const { jobId } = useParams();
     const [jobInteraction, setJobInteraction] = useState({
@@ -51,6 +57,12 @@ function jobPage() {
         try {
             const job = await axios.get(`http://localhost:5000/api/jobs/fetch-job/${jobId}`);
             setJobDetails(job.data.jobDetails);
+            setClientHiringDetails({
+                open: job.data?.categorized?.open.length,
+                inProgress: job.data?.categorized?.inProgress.length,
+                completed: job.data?.categorized?.completed.length
+            })
+
         } catch (error) {
             console.log("Unable to find job details", error);
             setRedNotice(true)
@@ -227,6 +239,9 @@ function jobPage() {
     }
 
 
+
+
+
     return (
         <>
             <div className='dark:bg-[#0f111d]  flex bg-[#161c32] w-full'>
@@ -244,6 +259,86 @@ function jobPage() {
                         </div>
                     </div>
                 )}
+
+                {
+                    showClientProfile && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                            <div className="text-white w-full  bg-[#161c32]/50 max-w-lg shadow-2xl rounded-xl p-6 animate-fadeIn">
+
+                                {/* Header */}
+                                <div className="flex items-center gap-4 mb-6">
+                                    <img
+                                        src={jobDetails?.clientDetails?.companyDetails?.logoUrl ||
+                                            `https://api.dicebear.com/7.x/bottts/svg?seed=${jobDetails?.clientAddress}`}
+                                        alt="Client Logo"
+                                        className="w-16 h-16 rounded-full border border-[#14a19f]/30 object-cover"
+                                    />
+                                    <div>
+                                        <h2 className="text-xl font-semibold">{jobDetails?.clientDetails?.companyDetails?.companyName || "Anonymous"}</h2>
+                                        <p className="text-gray-400 text-sm">{jobDetails?.clientDetails?.companyDetails?.location || "Unknown Location"}</p>
+                                    </div>
+                                </div>
+
+                                {/* Stats */}
+                                <div className="grid grid-cols-3 gap-3 mb-6">
+                                    <div className=" bg-[#1be4e0]/40
+                                    dark:bg-[#0a184b]/40 p-4 rounded-lg text-center">
+                                        <p className="text-lg font-semibold">
+                                            {((clientHiringDetails?.open ?? 0) +
+                                                (clientHiringDetails?.Completed ?? 0) +
+                                                (clientHiringDetails?.inProgress ?? 0))}
+                                        </p>
+                                        <p className="text-gray-400 text-xs">Jobs Posted</p>
+                                    </div>
+
+                                    <div className=" bg-[#1be4e0]/40
+                                    dark:bg-[#0a184b]/40 p-4 rounded-lg text-center">
+                                        <p className="text-lg font-semibold">
+                                            {(Number(clientHiringDetails.Completed || 0) + Number(clientHiringDetails.inProgress || 0)) ?? 0}
+                                        </p>
+                                        <p className="text-gray-400 text-xs">Hired</p>
+                                    </div>
+
+                                    <div className=" bg-[#1be4e0]/40
+                                    dark:bg-[#0a184b]/40 p-4 rounded-lg text-center">
+                                        <p className="text-lg font-semibold">{clientHiringDetails?.Completed ?? 0}</p>
+                                        <p className="text-gray-400 text-xs">Completed</p>
+                                    </div>
+                                </div>
+
+                                {/* Ratings */}
+                                <div className=" bg-[#1be4e0]/40
+                                    dark:bg-[#0a184b]/40 p-4 rounded-lg mb-6">
+                                    <p className="text-sm text-gray-400 mb-1">Rating</p>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-yellow-400 text-lg">★</span>
+                                        <p className="font-semibold text-lg">{jobDetails?.clientDetails?.stats?.averageRating / 5 ?? "N/A"}</p>
+                                    </div>
+                                </div>
+
+
+                                <div className=" bg-[#1be4e0]/40
+                                    dark:bg-[#0a184b]/30 p-4 rounded-lg mb-6">
+                                    <p className="text-sm text-gray-400 mb-1">About</p>
+                                    <p className="text-gray-300 text-sm">
+                                        No description available
+                                    </p>
+                                </div>
+
+
+                                <button
+                                    onClick={() => setShowClientProfile(false)}
+                                    className="w-full bg-[#1be4e0]/40
+                                    dark:bg-[#0a184b]/40 hover:bg-[#1be4e0]/60 hover:dark:bg-[#0a184b]/60 transition-colors p-3 rounded-lg text-center font-semibold"
+                                >
+                                    Close
+                                </button>
+
+                            </div>
+                        </div>
+                    )
+                }
+
 
                 {isBidding && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -511,7 +606,7 @@ function jobPage() {
                                 </div>
 
 
-                                <button className="w-full bg-transparent text-[#14a19f] dark:text-white border border-[#14a19f] dark:border-[#0a184b] font-semibold py-2 rounded-lg hover:bg-[#14a19f]/10 dark:hover:bg-[#0d1c4e] transition-colors">
+                                <button onClick={() => { setShowClientProfile(true) }} className="w-full bg-transparent text-[#14a19f] dark:text-white border border-[#14a19f] dark:border-[#0a184b] font-semibold py-2 rounded-lg hover:bg-[#14a19f]/10 dark:hover:bg-[#0d1c4e] transition-colors">
                                     View Profile
                                 </button>
                             </div>

@@ -16,10 +16,8 @@ function Dashboard() {
     useEffect(() => {
         let t;
         if (!isConnected) {
-            // show user-friendly message, then redirect after short delay
             setNotice("Wallet not connected — redirecting to home...");
             t = setTimeout(() => {
-                // perform navigation after showing notice
                 window.location.href = "/";
             }, 1800);
         } else {
@@ -45,7 +43,6 @@ function Dashboard() {
                 </div>
             )}
 
-            {/* make container relative and hide horizontal overflow to prevent extra width */}
             <div className='dark:bg-[#0f111d] pt-6 flex bg-[#161c32] w-full'>
                 {/* decorative background blobs */}
                 <div className="pointer-events-none absolute right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
@@ -54,6 +51,9 @@ function Dashboard() {
                 <SideBar />
 
                 <div className='flex px-12 p-2 w-full'>
+                    <div className='cards border border-white/70 rounded-md p-2 flex'>
+                        <div ></div>
+                    </div>
                     <MyJobsTabs />
                 </div>
             </div>

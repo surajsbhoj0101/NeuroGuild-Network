@@ -14,7 +14,6 @@ function BrowseJobs() {
     const { isConnected, address } = useAccount();
     const navigate = useNavigate();
 
-    // user notice shown when redirecting due to no wallet
     const [notice, setNotice] = useState(null);
     const [redNotice, setRedNotice] = useState(false);
 
@@ -22,11 +21,10 @@ function BrowseJobs() {
 
     const [skills, setSkills] = useState([]);
     const [selectedSkills, setSelectedSkills] = useState([]);
-    const [jobType, setJobType] = useState(""); // single select
-    const [sortBy, setSortBy] = useState("");   // single select
+    const [jobType, setJobType] = useState(""); 
+    const [sortBy, setSortBy] = useState("");   
     const [jobs, setJobs] = useState([]);
 
-    // results shown (applied filters)
     const [filteredJobs, setFilteredJobs] = useState([]);
 
     async function fetchJobs(params) {

@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import Job from "../models/job_models/job.model.js";
 import User from "../models/user.model.js";
 import jobModel from "../models/job_models/job.model.js";
+import Client from "../models/client_models/clients.model.js"
 import Freelancer from "../models/freelancer_models/freelancers.model.js";
 import { uploadToIpfs } from "../services/upload_to_pinata.js";
 import JobInteraction from "../models/job_models/jobInteraction.model.js";
@@ -181,17 +182,35 @@ export const fetchJobs = async (req, res) => {
 export const fetchJob = async (req, res) => {
   const { jobId } = req.params;
 
+
   try {
     const job = await Job.findOne({ jobId }).populate({
       path: "clientDetails",
-      select: "companyDetails.logoUrl companyDetails.companyName stats.averageRating"
+      select: "companyDetails.logoUrl walletAddress companyDetails.location companyDetails.companyName stats.averageRating "
     });
+
+
+    const clientAddress = job.clientAddress;
+
+    //Used to Get all jobs posted by this client
+    const jobsByClient = await Job.find({
+      clientAddress: clientAddress
+    });
+
+    const categorized = {
+      open: jobsByClient.filter(j => j.status === "open"),
+      inProgress: jobsByClient.filter(j => j.status === "in-progress"),
+      completed: jobsByClient.filter(j => j.status === "completed"),
+      cancelled: jobsByClient.filter(j => j.status === "cancelled"),
+    };
+
+
 
     if (!job) {
       return res.status(404).json({ isFound: false, message: "Job not found", jobId: jobId });
     }
 
-    res.status(200).json({ isFound: true, jobDetails: job });
+    res.status(200).json({ isFound: true, jobDetails: job, categorized: categorized });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -319,51 +338,53 @@ export const saveJob = async (req, res) => {
 };
 
 export const saveBid = async (req, res) => {
-    const { jobId, amount, proposal, address } = req.body;
+  const { jobId, amount, proposal, address } = req.body;
 
-    if (!jobId || !amount || !proposal || !address) {
-        return res.status(400).json({ success: false, message: "Missing fields" });
-    }
+  if (!jobId || !amount || !proposal || !address) {
+    return res.status(400).json({ success: false, message: "Missing fields" });
+  }
 
-    const walletAddress = address.toLowerCase();
+  const walletAddress = address.toLowerCase();
 
-    try {
-       
-        const bid = await Bid.create({
-            jobId: jobId,
-            bidderAddress: walletAddress,
-            bidAmount: amount,
-            proposal: proposal
-        });
+  try {
 
-        
-        const updated = await JobInteraction.findOneAndUpdate(
-            { walletAddress },
-            {
-                $set: {
-                    isApplied:true,
-                    appliedAt: new Date()
-                }
-            },
-            { upsert: true, new: true }
-        );
+    const bid = await Bid.create({
+      jobId: jobId,
+      bidderAddress: walletAddress,
+      bidAmount: amount,
+      proposal: proposal
+    });
 
-       
-        return res.status(201).json({
-            success: true,
-            message: "Bid submitted successfully",
-            bid,
-            interaction: updated
-        });
 
-    } catch (error) {
-        console.error("saveBid error:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Internal Server Error",
-            error: error.message
-        });
-    }
+    const updated = await JobInteraction.findOneAndUpdate(
+      { walletAddress, jobId },
+      {
+        $set: {
+          isApplied: true,
+          appliedAt: new Date()
+        }
+      },
+      { upsert: true, new: true }
+    );
+
+
+    return res.status(201).json({
+      success: true,
+      message: "Bid submitted successfully",
+      bid,
+      interaction: updated
+    });
+
+  } catch (error) {
+    console.error("saveBid error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message
+    });
+  }
 };
+
+
 
 
