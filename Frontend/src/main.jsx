@@ -13,7 +13,7 @@ import '@fontsource/orbitron/400.css';
 import '@fontsource/orbitron/700.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/700.css';
-import Dashboard from './pages/FreelancerPages/Dashboard.jsx';
+import FreelancerDashboard from './pages/FreelancerPages/Dashboard.jsx';
 import BrowseJobs from './pages/FreelancerPages/BrowseJobs.jsx';
 import MyProfile from './pages/FreelancerPages/MyProfile.jsx';
 import Setting from './pages/FreelancerPages/Setting.jsx';
@@ -22,6 +22,8 @@ import SbtMint from './pages/FreelancerPages/SbtMint.jsx';
 import ClientProfile from './pages/ClientPages/ClientProfile.jsx';
 import PostJobs from './pages/ClientPages/PostJobs.jsx';
 import JobPage from './pages/jobs/jobPage.jsx';
+import ClientDashboard from './pages/ClientPages/Dashboard.jsx';
+import SideBar from './components/SideBar.jsx';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
@@ -52,7 +54,7 @@ const router = createBrowserRouter([
       <>
         {/* <Snowfall snowflakeCount={60} /> */}
         <Navbar />
-        <Dashboard />
+        <FreelancerDashboard />
       </>
     )
   }, {
@@ -125,6 +127,15 @@ const router = createBrowserRouter([
         {/* <Snowfall snowflakeCount={60} /> */}
         <Navbar />
         <JobPage />
+      </>
+    )
+  },
+  {
+    path:"/client/dashboard",
+    element:(
+      <>
+      <Navbar />
+      <ClientDashboard />
       </>
     )
   }

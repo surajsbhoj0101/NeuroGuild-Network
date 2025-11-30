@@ -8,6 +8,7 @@ import { checkUserPassedQuiz } from "../controllers/freelancer.controller.js";
 import { upgradeSkill } from "../controllers/freelancer.controller.js";
 import { fetchSbt } from "../controllers/freelancer.controller.js";
 import { isAlreadyMint } from "../controllers/freelancer.controller.js";
+import { fetchFreelancerDashboard } from "../controllers/freelancer.controller.js";
 
 const freelancerRoutes = express.Router()
 
@@ -19,6 +20,7 @@ freelancerRoutes.get('/check-user-passed', checkUserPassedQuiz)
 freelancerRoutes.put('/upgrade-skill', upgradeSkill)
 freelancerRoutes.post('/is-already-mint', isAlreadyMint);
 freelancerRoutes.post('/fetch-sbt', fetchSbt)
+freelancerRoutes.get('/dashboard/:address', fetchFreelancerDashboard)
 
 
 export default freelancerRoutes;

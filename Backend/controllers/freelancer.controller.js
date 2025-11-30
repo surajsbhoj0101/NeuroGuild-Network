@@ -8,6 +8,10 @@ import axios from "axios";
 import { uploadToIpfs } from "../services/upload_to_pinata.js";
 import { checkUserAlreadyMinted } from "../services/check_user_already_mint.js"
 import { updateHolderSkill } from "../services/update_user_skill.js"
+import JobInteraction from "../models/job_models/jobInteraction.model.js";
+import Bid from "../models/job_models/bid.model.js";
+import Job from "../models/job_models/job.model.js";
+
 
 
 dotenv.config();
@@ -144,7 +148,7 @@ export const fetchQuestions = async (req, res) => {
         res.status(200).json({
             success: true,
             questions: storedQuestions,
-            quizId: newSession._id  
+            quizId: newSession._id
         });
 
     } catch (error) {
@@ -196,7 +200,7 @@ export const quizCheckAllCorrect = async (req, res) => {
 
     try {
 
-        const latestQuiz = await quizModel.findById(quizId); 
+        const latestQuiz = await quizModel.findById(quizId);
 
         if (!latestQuiz) {
             return res.status(404).json({ error: "No quiz session found" });
@@ -223,7 +227,7 @@ export const quizCheckAllCorrect = async (req, res) => {
         const attempt = await quizModel.create({
             wallet: walletAddress,
             skill,
-            questions: latestQuiz.questions, 
+            questions: latestQuiz.questions,
             passed: allCorrect,
         });
         let isWhiteListed = false;
@@ -500,5 +504,43 @@ export const fetchSbt = async (req, res) => {
     }
 };
 
+export const fetchFreelancerDashboard = async (req, res) => {
+    const { address } = req.params;
+    const bidderAddress = address.toLowerCase();
 
+    try {
+        const bids = await Bid.find({ bidderAddress })
+            .populate("JobDetails")
+            .lean();//When You only need to read data.
+       
+
+        const categorized = {
+            open: bids.filter(b =>
+                b.JobDetails?.status === "open"
+            ),
+
+            inProgress: bids.filter(b =>
+                b.JobDetails?.status === "in-progress" &&
+                b.JobDetails?.hiredFreelancer === b.bidderAddress
+            ),
+
+            completed: bids.filter(b =>
+                b.JobDetails?.status === "completed" &&
+                b.JobDetails?.hiredFreelancer === b.bidderAddress
+            ),
+
+            cancelled: bids.filter(b =>
+                b.JobDetails?.status === "cancelled" &&
+                b.JobDetails?.hiredFreelancer === b.bidderAddress
+            ),
+        };
+        console.log(categorized)
+        res.status(200).json({ success: true, categorized: categorized });
+
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+}
 

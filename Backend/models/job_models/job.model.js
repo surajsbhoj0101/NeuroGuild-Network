@@ -66,6 +66,10 @@ const JobSchema = new mongoose.Schema({
         default: 0
     },
 
+    hiredFreelancer: {
+        type: String
+    }
+
 }, { timestamps: true });
 
 

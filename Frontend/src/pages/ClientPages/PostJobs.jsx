@@ -282,7 +282,7 @@ function PostJobs() {
             budget: jobDetails.budget ? Number(jobDetails.budget) : 0,
             deadline: dlISO,
             completion: compISO,
-            clientAddress: address,
+            clientAddress: address.toLowerCase(),
             createdAt: new Date().toISOString(),
         };
 
@@ -408,12 +408,12 @@ function PostJobs() {
                 <div className="pointer-events-none fixed right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
                 <div className="pointer-events-none fixed left-[5%] bottom-[1%] w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
 
-                <div className="flex">
+                <div className="flex pt-6">
 
                     <SideBar />
 
 
-                    <div className="flex flex-1 gap-6 p-6">
+                    <div className="flex flex-1 px-6 gap-6 ">
 
                         <div className="w-full lg:w-[60%] space-y-6">
                             <h1 style={orbitronStyle} className="text-3xl text-white font-bold">

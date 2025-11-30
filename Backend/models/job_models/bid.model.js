@@ -25,6 +25,12 @@ const BidSchema = new mongoose.Schema(
       default: ""
     },
 
+    status: {
+      type: String,
+      enum: ["pending", "accepted", "rejected"],
+      default: "pending"
+    },
+
     timestamp: {
       type: Date,
       default: Date.now
@@ -33,4 +39,12 @@ const BidSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+BidSchema.virtual("JobDetails", {
+  ref: "Job",
+  localField: "jobId",      // value stored in Bid
+  foreignField: "jobId",    // match with Job.jobId
+  justOne: true
+});
+
 export default mongoose.model("Bid", BidSchema);
+

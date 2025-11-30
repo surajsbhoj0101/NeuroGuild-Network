@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAccount } from 'wagmi'
 import SideBar from '../../components/SideBar'
 import axios from "axios"
+import { ArrowBigRight, ArrowBigLeft } from 'lucide-react';
 
 import "../../index.css"
 
@@ -17,12 +18,12 @@ function BrowseJobs() {
     const [notice, setNotice] = useState(null);
     const [redNotice, setRedNotice] = useState(false);
 
-
+    const [currentIndex, setCurrentIndex] = useState(0);
 
     const [skills, setSkills] = useState([]);
     const [selectedSkills, setSelectedSkills] = useState([]);
-    const [jobType, setJobType] = useState(""); 
-    const [sortBy, setSortBy] = useState("");   
+    const [jobType, setJobType] = useState("");
+    const [sortBy, setSortBy] = useState("");
     const [jobs, setJobs] = useState([]);
 
     const [filteredJobs, setFilteredJobs] = useState([]);
@@ -86,6 +87,18 @@ function BrowseJobs() {
         });
     }
 
+    function nextJobs() {
+        if (currentIndex + 3 < filteredJobs?.length) {
+            setCurrentIndex(currentIndex + 3);
+        }
+    }
+
+    function prevJobs() {
+        if (currentIndex - 3 >= 0) {
+            setCurrentIndex(currentIndex - 3);
+        }
+    }
+
 
     const handleJobType = (type) => {
         setJobType(curr => curr === type ? "" : type);
@@ -127,6 +140,9 @@ function BrowseJobs() {
         setSortBy("");
         setFilteredJobs(jobs);
     };
+
+    const visibleItems = filteredJobs.slice(currentIndex, currentIndex + 3);
+
 
     return (
 
@@ -263,18 +279,33 @@ function BrowseJobs() {
                         </div>
 
                         <div className='text-sm text-gray-300'>
-                            Showing <span className='font-bold text-white'>{filteredJobs?.length}</span> results
+                            Total <span className='font-bold text-white'>{filteredJobs?.length}</span> results
                         </div>
                     </div>
+
+                    <div className="bg-[#161c32] dark:bg-[#0f111d] border border-white/20 m-4 rounded-lg shadow-lg py-2 flex justify-between items-center px-4">
+
+
+                        <button onClick={prevJobs} className="p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 transition">
+                            <ArrowBigLeft className="text-white" size={24} />
+                        </button>
+
+
+                        <button onClick={nextJobs} className="p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 transition rotate-180">
+                            <ArrowBigLeft className="text-white" size={24} />
+                        </button>
+
+                    </div>
+
                 </div>
 
                 <div className='w-full lg:w-1/2 px-2'>
                     <h1 style={orbitronStyle} className='text-3xl  text-white font-bold px-6 mb-4'>Available Gigs</h1>
                     <div style={robotoStyle} className='jobs-found py-1  space-y-3 px-1'>
-                        {filteredJobs?.length === 0 ? (
+                        {visibleItems?.length === 0 ? (
                             <div className="text-center text-gray-400 py-8">No jobs match your filters.</div>
                         ) : (
-                            filteredJobs.map((item, idx) => (
+                            visibleItems.map((item, idx) => (
                                 <div
                                     onClick={() => fetchJobPage(item?.jobId)}
                                     key={idx}
@@ -289,7 +320,7 @@ function BrowseJobs() {
                                                     cursor-pointer
                                                     flex
                                                     flex-col
-                                                    gap-4
+                                                    gap-7
                                                     transition-all
                                                     duration-300
                                                     hover:shadow-blue-500/40

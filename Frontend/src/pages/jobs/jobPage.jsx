@@ -438,6 +438,10 @@ function jobPage() {
                                     <Clock size={16} /> {jobDetails?.deadline?.slice(0, 10)}
                                 </span>
 
+                                <span className="flex items-center gap-1 text-blue-300">
+                                    <Clock size={16} /> {jobDetails?.completion?.slice(0, 10) ?? "—"}
+                                </span>
+
                             </div>
                         </div>
 

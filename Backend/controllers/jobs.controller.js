@@ -173,7 +173,10 @@ export const fetchJobs = async (req, res) => {
       select: "companyDetails.logoUrl companyDetails.companyName stats.averageRating"
     });
 
-    res.status(200).json({ success: true, jobs: jobs })
+    const filteredJobs = jobs.filter(job => new Date(job.deadline) >= new Date());
+
+
+    res.status(200).json({ success: true, jobs: filteredJobs })
   } catch (error) {
     res.status(500).json({ success: false, message: "Job fetching failed" })
   }
