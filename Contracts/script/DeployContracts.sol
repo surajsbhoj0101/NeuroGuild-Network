@@ -20,8 +20,9 @@ import {Script} from "forge-std/Script.sol";
 
 contract DeployContracts is Script {
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        vm.startBroadcast(deployerPrivateKey);
+        // uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        // vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
 
         // -----------------------------------------------------
         // 1. Deploy Core SBT + Registry System

@@ -240,7 +240,7 @@ contract JobContract is Escrow, ReentrancyGuard {
         bytes32 jobId,
         uint256 bidAmount
     ) external onlyFreelancer onlyOpenJob(jobId) {
-        if (bidAmount >= jobs[jobId].budget)
+        if (bidAmount <= jobs[jobId].budget)
             revert AmountShouldBeGreaterThanOffer();
         if (jobs[jobId].bidDeadline < block.timestamp)
             revert cannotSubmitBidDeadlineExceed();
