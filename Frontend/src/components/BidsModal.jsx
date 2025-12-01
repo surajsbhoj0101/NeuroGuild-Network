@@ -68,13 +68,13 @@ function BidsModal({ job, bids, onClose, onAcceptBid, onRejectBid }) {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3 flex-1">
                     <img
-                      src={bid.freelancerAvatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${bid.freelancerId}`}
-                      alt={bid.freelancerName}
+                      src={bid?.FreelancerDetails?.BasicInformation?.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${bid.bidderAddress}`}
+                      alt={bid?.FreelancerDetails?.BasicInformation?.name}
                       className="w-10 h-10 rounded-full"
                     />
                     <div>
-                      <p className="text-white font-semibold">{bid.freelancerName}</p>
-                      <p className="text-xs text-gray-400">{bid.freelancerTitle || 'Freelancer'}</p>
+                      <p className="text-white font-semibold">{bid?.FreelancerDetails?.BasicInformation?.name}</p>
+                      <p className="text-xs text-gray-400">{bid.bid?.FreelancerDetails?.BasicInformation?.title|| 'Freelancer'}</p>
                     </div>
                   </div>
                   <div className={`px-3 py-1 rounded text-xs font-medium ${
@@ -89,7 +89,7 @@ function BidsModal({ job, bids, onClose, onAcceptBid, onRejectBid }) {
                 {/* Bid Amount */}
                 <div className="flex items-center gap-2 mb-3 text-lg font-semibold text-[#14a19f]">
                   <DollarSign size={18} />
-                  {bid.amount.toLocaleString()}
+                  {bid.bidAmount.toLocaleString()}
                 </div>
 
                 {/* Bid Proposal - Expandable */}
@@ -107,9 +107,9 @@ function BidsModal({ job, bids, onClose, onAcceptBid, onRejectBid }) {
 
                 {/* Bid Info */}
                 <div className="flex flex-wrap gap-3 text-xs text-gray-400 mb-3">
-                  <span>Submitted: {new Date(bid.submittedAt).toLocaleDateString()}</span>
-                  {bid.rating && <span>Rating: ⭐ {bid.rating}/5</span>}
-                  {bid.completedProjects && <span>Completed: {bid.completedProjects}</span>}
+                  <span>Submitted: {new Date(bid?.timestamp).toLocaleDateString()}</span>
+                 
+                  {/* {bid.completedProjects && <span>Completed: {bid.completedProjects}</span>} */}
                 </div>
 
                 {/* Actions */}

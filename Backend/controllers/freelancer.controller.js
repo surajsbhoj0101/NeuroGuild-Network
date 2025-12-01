@@ -510,9 +510,14 @@ export const fetchFreelancerDashboard = async (req, res) => {
 
     try {
         const bids = await Bid.find({ bidderAddress })
-            .populate("JobDetails")
-            .lean();//When You only need to read data.
-       
+            .populate({
+                path: "JobDetails",
+                populate: {
+                    path: "clientDetails"
+                }
+            })
+            .lean({ virtuals: true });
+
 
         const categorized = {
             open: bids.filter(b =>

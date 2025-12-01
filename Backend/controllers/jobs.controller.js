@@ -173,8 +173,13 @@ export const fetchJobs = async (req, res) => {
       select: "companyDetails.logoUrl companyDetails.companyName stats.averageRating"
     });
 
-    const filteredJobs = jobs.filter(job => new Date(job.deadline) >= new Date());
+    const now = new Date();
 
+    const filteredJobs = jobs.filter(job =>
+      job.status === "open" &&
+      job.deadline &&
+      new Date(job.deadline) >= now
+    );
 
     res.status(200).json({ success: true, jobs: filteredJobs })
   } catch (error) {
@@ -370,12 +375,19 @@ export const saveBid = async (req, res) => {
       { upsert: true, new: true }
     );
 
+    const updatedJob = await Job.findOneAndUpdate(
+      { jobId },
+      { $inc: { proposalsCount: 1 } },
+      { new: true }
+    );
+
 
     return res.status(201).json({
       success: true,
       message: "Bid submitted successfully",
       bid,
-      interaction: updated
+      interaction: updated,
+      updatedJob: updatedJob
     });
 
   } catch (error) {
@@ -388,6 +400,50 @@ export const saveBid = async (req, res) => {
   }
 };
 
+export const fetchClientsJobs = async (req, res) => {
+  const { address } = req.params;
+  const clientAddress = address.toLowerCase();
+
+  try {
+    const jobs = await Job.find({ clientAddress });
+    res.status(200).json({ success: true, jobs: jobs })
+  } catch (error) {
+    console.error("Fetch job posted by client error", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message
+    });
+  }
+}
+
+export const fetchJobBids = async (req, res) => {
+  const { jobId } = req.params;
+  console.log(jobId)
+  try {
+    const bids = await Bid.find({ jobId })
+      .populate({ path: "FreelancerDetails" }).lean({ virtuals: true });
+      console.log(bids)
+    res.status(200).json({ success: true, bids: bids })
+  } catch (error) {
+    console.error("Fetch Bids error", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message
+    });
+  }
+}
+
+
+
+// Bid.find({ bidderAddress })
+// .populate({
+//   path: "BidDetails",
+//   populate: {
+//     path: "FreelancerDetails",
+//   }
+// }).lean({ virtuals: true });
 
 
 

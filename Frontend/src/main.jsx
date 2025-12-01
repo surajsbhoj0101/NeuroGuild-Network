@@ -24,6 +24,7 @@ import PostJobs from './pages/ClientPages/PostJobs.jsx';
 import JobPage from './pages/jobs/jobPage.jsx';
 import ClientDashboard from './pages/ClientPages/Dashboard.jsx';
 import SideBar from './components/SideBar.jsx';
+import { Snowflake } from 'lucide-react';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
@@ -131,11 +132,12 @@ const router = createBrowserRouter([
     )
   },
   {
-    path:"/client/dashboard",
-    element:(
+    path: "/client/dashboard",
+    element: (
       <>
-      <Navbar />
-      <ClientDashboard />
+        {/* <Snowfall snowflakeCount={60} /> */}
+        <Navbar />
+        <ClientDashboard />
       </>
     )
   }

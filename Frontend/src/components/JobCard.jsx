@@ -30,7 +30,7 @@ function JobCard({ job, onEdit, onDelete, onViewBids, onMarkComplete }) {
     }
   };
 
-  const isOverdue = new Date(job.deadline) < new Date() && job.status === 'active';
+  const isOverdue = new Date(job.completion) < new Date() && job.status === 'active';
 
   return (
     <div className="backdrop-blur-md border border-[#14a19f]/20 bg-[#0d1224]/50 rounded-xl p-5 hover:border-[#14a19f]/50 transition-all duration-200 space-y-4">
@@ -77,14 +77,14 @@ function JobCard({ job, onEdit, onDelete, onViewBids, onMarkComplete }) {
           <p className="text-gray-400 text-xs mb-1">Bids</p>
           <p className="text-white font-semibold flex items-center gap-1">
             <Users size={14} />
-            {job.bidCount || 0}
+            {job.proposalsCount || 0}
           </p>
         </div>
         <div className={`rounded p-2 ${isOverdue ? 'bg-red-500/10' : 'bg-[#14a19f]/10'}`}>
           <p className="text-gray-400 text-xs mb-1">Deadline</p>
           <p className={`font-semibold flex items-center gap-1 ${isOverdue ? 'text-red-400' : 'text-white'}`}>
             <Clock size={14} />
-            {new Date(job.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            {new Date(job.completion).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </p>
         </div>
       </div>
@@ -98,7 +98,7 @@ function JobCard({ job, onEdit, onDelete, onViewBids, onMarkComplete }) {
           <Eye size={16} />
           View Bids
         </button>
-        {job.status !== 'completed' && (
+        {job.status === "open" && (
           <button
             onClick={() => onEdit(job)}
             className="flex-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 text-sm font-medium py-2 rounded transition-colors flex items-center justify-center gap-2"
@@ -107,7 +107,7 @@ function JobCard({ job, onEdit, onDelete, onViewBids, onMarkComplete }) {
             Edit
           </button>
         )}
-        {job.status === 'active' && (
+        {job.status === 'in-progress' && (
           <button
             onClick={() => onMarkComplete(job)}
             className="flex-1 bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30 text-sm font-medium py-2 rounded transition-colors flex items-center justify-center gap-2"
@@ -116,19 +116,23 @@ function JobCard({ job, onEdit, onDelete, onViewBids, onMarkComplete }) {
             Complete
           </button>
         )}
-        <button
-          onClick={() => onDelete(job)}
-          className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 text-sm font-medium py-2 rounded transition-colors flex items-center justify-center gap-2"
-        >
-          <Trash2 size={16} />
-          Delete
-        </button>
+
+        {job.status === "open" && (
+          <button
+            onClick={() => onDelete(job)}
+            className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 text-sm font-medium py-2 rounded transition-colors flex items-center justify-center gap-2"
+          >
+            <Trash2 size={16} />
+            Delete
+          </button>
+        )}
+
       </div>
 
       {/* Overdue warning */}
       {isOverdue && (
         <div className="bg-red-500/10 border border-red-500/30 rounded p-2 flex items-center gap-2">
-          <AlertCircle size={16} className="text-red-400 flex-shrink-0" />
+          <AlertCircle size={16} className="text-red-400 shrink" />
           <p className="text-xs text-red-400">This job deadline has passed</p>
         </div>
       )}

@@ -57,7 +57,7 @@ const JobSchema = new mongoose.Schema({
 
     status: {
         type: String,
-        enum: ["open", "in-progress", "completed", "cancelled"],
+        enum: ["open", "in-progress", "completed", "cancelled", "disputed"],
         default: "open",
     },
 
@@ -81,8 +81,18 @@ JobSchema.virtual("clientDetails", {
     justOne: true
 });
 
+JobSchema.virtual("BidDetails",{
+    ref: "Bid",
+    localField:"jobId",
+    foreignField:"jobId",
+    justOne: false
+})
+
+
+
 JobSchema.set("toObject", { virtuals: true });
 JobSchema.set("toJSON", { virtuals: true });
+
 
 
 export default mongoose.model("Job", JobSchema);

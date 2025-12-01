@@ -23,8 +23,9 @@ function Dashboard() {
     const [jobBids, setJobBids] = useState([]);
     const [deletingJobId, setDeletingJobId] = useState(null);
 
+    // Default to showing jobs that are actionable for clients: open and in-progress
     const [filters, setFilters] = useState({
-        status: ['active', 'draft'],
+        status: ['open', 'in-progress'],
         search: '',
         sortBy: 'recent'
     });
@@ -50,6 +51,8 @@ function Dashboard() {
             const response = await axios.get(
                 `http://localhost:5000/api/jobs/client-jobs/${address}`
             );
+
+
             setJobs(response.data?.jobs || []);
             setRedNotice(false);
         } catch (error) {
@@ -64,7 +67,7 @@ function Dashboard() {
     const fetchJobBids = async (job) => {
         try {
             const response = await axios.get(
-                `http://localhost:5000/api/jobs/${job.id}/bids`
+                `http://localhost:5000/api/jobs/get-job-bids/${job.jobId}`
             );
             setJobBids(response.data?.bids || []);
             setSelectedJobForBids(job);
@@ -97,7 +100,7 @@ function Dashboard() {
     };
 
     const handleEditJob = (job) => {
-        navigate('/client/post-job', { state: { jobToEdit: job } });
+        navigate('/post-job', { state: { jobToEdit: job } });
     };
 
     const handleMarkComplete = async (job) => {
@@ -108,7 +111,7 @@ function Dashboard() {
                 `http://localhost:5000/api/jobs/${job.id}/complete`,
                 { clientAddress: address }
             );
-            setJobs(jobs.map(j => 
+            setJobs(jobs.map(j =>
                 j.id === job.id ? { ...j, status: 'completed' } : j
             ));
             setNotice("Job marked as completed");
@@ -126,13 +129,13 @@ function Dashboard() {
         try {
             await axios.post(
                 `http://localhost:5000/api/jobs/accept-bid`,
-                { 
+                {
                     bidId: bid.id,
                     jobId: selectedJobForBids.id,
                     clientAddress: address
                 }
             );
-            setJobBids(jobBids.map(b => 
+            setJobBids(jobBids.map(b =>
                 b.id === bid.id ? { ...b, status: 'accepted' } : { ...b, status: 'rejected' }
             ));
             setNotice("Bid accepted successfully");
@@ -150,13 +153,13 @@ function Dashboard() {
         try {
             await axios.post(
                 `http://localhost:5000/api/jobs/reject-bid`,
-                { 
+                {
                     bidId: bid.id,
                     jobId: selectedJobForBids.id,
                     clientAddress: address
                 }
             );
-            setJobBids(jobBids.map(b => 
+            setJobBids(jobBids.map(b =>
                 b.id === bid.id ? { ...b, status: 'rejected' } : b
             ));
             setNotice("Bid rejected");
@@ -173,7 +176,7 @@ function Dashboard() {
         let filtered = jobs.filter(job => {
             // Filter by status
             if (!filters.status.includes(job.status)) return false;
-            
+
             // Filter by search
             if (filters.search) {
                 const search = filters.search.toLowerCase();
@@ -213,37 +216,32 @@ function Dashboard() {
             {/* Floating Notice */}
             {notice && (
                 <div className="fixed top-4 right-4 z-50 animate-pulse">
-                    <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${
-                        redNotice 
-                            ? 'bg-red-600/20 border-red-500/30 text-red-300' 
-                            : 'bg-green-600/20 border-green-500/30 text-green-300'
-                    }`}>
-                        <AlertCircle size={18} />
+                    <div className={`flex items-center gap-3 bg-[#14a19f] text-white px-4 py-2 rounded shadow-lg border border-[#1ecac7]/30 ${redNotice ? 'bg-red-600 border-red-700' : 'bg-[#14a19f] border-[#1ecac7]/30'} `}>
                         <div className="text-sm">{notice}</div>
                         <button
                             onClick={() => setNotice(null)}
-                            className="ml-2 text-xs px-2 py-1 rounded hover:opacity-75 transition-opacity"
+                            className="ml-2 text-xs text-white/90 px-2 py-1 rounded hover:opacity-90 transition-opacity"
                         >
-                            ✕
+                            Dismiss
                         </button>
                     </div>
                 </div>
             )}
 
-            <div className='dark:bg-[#0f111d] flex bg-[#161c32] w-full min-h-screen'>
+            <div className='dark:bg-[#0f111d] py-8 flex bg-[#161c32] w-full min-h-screen'>
                 {/* Decorative Background Blobs */}
                 <div className="pointer-events-none fixed right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-20 blur-3xl mix-blend-screen"></div>
                 <div className="pointer-events-none fixed left-[5%] bottom-[1%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-20 blur-3xl mix-blend-screen"></div>
 
                 <SideBar />
 
-                <div className='flex-1 p-8'>
+                <div className='flex-1 px-8'>
                     {/* Header Section */}
                     <div className="mb-8">
                         <div className="flex items-center justify-between mb-2">
                             <h1 className="text-3xl font-bold text-white">Job Management</h1>
                             <button
-                                onClick={() => navigate('/client/post-job')}
+                                onClick={() => navigate('/post-job')}
                                 className="flex items-center gap-2 bg-[#14a19f] hover:bg-[#14a19f]/90 text-white font-semibold px-4 py-2 rounded-lg transition-all hover:shadow-lg"
                             >
                                 <Plus size={20} />
@@ -262,10 +260,11 @@ function Dashboard() {
                     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                         {/* Filters Sidebar */}
                         <div className="lg:col-span-1">
-                            <JobFilters 
-                                filters={filters} 
+                            <JobFilters
+                                filters={filters}
                                 setFilters={setFilters}
-                                statusOptions={['active', 'draft', 'completed', 'closed']}
+                                // Available job statuses in the system
+                                statusOptions={['open', 'in-progress', 'completed', 'cancelled', 'disputed']}
                             />
                         </div>
 
@@ -282,13 +281,13 @@ function Dashboard() {
                                         {jobs.length === 0 ? 'No jobs posted yet' : 'No matching jobs'}
                                     </h3>
                                     <p className="text-gray-400 mb-6">
-                                        {jobs.length === 0 
+                                        {jobs.length === 0
                                             ? 'Start by creating your first job posting'
                                             : 'Try adjusting your filters'}
                                     </p>
                                     {jobs.length === 0 && (
                                         <button
-                                            onClick={() => navigate('/client/post-job')}
+                                            onClick={() => navigate('/post-job')}
                                             className="bg-[#14a19f] hover:bg-[#14a19f]/90 text-white font-semibold px-6 py-2 rounded-lg transition-all inline-flex items-center gap-2"
                                         >
                                             <Plus size={18} />

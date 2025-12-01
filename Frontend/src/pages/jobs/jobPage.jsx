@@ -7,7 +7,7 @@ import MatchScore from '../../components/MatchScore';
 import CustomConnectButton from "../../components/CustomConnectButton"
 import { BrowserProvider } from 'ethers';
 import { submitBid } from '../../utils/submitBid';
-import { Lock, ScrollText, Star, Clock, Award, Plus, X, Check, User, Mail, MapPin, Github, Linkedin, Twitter, Globe } from 'lucide-react';
+import {Users, Lock, ScrollText, Star, Clock, Award, Plus, X, Check, User, Mail, MapPin, Github, Linkedin, Twitter, Globe } from 'lucide-react';
 
 
 function jobPage() {
@@ -440,6 +440,10 @@ function jobPage() {
 
                                 <span className="flex items-center gap-1 text-blue-300">
                                     <Clock size={16} /> {jobDetails?.completion?.slice(0, 10) ?? "—"}
+                                </span>
+
+                                <span className='flex items-center gap-1 text-white'>
+                                    <User size={16} /> {jobDetails?.proposalsCount}
                                 </span>
 
                             </div>

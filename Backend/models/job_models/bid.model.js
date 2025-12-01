@@ -46,5 +46,15 @@ BidSchema.virtual("JobDetails", {
   justOne: true
 });
 
+BidSchema.virtual("FreelancerDetails", {
+  ref: "Freelancer",
+  localField: "bidderAddress",
+  foreignField:"walletAddress",
+  justOne: true
+})
+
+BidSchema.set("toObject", { virtuals: true });
+BidSchema.set("toJSON", { virtuals: true });
+
 export default mongoose.model("Bid", BidSchema);
 

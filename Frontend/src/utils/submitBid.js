@@ -1,7 +1,7 @@
 import { Contract, keccak256, toUtf8Bytes } from "ethers";
 import { jobContract } from "../abis/JobContract.js";
 
-const contractAddress = "0x6F7C1dC416Ab16B518D2f5d4B144B452e2cF1800";
+const contractAddress = "0xb8f70934C48B2D733CD97D5550c9FC4DA77af317";
 
 export const submitBid = async (signer, amount, jobId) => {
 
