@@ -7,6 +7,7 @@ import JobCard from '../../components/JobCard';
 import JobFilters from '../../components/JobFilters';
 import JobStats from '../../components/JobStats';
 import BidsModal from '../../components/BidsModal';
+import ConfirmationBox from '../../components/ConfirmationBox';
 import { Plus, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -22,6 +23,10 @@ function Dashboard() {
     const [selectedJobForBids, setSelectedJobForBids] = useState(null);
     const [jobBids, setJobBids] = useState([]);
     const [deletingJobId, setDeletingJobId] = useState(null);
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmMessage, setConfirmMessage] = useState('');
+    const [confirmAction, setConfirmAction] = useState(null);
+    const [confirmLoading, setConfirmLoading] = useState(false);
 
     // Default to showing jobs that are actionable for clients: open and in-progress
     const [filters, setFilters] = useState({
@@ -78,97 +83,118 @@ function Dashboard() {
         }
     };
 
-    const handleDeleteJob = async (job) => {
-        if (!window.confirm(`Are you sure you want to delete "${job.title}"?`)) return;
+    const showConfirm = (message, onConfirm) => {
+        setConfirmMessage(message);
+        setConfirmAction(() => onConfirm);
+        setConfirmOpen(true);
+    };
 
-        setDeletingJobId(job.id);
-        try {
-            await axios.delete(
-                `http://localhost:5000/api/jobs/${job.id}`,
-                { data: { clientAddress: address } }
-            );
-            setJobs(jobs.filter(j => j.id !== job.id));
-            setNotice("Job deleted successfully");
-            setRedNotice(false);
-        } catch (error) {
-            console.error("Error deleting job:", error);
-            setRedNotice(true);
-            setNotice("Failed to delete job");
-        } finally {
-            setDeletingJobId(null);
-        }
+    const handleDeleteJob = (job) => {
+        showConfirm(`Are you sure you want to delete "${job.title}"?`, async () => {
+            setConfirmLoading(true);
+            setDeletingJobId(job.jobId);
+            console.log(job.jobId)
+            try {
+                await axios.delete(
+                    `http://localhost:5000/api/jobs/delete-job/${job.jobId}`
+                );
+                setJobs(prev => prev.filter(j => j.jobId !== job.jobId));
+                setNotice("Job deleted successfully");
+                setRedNotice(false);
+            } catch (error) {
+                console.error("Error deleting job:", error);
+                setRedNotice(true);
+                setNotice("Failed to delete job");
+            } finally {
+                setDeletingJobId(null);
+                setConfirmLoading(false);
+                setConfirmOpen(false);
+            }
+        });
     };
 
     const handleEditJob = (job) => {
         navigate('/post-job', { state: { jobToEdit: job } });
     };
 
-    const handleMarkComplete = async (job) => {
-        if (!window.confirm(`Mark "${job.title}" as completed?`)) return;
-
-        try {
-            await axios.put(
-                `http://localhost:5000/api/jobs/${job.id}/complete`,
-                { clientAddress: address }
-            );
-            setJobs(jobs.map(j =>
-                j.id === job.id ? { ...j, status: 'completed' } : j
-            ));
-            setNotice("Job marked as completed");
-            setRedNotice(false);
-        } catch (error) {
-            console.error("Error marking job complete:", error);
-            setRedNotice(true);
-            setNotice("Failed to complete job");
-        }
+    const handleMarkComplete = (job) => {
+        showConfirm(`Mark "${job.title}" as completed?`, async () => {
+            setConfirmLoading(true);
+            try {
+                await axios.put(
+                    `http://localhost:5000/api/jobs/${job.id}/complete`,
+                    { clientAddress: address }
+                );
+                setJobs(prev => prev.map(j =>
+                    j.id === job.id ? { ...j, status: 'completed' } : j
+                ));
+                setNotice("Job marked as completed");
+                setRedNotice(false);
+            } catch (error) {
+                console.error("Error marking job complete:", error);
+                setRedNotice(true);
+                setNotice("Failed to complete job");
+            } finally {
+                setConfirmLoading(false);
+                setConfirmOpen(false);
+            }
+        });
     };
 
-    const handleAcceptBid = async (bid) => {
-        if (!window.confirm(`Accept bid from ${bid.freelancerName}?`)) return;
-
-        try {
-            await axios.post(
-                `http://localhost:5000/api/jobs/accept-bid`,
-                {
-                    bidId: bid.id,
-                    jobId: selectedJobForBids.id,
-                    clientAddress: address
-                }
-            );
-            setJobBids(jobBids.map(b =>
-                b.id === bid.id ? { ...b, status: 'accepted' } : { ...b, status: 'rejected' }
-            ));
-            setNotice("Bid accepted successfully");
-            setRedNotice(false);
-        } catch (error) {
-            console.error("Error accepting bid:", error);
-            setRedNotice(true);
-            setNotice("Failed to accept bid");
-        }
+    const handleAcceptBid = (bid) => {
+        showConfirm(`Accept bid from ${bid.freelancerName}?`, async () => {
+            setConfirmLoading(true);
+            try {
+                await axios.put(
+                    `http://localhost:5000/api/jobs/accept-bid`,
+                    {
+                        bidId: bid._id,
+                        jobId: selectedJobForBids.jobId,
+                        clientAddress: address
+                    }
+                );
+                setJobBids(prev => prev.map(b =>
+                    String(b._id) === String(bid._id) ? { ...b, status: 'accepted' } : { ...b, status: 'rejected' }
+                ));
+                setNotice("Bid accepted successfully");
+                setRedNotice(false);
+            } catch (error) {
+                console.error("Error accepting bid:", error);
+                setRedNotice(true);
+                setNotice("Failed to accept bid");
+            } finally {
+                setConfirmLoading(false);
+                setConfirmOpen(false);
+            }
+        });
     };
 
-    const handleRejectBid = async (bid) => {
-        if (!window.confirm(`Reject bid from ${bid.freelancerName}?`)) return;
-
-        try {
-            await axios.post(
-                `http://localhost:5000/api/jobs/reject-bid`,
-                {
-                    bidId: bid.id,
-                    jobId: selectedJobForBids.id,
-                    clientAddress: address
-                }
-            );
-            setJobBids(jobBids.map(b =>
-                b.id === bid.id ? { ...b, status: 'rejected' } : b
-            ));
-            setNotice("Bid rejected");
-            setRedNotice(false);
-        } catch (error) {
-            console.error("Error rejecting bid:", error);
-            setRedNotice(true);
-            setNotice("Failed to reject bid");
-        }
+    const handleRejectBid = (bid) => {
+        showConfirm(`Reject bid from ${bid.freelancerName}?`, async () => {
+            setConfirmLoading(true);
+            console.log(bid._id,bid.jobId)
+            try {
+                await axios.put(
+                    `http://localhost:5000/api/jobs/reject-bid`,
+                    {
+                        bidId: bid._id,
+                        jobId: selectedJobForBids.jobId
+                    }
+                );
+                setJobBids(prev => prev.map(b =>
+                    String(b._id) === String(bid._id) ? { ...b, status: 'rejected' } : b
+                ));
+                setNotice("Bid rejected");
+                setRedNotice(false);
+            } catch (error) {
+                console.error("Error rejecting bid:", error);
+                setRedNotice(true);
+                setNotice("Failed to reject bid");
+            } finally {
+                setConfirmLoading(false);
+                setConfirmOpen(false);
+            }
+        });
     };
 
     // Filter and sort jobs
@@ -228,6 +254,10 @@ function Dashboard() {
                 </div>
             )}
 
+
+
+
+
             <div className='dark:bg-[#0f111d] py-8 flex bg-[#161c32] w-full min-h-screen'>
                 {/* Decorative Background Blobs */}
                 <div className="pointer-events-none fixed right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-20 blur-3xl mix-blend-screen"></div>
@@ -236,6 +266,7 @@ function Dashboard() {
                 <SideBar />
 
                 <div className='flex-1 px-8'>
+
                     {/* Header Section */}
                     <div className="mb-8">
                         <div className="flex items-center justify-between mb-2">
@@ -327,6 +358,15 @@ function Dashboard() {
                     onRejectBid={handleRejectBid}
                 />
             )}
+
+            {/* Confirmation Modal */}
+            <ConfirmationBox
+                isOpen={confirmOpen}
+                message={confirmMessage}
+                onConfirm={() => { if (confirmAction) confirmAction(); }}
+                onCancel={() => { if (!confirmLoading) setConfirmOpen(false); }}
+                loading={confirmLoading}
+            />
         </>
     )
 }

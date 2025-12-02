@@ -423,7 +423,7 @@ export const fetchJobBids = async (req, res) => {
   try {
     const bids = await Bid.find({ jobId })
       .populate({ path: "FreelancerDetails" }).lean({ virtuals: true });
-      console.log(bids)
+    console.log(bids)
     res.status(200).json({ success: true, bids: bids })
   } catch (error) {
     console.error("Fetch Bids error", error);
@@ -434,6 +434,51 @@ export const fetchJobBids = async (req, res) => {
     });
   }
 }
+
+export const deleteJobs = async (req, res) => {
+  console.log("came to delete")
+  const { jobId } = req.params;
+
+  try {
+
+    const deletedJobs = await Job.findOneAndDelete({ jobId });
+    if (!deletedJobs) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    await Bid.deleteMany({ jobId });
+
+    res.json({ success: true, message: "Job and its bids deleted" });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+export const rejectBid = async (req, res) => {
+  const { bidId, jobId } = req.body;
+  console.log("Came to reject")
+  try {
+    const rejected = await Bid.findOneAndUpdate(
+      { _id: bidId, jobId },
+      { $set: { status: "rejected" } },
+      { new: true }
+    );
+
+    if (!rejected) {
+      return res.status(404).json({ message: "Bid not found" });
+    }
+
+    res.json({ message: "Bid rejected", bid: rejected });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// export const acceptBid = async() =>{
+
+// }
+
 
 
 

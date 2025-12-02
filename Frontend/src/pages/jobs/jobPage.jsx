@@ -7,7 +7,7 @@ import MatchScore from '../../components/MatchScore';
 import CustomConnectButton from "../../components/CustomConnectButton"
 import { BrowserProvider } from 'ethers';
 import { submitBid } from '../../utils/submitBid';
-import {Users, Lock, ScrollText, Star, Clock, Award, Plus, X, Check, User, Mail, MapPin, Github, Linkedin, Twitter, Globe } from 'lucide-react';
+import { Users, Lock, ScrollText, Star, Clock, Award, Plus, X, Check, User, Mail, MapPin, Github, Linkedin, Twitter, Globe } from 'lucide-react';
 
 
 function jobPage() {
@@ -390,7 +390,7 @@ function jobPage() {
                                 <button
                                     disabled={isSubmittingBid}
                                     onClick={() => setIsBidding(false)}
-                                    className="px-4 py-2 rounded-lg border border-gray-400 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#13182c] transition"
+                                    className={`px-4 py-2 rounded-lg border border-gray-400 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#13182c] transition `}
                                 >
                                     Cancel
                                 </button>
@@ -400,7 +400,8 @@ function jobPage() {
                                     onClick={handleSubmitBid}
                                     className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
                                 >
-                                    Submit Bid
+                                    {isSubmittingBid ? (<div className='animate-pulse transition'>Submitting ...</div>) : (<div>Submit</div>)}
+
                                 </button>
                             </div>
 

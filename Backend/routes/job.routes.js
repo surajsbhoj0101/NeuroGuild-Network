@@ -9,6 +9,8 @@ import { saveJob } from "../controllers/jobs.controller.js";
 import { saveBid } from "../controllers/jobs.controller.js";
 import { fetchClientsJobs } from "../controllers/jobs.controller.js";
 import { fetchJobBids } from "../controllers/jobs.controller.js";
+import { deleteJobs } from "../controllers/jobs.controller.js";
+import { rejectBid } from "../controllers/jobs.controller.js";
 
 const jobRoutes = express.Router();
 
@@ -22,5 +24,7 @@ jobRoutes.put('/save-job',saveJob)
 jobRoutes.put('/submit-bid',saveBid)
 jobRoutes.get('/client-jobs/:address',fetchClientsJobs);
 jobRoutes.get('/get-job-bids/:jobId',fetchJobBids)
+jobRoutes.delete('/delete-job/:jobId',deleteJobs)
+jobRoutes.put('/reject-bid',rejectBid)
 
 export default jobRoutes
