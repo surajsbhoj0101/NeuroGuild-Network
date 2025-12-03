@@ -114,7 +114,7 @@ contract GoverContract is
         uint256 tokenId = reputation.getTokenId(voter);
         uint256 repVotes = reputation.getScore(tokenId);
 
-        return tokenVotes + repVotes;
+        return tokenVotes + (repVotes / 4);
     }
 
     /*

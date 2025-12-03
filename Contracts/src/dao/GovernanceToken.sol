@@ -12,18 +12,12 @@ contract GovernanceToken is ERC20Votes, ERC20Permit, Ownable {
         ERC20("NeuroSigil", "NSG")
         ERC20Permit("NeuroSigil") // Needed for off-chain signatures
     {
-        _mint(msg.sender, 1000000000);
+        _mint(msg.sender, 100000);
     }
 
     function setJobContract(address _jobContract) external onlyOwner {
         require(_jobContract != address(0), "Invalid job contract");
         jobContract = _jobContract;
-    }
-
-    function rewardUser(address user, uint256 amount) external {
-        require(msg.sender == jobContract, "Only JobContract");
-        require(totalSupply() + amount <= MAX_SUPPLY, "Cap reached");
-        _mint(user, amount);
     }
 
     // Required overrides

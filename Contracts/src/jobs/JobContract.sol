@@ -22,23 +22,20 @@ contract JobContract is Escrow, ReentrancyGuard {
     error cannotAcceptBidDeadlineExceed();
     error cannotSubmitWorkDeadlineExceeded();
     error NotAssignedFreelancer();
-    error CannotEditAfterExpiry();
     error WorkAlreadySubmitted();
     error NotJobParticipant();
     error DisputePeriodOver();
     error DisputeAlreadyRaised();
     error OnlySubmittedJobs();
     error ReviewPeriodStillActive();
-    error ReviewPeroidMustBeGreaterThanOne();
+    error ReviewPeriodMustBeGreaterThanOne();
     error ExpireDeadlineMustBeGreaterThanBid();
-    error CannotEditAfterBids();
+    error OnlyPendingBid();
     error OnlySubmittedOrInProgressJobs();
+    error cannotRejectBidDeadlineExceed();
 
     event DisputeRaised(bytes32 indexed jobId, address indexed by);
-    event DisputeResolved(
-        bytes32 indexed jobId,
-        address winner
-    );
+    event DisputeResolved(bytes32 indexed jobId, address winner);
 
     event JobCreated(
         bytes32 indexed jobId,
@@ -62,7 +59,8 @@ contract JobContract is Escrow, ReentrancyGuard {
         bytes32 indexed jobId,
         address indexed freelancer,
         uint256 amount,
-        uint256 bidIndex
+        uint256 bidIndex,
+        string proposalIpfs
     );
 
     event JobExpireDeadlineIncreased(
@@ -72,6 +70,13 @@ contract JobContract is Escrow, ReentrancyGuard {
     event JobStarted(bytes32 indexed jobId, address indexed freelancer);
     event JobCompleted(bytes32 indexed jobId, address indexed freelancer);
     event BidAccepted(
+        bytes32 indexed jobId,
+        address indexed freelancer,
+        uint256 amount,
+        uint256 bidIndex
+    );
+
+    event BidRejected(
         bytes32 indexed jobId,
         address indexed freelancer,
         uint256 amount,
@@ -96,6 +101,12 @@ contract JobContract is Escrow, ReentrancyGuard {
         Expired
     }
 
+    enum BidStatus {
+        Pending,
+        Accepted,
+        Rejected
+    }
+
     struct Job {
         bytes32 jobId;
         address client;
@@ -116,6 +127,8 @@ contract JobContract is Escrow, ReentrancyGuard {
         address freelancer;
         uint256 amount;
         uint256 createdAt;
+        string proposalIpfs;
+        BidStatus status;
     }
 
     IReputationSBT public reputation;
@@ -130,7 +143,7 @@ contract JobContract is Escrow, ReentrancyGuard {
     mapping(bytes32 => Bid[]) public jobBids;
     mapping(bytes32 => mapping(address => bool)) public hasBid;
     bytes32[] public allJobIds;
-    uint256 public constant MAX_REPUTATION = 1000;
+    
     mapping(bytes32 => bool) public clientRatedFreelancer;
     mapping(bytes32 => bool) public freelancerRatedClient;
 
@@ -172,7 +185,7 @@ contract JobContract is Escrow, ReentrancyGuard {
     }
 
     function setReviewPeriod(uint8 _reviewPeriod) external onlyGovernance {
-        if (_reviewPeriod <= 1) revert ReviewPeroidMustBeGreaterThanOne(); // days
+        if (_reviewPeriod <= 1) revert ReviewPeriodMustBeGreaterThanOne(); // days
         reviewPeriod = uint256(_reviewPeriod) * 1 days;
     }
 
@@ -238,13 +251,13 @@ contract JobContract is Escrow, ReentrancyGuard {
 
     function submitBid(
         bytes32 jobId,
-        uint256 bidAmount
+        uint256 bidAmount,
+        string memory proposalIpfs
     ) external onlyFreelancer onlyOpenJob(jobId) {
         if (bidAmount <= jobs[jobId].budget)
             revert AmountShouldBeGreaterThanOffer();
         if (jobs[jobId].bidDeadline < block.timestamp)
             revert cannotSubmitBidDeadlineExceed();
-
         if (hasBid[jobId][msg.sender]) revert OnlyBidOnce();
         require(bidAmount > 0, "Bid Amount must be greater than zero");
 
@@ -252,14 +265,16 @@ contract JobContract is Escrow, ReentrancyGuard {
             jobId: jobId,
             freelancer: msg.sender,
             amount: bidAmount,
-            createdAt: block.timestamp
+            createdAt: block.timestamp,
+            proposalIpfs: proposalIpfs,
+            status: BidStatus.Pending
         });
 
         uint256 bidIndex = jobBids[jobId].length;
         jobBids[jobId].push(newBid);
         hasBid[jobId][msg.sender] = true;
 
-        emit BidSubmitted(jobId, msg.sender, bidAmount, bidIndex);
+        emit BidSubmitted(jobId, msg.sender, bidAmount, bidIndex, proposalIpfs);
     }
 
     function acceptBid(
@@ -276,10 +291,36 @@ contract JobContract is Escrow, ReentrancyGuard {
         if (bidIndex >= bids.length) revert InvalidBidIndex();
 
         Bid storage chosenBid = bids[bidIndex];
+        if (chosenBid.status != BidStatus.Pending) revert OnlyPendingBid();
+        chosenBid.status = BidStatus.Accepted;
         job.status = JobStatus.InProgress;
         job.freelancer = chosenBid.freelancer;
         _lockFunds(jobId, chosenBid.amount, chosenBid.freelancer);
+        emit BidAccepted(jobId, job.freelancer, chosenBid.amount, bidIndex);
         emit JobStarted(jobId, chosenBid.freelancer);
+    }
+
+    function rejectBid(
+        bytes32 jobId,
+        uint256 bidIndex
+    ) external onlyClient onlyOpenJob(jobId) nonReentrant {
+        Job storage job = jobs[jobId];
+        if (job.bidDeadline < block.timestamp)
+            revert cannotRejectBidDeadlineExceed();
+        if (job.client != msg.sender) revert NotJobClient();
+        Bid[] storage bids = jobBids[jobId];
+        if (bidIndex >= bids.length) revert InvalidBidIndex();
+
+        Bid storage chosenBid = bids[bidIndex];
+        if (chosenBid.status != BidStatus.Pending) revert OnlyPendingBid();
+        chosenBid.status = BidStatus.Rejected;
+
+        emit BidRejected(
+            jobId,
+            chosenBid.freelancer,
+            chosenBid.amount,
+            bidIndex
+        );
     }
 
     function submitWork(
@@ -308,8 +349,8 @@ contract JobContract is Escrow, ReentrancyGuard {
         _releaseFunds(jobId);
         job.status = JobStatus.Completed;
 
-        _changeRep(job.freelancer, reputationReward);
-        _changeRep(job.client, reputationReward);
+        _increaseRep(job.freelancer, reputationReward);
+        _increaseRep(job.client, reputationReward);
 
         emit JobCompleted(jobId, job.freelancer);
     }
@@ -346,39 +387,6 @@ contract JobContract is Escrow, ReentrancyGuard {
         emit DisputeRaised(jobId, msg.sender);
     }
 
-    function editJobDetails(
-        bytes32 jobId,
-        string memory ipfsLink,
-        uint256 budget,
-        uint256 bidDeadline,
-        uint256 expireDeadline
-    ) external onlyClient {
-        Job storage job = jobs[jobId];
-        if (job.client != msg.sender) revert NotJobClient();
-        if (block.timestamp > job.bidDeadline) revert CannotEditAfterExpiry();
-
-        if (jobBids[jobId].length != 0) revert CannotEditAfterBids();
-
-        if (job.status != JobStatus.Open) revert OnlyOpenJobs();
-        if (bidDeadline <= block.timestamp) revert DeadlineMustBeInFuture();
-        if (expireDeadline <= bidDeadline)
-            revert("Expired deadline must be greater than bidDeadline");
-
-        job.budget = budget;
-        job.bidDeadline = bidDeadline;
-        job.ipfs = ipfsLink;
-        job.expireDeadline = expireDeadline;
-
-        emit JobDetailsUpdated(
-            jobId,
-            msg.sender,
-            budget,
-            bidDeadline,
-            expireDeadline, // pass the new value
-            ipfsLink
-        );
-    }
-
     function cancelJob(bytes32 jobId) external onlyClient {
         Job storage job = jobs[jobId];
         if (job.client != msg.sender) revert NotJobClient();
@@ -399,7 +407,7 @@ contract JobContract is Escrow, ReentrancyGuard {
 
         _releaseFunds(jobId);
         job.status = JobStatus.Completed;
-
+        _increaseRep(job.freelancer, reputationReward);
         emit JobCompleted(jobId, job.freelancer);
     }
 
@@ -415,14 +423,20 @@ contract JobContract is Escrow, ReentrancyGuard {
 
         job.status = JobStatus.Expired;
         _refundClient(jobId);
-        _changeRep(job.freelancer, reputationPenalty);
+        _decreaseRep(job.freelancer, reputationPenalty);
         emit ClaimAfterExpiredDeadlineSuccessful(jobId);
     }
 
-    function _changeRep(address user, uint256 amount) internal {
+    function _increaseRep(address user, uint256 amount) internal {
         if (address(reputation) == address(0)) return;
         uint256 tokenId = reputation.getTokenId(user);
         reputation.increaseScoreFromSystem(tokenId, amount);
+    }
+
+    function _decreaseRep(address user, uint256 amount) internal {
+        if (address(reputation) == address(0)) return;
+        uint256 tokenId = reputation.getTokenId(user);
+        reputation.decreaseScoreFromSystem(tokenId, amount);
     }
 
     function resolveDispute(
@@ -441,13 +455,13 @@ contract JobContract is Escrow, ReentrancyGuard {
         if (winner == job.freelancer) {
             _releaseFunds(jobId); // sends full escrow to freelancer
 
-            _changeRep(job.freelancer, reputationReward);
-            _changeRep(job.client, reputationPenalty);
+            _increaseRep(job.freelancer, reputationReward);
+            _decreaseRep(job.client, reputationPenalty);
         } else {
             _refundClient(jobId); // sends full escrow back to client
 
-            _changeRep(job.client, reputationReward);
-            _changeRep(job.freelancer, reputationPenalty);
+            _increaseRep(job.client, reputationReward);
+            _decreaseRep(job.freelancer, reputationPenalty);
         }
 
         job.status = JobStatus.Completed;
@@ -465,7 +479,7 @@ contract JobContract is Escrow, ReentrancyGuard {
 
         clientRatedFreelancer[jobId] = true;
 
-        _changeRep(job.freelancer, rating);
+        _increaseRep(job.freelancer, rating);
     }
 
     function rateClient(bytes32 jobId, uint8 rating) external onlyFreelancer {
@@ -478,7 +492,7 @@ contract JobContract is Escrow, ReentrancyGuard {
 
         freelancerRatedClient[jobId] = true;
 
-        _changeRep(job.client, rating);
+        _increaseRep(job.client, rating);
     }
 
     function getJobStatus(bytes32 jobId) external view returns (JobStatus) {

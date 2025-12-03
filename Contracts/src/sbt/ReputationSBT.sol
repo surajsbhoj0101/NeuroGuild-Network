@@ -21,6 +21,7 @@ contract ReputationSBT is IERC721, IERC721Metadata {
 
     string public constant name = "NeuroGuild Soul Reputation";
     string public constant symbol = "NGSR";
+    uint256 public constant MAX_REPUTATION = 1000;
 
     uint256 private _currentTokenId;
 
@@ -65,14 +66,14 @@ contract ReputationSBT is IERC721, IERC721Metadata {
         emit AdminChanged(old, newAdmin);
     }
 
-    function  getScore(uint256 tokenId) public view returns(uint256){
+    function getScore(uint256 tokenId) public view returns (uint256) {
         return reputationScore[tokenId];
     }
 
     function mintFromSystem(
         address user,
         string calldata tokenUri
-    ) external returns(uint256) {
+    ) external returns (uint256) {
         require(user != address(0), "zero address");
         require(_balanceOf[user] == 0, "already owns SBT");
 
@@ -100,8 +101,6 @@ contract ReputationSBT is IERC721, IERC721Metadata {
     ) external onlyAuthorized {
         _decreaseScore(tokenId, amount);
     }
-
-    
 
     function adminSetTokenURI(
         uint256 tokenId,
@@ -159,15 +158,26 @@ contract ReputationSBT is IERC721, IERC721Metadata {
 
     function _increaseScore(uint256 tokenId, uint256 amount) internal {
         require(_exists(tokenId), "token doesn't exist");
-        reputationScore[tokenId] += amount;
-        emit ReputationIncreased(tokenId, reputationScore[tokenId]);
+
+        uint256 current = reputationScore[tokenId];
+        uint256 newScore = current + amount;
+
+        if (newScore > MAX_REPUTATION) {
+            newScore = MAX_REPUTATION;
+        }
+
+        reputationScore[tokenId] = newScore;
+        emit ReputationIncreased(tokenId, newScore);
     }
 
     function _decreaseScore(uint256 tokenId, uint256 amount) internal {
         require(_exists(tokenId), "token doesn't exist");
-        require(reputationScore[tokenId] >= amount, "score below zero");
-        reputationScore[tokenId] -= amount;
-        emit ReputationDecreased(tokenId, reputationScore[tokenId]);
+
+        uint256 current = reputationScore[tokenId];
+        uint256 newScore = current <= amount ? 0 : current - amount;
+
+        reputationScore[tokenId] = newScore;
+        emit ReputationDecreased(tokenId, newScore);
     }
 
     function _setTokenUri(uint256 tokenId, string memory uri) internal {

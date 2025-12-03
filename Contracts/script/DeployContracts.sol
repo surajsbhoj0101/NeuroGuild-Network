@@ -84,7 +84,7 @@ contract DeployContracts is Script {
 
         JobContract jobContract = new JobContract(
             address(userRegistry),
-            address(0xAF33ADd7918F685B2A82C1077bd8c07d220FFA04),
+            address(0x036CbD53842c5426634e7929541eC2318f3dCF7e),
             initialReviewPeriod,
             address(governor),
             initialReward,
