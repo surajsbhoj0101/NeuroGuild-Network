@@ -1,0 +1,1428 @@
+[
+    {
+        "type": "constructor",
+        "inputs": [
+            {
+                "name": "_registryAddress",
+                "type": "address",
+                "internalType": "address"
+            },
+            {
+                "name": "token",
+                "type": "address",
+                "internalType": "address"
+            },
+            {
+                "name": "initialReviewPeriod",
+                "type": "uint8",
+                "internalType": "uint8"
+            },
+            {
+                "name": "_governance",
+                "type": "address",
+                "internalType": "address"
+            },
+            {
+                "name": "initialReward",
+                "type": "uint8",
+                "internalType": "uint8"
+            },
+            {
+                "name": "initialPenalty",
+                "type": "uint8",
+                "internalType": "uint8"
+            },
+            {
+                "name": "initialRepAddress",
+                "type": "address",
+                "internalType": "address"
+            }
+        ],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "USDC",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "address",
+                "internalType": "contract IERC20"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "acceptBid",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            },
+            {
+                "name": "bidIndex",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "acceptWork",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "allJobIds",
+        "inputs": [
+            {
+                "name": "",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "cancelJob",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "claimAfterExpiredDeadline",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "claimAfterReviewPeriod",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "clientRatedFreelancer",
+        "inputs": [
+            {
+                "name": "",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool",
+                "internalType": "bool"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "createJob",
+        "inputs": [
+            {
+                "name": "ipfsLink",
+                "type": "string",
+                "internalType": "string"
+            },
+            {
+                "name": "budget",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "bidDeadline",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "expireDeadline",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "escrows",
+        "inputs": [
+            {
+                "name": "",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "client",
+                "type": "address",
+                "internalType": "address"
+            },
+            {
+                "name": "freelancer",
+                "type": "address",
+                "internalType": "address"
+            },
+            {
+                "name": "amount",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "funded",
+                "type": "bool",
+                "internalType": "bool"
+            },
+            {
+                "name": "released",
+                "type": "bool",
+                "internalType": "bool"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "freelancerRatedClient",
+        "inputs": [
+            {
+                "name": "",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool",
+                "internalType": "bool"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "getAllJobIds",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "bytes32[]",
+                "internalType": "bytes32[]"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "getBids",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "tuple[]",
+                "internalType": "struct JobContract.Bid[]",
+                "components": [
+                    {
+                        "name": "jobId",
+                        "type": "bytes32",
+                        "internalType": "bytes32"
+                    },
+                    {
+                        "name": "freelancer",
+                        "type": "address",
+                        "internalType": "address"
+                    },
+                    {
+                        "name": "amount",
+                        "type": "uint256",
+                        "internalType": "uint256"
+                    },
+                    {
+                        "name": "createdAt",
+                        "type": "uint256",
+                        "internalType": "uint256"
+                    },
+                    {
+                        "name": "proposalIpfs",
+                        "type": "string",
+                        "internalType": "string"
+                    },
+                    {
+                        "name": "status",
+                        "type": "uint8",
+                        "internalType": "enum JobContract.BidStatus"
+                    }
+                ]
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "getJob",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "tuple",
+                "internalType": "struct JobContract.Job",
+                "components": [
+                    {
+                        "name": "jobId",
+                        "type": "bytes32",
+                        "internalType": "bytes32"
+                    },
+                    {
+                        "name": "client",
+                        "type": "address",
+                        "internalType": "address"
+                    },
+                    {
+                        "name": "freelancer",
+                        "type": "address",
+                        "internalType": "address"
+                    },
+                    {
+                        "name": "budget",
+                        "type": "uint256",
+                        "internalType": "uint256"
+                    },
+                    {
+                        "name": "bidDeadline",
+                        "type": "uint256",
+                        "internalType": "uint256"
+                    },
+                    {
+                        "name": "expireDeadline",
+                        "type": "uint256",
+                        "internalType": "uint256"
+                    },
+                    {
+                        "name": "status",
+                        "type": "uint8",
+                        "internalType": "enum JobContract.JobStatus"
+                    },
+                    {
+                        "name": "ipfs",
+                        "type": "string",
+                        "internalType": "string"
+                    },
+                    {
+                        "name": "ipfsProof",
+                        "type": "string",
+                        "internalType": "string"
+                    },
+                    {
+                        "name": "createdAt",
+                        "type": "uint256",
+                        "internalType": "uint256"
+                    },
+                    {
+                        "name": "submittedAt",
+                        "type": "uint256",
+                        "internalType": "uint256"
+                    },
+                    {
+                        "name": "disputed",
+                        "type": "bool",
+                        "internalType": "bool"
+                    }
+                ]
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "getJobStatus",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint8",
+                "internalType": "enum JobContract.JobStatus"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "governance",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "address",
+                "internalType": "address"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "hasBid",
+        "inputs": [
+            {
+                "name": "",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            },
+            {
+                "name": "",
+                "type": "address",
+                "internalType": "address"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool",
+                "internalType": "bool"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "increaseExpireDeadline",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            },
+            {
+                "name": "exceedTimeBy",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "jobBids",
+        "inputs": [
+            {
+                "name": "",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            },
+            {
+                "name": "",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            },
+            {
+                "name": "freelancer",
+                "type": "address",
+                "internalType": "address"
+            },
+            {
+                "name": "amount",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "createdAt",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "proposalIpfs",
+                "type": "string",
+                "internalType": "string"
+            },
+            {
+                "name": "status",
+                "type": "uint8",
+                "internalType": "enum JobContract.BidStatus"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "jobs",
+        "inputs": [
+            {
+                "name": "",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            },
+            {
+                "name": "client",
+                "type": "address",
+                "internalType": "address"
+            },
+            {
+                "name": "freelancer",
+                "type": "address",
+                "internalType": "address"
+            },
+            {
+                "name": "budget",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "bidDeadline",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "expireDeadline",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "status",
+                "type": "uint8",
+                "internalType": "enum JobContract.JobStatus"
+            },
+            {
+                "name": "ipfs",
+                "type": "string",
+                "internalType": "string"
+            },
+            {
+                "name": "ipfsProof",
+                "type": "string",
+                "internalType": "string"
+            },
+            {
+                "name": "createdAt",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "submittedAt",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "disputed",
+                "type": "bool",
+                "internalType": "bool"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "owner",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "address",
+                "internalType": "address"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "raiseDispute",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "rateClient",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            },
+            {
+                "name": "rating",
+                "type": "uint8",
+                "internalType": "uint8"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "rateFreelancer",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            },
+            {
+                "name": "rating",
+                "type": "uint8",
+                "internalType": "uint8"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "registry",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "address",
+                "internalType": "contract UserRegistry"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "rejectBid",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            },
+            {
+                "name": "bidIndex",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "reputation",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "address",
+                "internalType": "contract IReputationSBT"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "reputationPenalty",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint8",
+                "internalType": "uint8"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "reputationReward",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint8",
+                "internalType": "uint8"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "resolveDispute",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            },
+            {
+                "name": "winner",
+                "type": "address",
+                "internalType": "address"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "reviewPeriod",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "setGovernor",
+        "inputs": [
+            {
+                "name": "_governance",
+                "type": "address",
+                "internalType": "address"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "setRepPenalty",
+        "inputs": [
+            {
+                "name": "penalty",
+                "type": "uint8",
+                "internalType": "uint8"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "setRepReward",
+        "inputs": [
+            {
+                "name": "reward",
+                "type": "uint8",
+                "internalType": "uint8"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "setReputationAddress",
+        "inputs": [
+            {
+                "name": "_rep",
+                "type": "address",
+                "internalType": "address"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "setReviewPeriod",
+        "inputs": [
+            {
+                "name": "_reviewPeriod",
+                "type": "uint8",
+                "internalType": "uint8"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "submitBid",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            },
+            {
+                "name": "bidAmount",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "proposalIpfs",
+                "type": "string",
+                "internalType": "string"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "submitWork",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            },
+            {
+                "name": "ipfsProof",
+                "type": "string",
+                "internalType": "string"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "totalJobs",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "event",
+        "name": "BidAccepted",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "indexed": true,
+                "internalType": "bytes32"
+            },
+            {
+                "name": "freelancer",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            },
+            {
+                "name": "amount",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            },
+            {
+                "name": "bidIndex",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "BidRejected",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "indexed": true,
+                "internalType": "bytes32"
+            },
+            {
+                "name": "freelancer",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            },
+            {
+                "name": "amount",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            },
+            {
+                "name": "bidIndex",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "BidSubmitted",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "indexed": true,
+                "internalType": "bytes32"
+            },
+            {
+                "name": "freelancer",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            },
+            {
+                "name": "amount",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            },
+            {
+                "name": "bidIndex",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            },
+            {
+                "name": "proposalIpfs",
+                "type": "string",
+                "indexed": false,
+                "internalType": "string"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "ClaimAfterExpiredDeadlineSuccessful",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "indexed": true,
+                "internalType": "bytes32"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "DisputeRaised",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "indexed": true,
+                "internalType": "bytes32"
+            },
+            {
+                "name": "by",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "DisputeResolved",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "indexed": true,
+                "internalType": "bytes32"
+            },
+            {
+                "name": "winner",
+                "type": "address",
+                "indexed": false,
+                "internalType": "address"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "FundLocked",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "indexed": true,
+                "internalType": "bytes32"
+            },
+            {
+                "name": "amount",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            },
+            {
+                "name": "client",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            },
+            {
+                "name": "freelancer",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "FundReleased",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "indexed": true,
+                "internalType": "bytes32"
+            },
+            {
+                "name": "amount",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            },
+            {
+                "name": "to",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "JobCancelled",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "indexed": true,
+                "internalType": "bytes32"
+            },
+            {
+                "name": "client",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "JobCompleted",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "indexed": true,
+                "internalType": "bytes32"
+            },
+            {
+                "name": "freelancer",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "JobCreated",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "indexed": true,
+                "internalType": "bytes32"
+            },
+            {
+                "name": "client",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            },
+            {
+                "name": "budget",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            },
+            {
+                "name": "bidDeadline",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            },
+            {
+                "name": "expireDeadline",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            },
+            {
+                "name": "ipfs",
+                "type": "string",
+                "indexed": false,
+                "internalType": "string"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "JobDetailsUpdated",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "indexed": true,
+                "internalType": "bytes32"
+            },
+            {
+                "name": "client",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            },
+            {
+                "name": "budget",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            },
+            {
+                "name": "bidDeadline",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            },
+            {
+                "name": "expireDeadline",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            },
+            {
+                "name": "ipfs",
+                "type": "string",
+                "indexed": false,
+                "internalType": "string"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "JobExpireDeadlineIncreased",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "indexed": true,
+                "internalType": "bytes32"
+            },
+            {
+                "name": "exceedTimeBy",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "JobStarted",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "indexed": true,
+                "internalType": "bytes32"
+            },
+            {
+                "name": "freelancer",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "WorkSubmitted",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "indexed": true,
+                "internalType": "bytes32"
+            },
+            {
+                "name": "freelancer",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            },
+            {
+                "name": "ipfsProof",
+                "type": "string",
+                "indexed": false,
+                "internalType": "string"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "error",
+        "name": "AmountShouldBeGreaterThanOffer",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "DeadlineMustBeInFuture",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "DisputeAlreadyRaised",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "DisputePeriodOver",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "ExpireDeadlineMustBeGreaterThanBid",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "InvalidBidIndex",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "InvalidState",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "NotAssignedFreelancer",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "NotJobClient",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "NotJobParticipant",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "OnlyBidOnce",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "OnlyClientAllowed",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "OnlyFreelancerAllowed",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "OnlyInProgressJobs",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "OnlyOpenJobs",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "OnlyPendingBid",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "OnlySubmittedJobs",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "OnlySubmittedOrInProgressJobs",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "ReentrancyGuardReentrantCall",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "ReviewPeriodMustBeGreaterThanOne",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "ReviewPeriodStillActive",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "SafeERC20FailedOperation",
+        "inputs": [
+            {
+                "name": "token",
+                "type": "address",
+                "internalType": "address"
+            }
+        ]
+    },
+    {
+        "type": "error",
+        "name": "WorkAlreadySubmitted",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "cannotAcceptBidDeadlineExceed",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "cannotLockedTwice",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "cannotRejectBidDeadlineExceed",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "cannotReleaseTwice",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "cannotSubmitBidDeadlineExceed",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "cannotSubmitWorkDeadlineExceeded",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "tokenLockingToEscrowFailed",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "tokenReleaseFailed",
+        "inputs": []
+    }
+]

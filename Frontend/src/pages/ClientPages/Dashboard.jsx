@@ -93,7 +93,6 @@ function Dashboard() {
         showConfirm(`Are you sure you want to delete "${job.title}"?`, async () => {
             setConfirmLoading(true);
             setDeletingJobId(job.jobId);
-            console.log(job.jobId)
             try {
                 await axios.delete(
                     `http://localhost:5000/api/jobs/delete-job/${job.jobId}`
@@ -145,6 +144,8 @@ function Dashboard() {
         showConfirm(`Accept bid from ${bid.freelancerName}?`, async () => {
             setConfirmLoading(true);
             try {
+                
+
                 await axios.put(
                     `http://localhost:5000/api/jobs/accept-bid`,
                     {
