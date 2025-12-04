@@ -3,6 +3,9 @@
     "JobContract": {
       "address": "0x99cC070581894D736e6FC91dc9D2084490427a21",
       "startBlock": 34489115
+    },
+    "UserRegistry": {
+      "address": "0xcb52c690334cac8D2C06268DE946b0a09BcF2486"
     }
   }
 }

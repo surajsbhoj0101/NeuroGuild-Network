@@ -66,3 +66,29 @@ dataSources:
         - event: WorkSubmitted(indexed bytes32,indexed address,string)
           handler: handleWorkSubmitted
       file: ./src/job-contract.ts
+  - kind: ethereum
+    name: UserRegistry
+    network: base-sepolia
+    source:
+      address: "0xcb52c690334cac8D2C06268DE946b0a09BcF2486"
+      abi: UserRegistry
+      startBlock: 34489115
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - UserBlocked
+        - UserRegistered
+        - UserUnblocked
+      abis:
+        - name: UserRegistry
+          file: ./abis/UserRegistry.json
+      eventHandlers:
+        - event: UserBlocked(indexed address)
+          handler: handleUserBlocked
+        - event: UserRegistered(indexed address,uint8)
+          handler: handleUserRegistered
+        - event: UserUnblocked(indexed address)
+          handler: handleUserUnblocked
+      file: ./src/user-registry.ts
