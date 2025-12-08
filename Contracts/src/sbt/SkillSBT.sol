@@ -1,163 +1,161 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IERC721} from "./interfaces/IERC721.sol";
-import {IERC165} from "./interfaces/IERC165.sol";
-import {IERC721Metadata} from "./interfaces/IERC721Metadata.sol";
 
+import {IERC721} from "../../lib/openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
+import {
+    ERC721
+} from "../../lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
+import {
+    ERC721URIStorage
+} from "../../lib/openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import {
+    Ownable
+} from "../../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
-/// @title ERC721 SBT with mutable token URI and admin-only skill updates
-contract SkillSBT is IERC721, IERC721Metadata {
-    event Transfer(
-        address indexed from,
-        address indexed to,
-        uint256 indexed id
+contract SkillSBT is ERC721URIStorage {
+    error InvalidRole();
+    error AlreadyHasSkill();
+    error NotCouncil();
+
+    event SkillMinted(
+        uint256 indexed tokenId,
+        address indexed user,
+        bytes32 indexed skillId,
+        uint8 aiScore,
+        uint8 councilConfidence,
+        string level,
+        string metadataURI
     );
 
-    event SkillUpdated(
-        address indexed userAddr,
-        string indexed skillName,
-        uint8 indexed level
-    );
+    enum SkillLevel {
+        Beginner,
+        Intermediate,
+        Advance
+    }
 
-    event TokenURISet(uint256 indexed tokenId, string uri);
-    event AddedToWhitelist(address indexed userAddr);
+    struct SkillData {
+        bytes32 skillId;
+        uint8 aiScore;
+        uint8 councilConfidence;
+        SkillLevel level;
+        uint256 issuedAt;
+        address reviewer;
+        string metadataURI;
+    }
 
-    address public admin;
-    uint8 public constant MAX_LEVEL = 1;
-    string public constant name = "NeruroGuild SkillSBT";
-    string public constant symbol = "NG-SBT";
- 
+    mapping(uint256 => SkillData) public skillData;
+    mapping(address => uint256[]) public userSkills;
+    mapping(address => mapping(bytes32 => bool)) public hasSkill;
 
-    uint256 private _currentTokenId;
+   
+    address public governor;
+    mapping(address => bool) public isCouncil;
 
-    mapping(address => mapping(bytes32 => uint8)) public _skillLevels;
-    mapping(address => bool) internal _whiteList;
-    mapping(uint256 => string) internal _tokenUri;
-    mapping(uint256 => address) internal _ownerOf;
-    mapping(address => uint8) internal _balanceOf;
+    uint256 private nextTokenId = 1;
 
-    modifier onlyAdmin() {
-        require(msg.sender == admin, "you are not admin");
+    constructor(address _governor) ERC721("NeuroGuild Skill SBT", "NGSBT") {
+        governor = _governor;
+    }
+
+    modifier onlyGovernance() {
+        if (msg.sender != governor) revert InvalidRole();
         _;
     }
 
-    modifier onlyWhiteListed() {
-        require(_whiteList[msg.sender], "not whitelisted");
+    modifier onlyCouncil() {
+        if (!isCouncil[msg.sender]) revert NotCouncil();
         _;
     }
 
-    constructor(address _admin_) {
-        require(_admin_ != address(0), "admin = zero address");
-        admin = _admin_;
+    function addSkillCouncilMember(address member) external onlyGovernance {
+        isCouncil[member] = true;
     }
 
-    function supportsInterface(
-        bytes4 interfaceId
-    ) external pure returns (bool) {
-        return
-            interfaceId == type(IERC721).interfaceId ||
-            interfaceId == type(IERC165).interfaceId;
+    function removeSkillCouncilMember(address member) external onlyGovernance {
+        isCouncil[member] = false;
     }
 
-    function ownerOf(uint256 id) external view returns (address owner) {
-        owner = _ownerOf[id];
-        require(owner != address(0), "token doesn't exist");
+    
+    // (Council Only)
+    
+    function mintSkill(
+        address user,
+        bytes32 skillId,
+        uint8 aiScore,
+        uint8 councilConfidence,
+        SkillLevel level,
+        string memory metadataURI
+    ) external onlyCouncil {
+        if (hasSkill[user][skillId]) revert AlreadyHasSkill();
+
+        uint256 tokenId = nextTokenId++;
+        _safeMint(user, tokenId);
+        _setTokenURI(tokenId, metadataURI);
+
+        skillData[tokenId] = SkillData({
+            skillId: skillId,
+            aiScore: aiScore,
+            councilConfidence: councilConfidence,
+            level: level,
+            issuedAt: block.timestamp,
+            reviewer: msg.sender,
+            metadataURI: metadataURI
+        });
+
+        userSkills[user].push(tokenId);
+        hasSkill[user][skillId] = true;
+
+        emit SkillMinted(
+            tokenId,
+            user,
+            skillId,
+            aiScore,
+            councilConfidence,
+            _levelToString(level),
+            metadataURI
+        );
     }
 
-    function balanceOf(address owner) external view returns (uint256) {
-        require(owner != address(0), "owner = zero address");
-        return _balanceOf[owner];
+    function _levelToString(
+        SkillLevel level
+    ) internal pure returns (string memory) {
+        if (level == SkillLevel.Beginner) return "Beginner";
+        if (level == SkillLevel.Intermediate) return "Intermediate";
+        return "Advance";
     }
 
-    function isWhiteListed(address userAddr) external view returns (bool) {
-        return _whiteList[userAddr];
+    
+
+    //  Overrides
+    function transferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) public override(ERC721, IERC721) {
+        revert("SkillSBT: Transfers are disabled");
     }
 
-    function skillLevels(
-        string memory skillName,
-        address userAddr
-    ) external view returns (uint8) {
-        require(_balanceOf[userAddr] > 0, "mint SBT first");
-        bytes32 skillKey = keccak256(abi.encodePacked(skillName));
-        return _skillLevels[userAddr][skillKey];
+    function approve(address to, uint256 tokenId) public override(ERC721, IERC721) {
+        revert("SkillSBT: Approvals are disabled");
     }
 
-    function tokenURI(uint256 id) public view override returns (string memory) {
-        return _tokenUri[id];
+    function setApprovalForAll(address operator, bool approved)
+        public
+        override(ERC721, IERC721)
+    {
+        revert("SkillSBT: Approvals are disabled");
     }
 
-    function tokenIdOf(address user) external view returns (uint256) {
-        require(_balanceOf[user] > 0, "user has no SBT");
-        for (uint256 i = 1; i <= _currentTokenId; i++) {
-            if (_ownerOf[i] == user) {
-                return i;
-            }
-        }
-        revert("token not found");
-    }
-
-    function addToWhitelist(address userAddr) external onlyAdmin {
-        _whiteList[userAddr] = true;
-        emit AddedToWhitelist(userAddr);
-    }
-
-    function updateSkill(
-        string memory skillName,
-        address userAddr,
-        string memory tokenUri_
-    ) external onlyAdmin {
-        uint256 tokenId = _getTokenId(userAddr);
-        _updateSkill(skillName, userAddr, tokenId, tokenUri_);
-    }
-
-    function mint() external onlyWhiteListed returns (uint256) {
-        require(_balanceOf[msg.sender] == 0, "already has SBT");
-        _currentTokenId++;
-        uint256 newTokenId = _currentTokenId;
-        _mint(msg.sender, newTokenId);
-        return newTokenId;
-    }
-
-    function _getTokenId(address user) internal view returns (uint256) {
-        require(_balanceOf[user] > 0, "user has no SBT");
-        for (uint256 i = 1; i <= _currentTokenId; i++) {
-            if (_ownerOf[i] == user) {
-                return i;
-            }
-        }
-        revert("token not found");
-    }
-
-    function _updateSkill(
-        string memory skillName,
-        address userAddr,
+    function _update(
+        address to,
         uint256 tokenId,
-        string memory uri
-    ) internal {
-        require(_balanceOf[userAddr] > 0, "mint SBT first");
-        bytes32 skillKey = keccak256(abi.encodePacked(skillName));
-        uint8 currentLevel = _skillLevels[userAddr][skillKey];
-        require(currentLevel < MAX_LEVEL, "max level reached");
-
-        _skillLevels[userAddr][skillKey] = currentLevel + 1;
-        _setTokenUri(tokenId, uri);
-
-        emit SkillUpdated(userAddr, skillName, currentLevel + 1);
-    }
-
-    function _mint(address to, uint256 id) internal {
-        require(to != address(0), "mint to zero address");
-        require(_ownerOf[id] == address(0), "token already minted");
-
-        _balanceOf[to] = 1;
-        _ownerOf[id] = to;
-
-        emit Transfer(address(0), to, id);
-    }
-
-    function _setTokenUri(uint256 id, string memory uri) internal {
-        _tokenUri[id] = uri;
-        emit TokenURISet(id, uri);
+        address auth
+    ) internal override(ERC721) returns (address) {
+        address from = _ownerOf(tokenId);
+        if (from != address(0) && from != to) {
+            revert("SkillSBT: Transfers are disabled");
+        }
+        return super._update(to, tokenId, auth);
     }
 }

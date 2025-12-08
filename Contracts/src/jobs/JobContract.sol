@@ -34,9 +34,10 @@ contract JobContract is Escrow, ReentrancyGuard {
     error OnlySubmittedOrInProgressJobs();
     error cannotRejectBidDeadlineExceed();
 
+    //Events
+
     event DisputeRaised(bytes32 indexed jobId, address indexed by);
     event DisputeResolved(bytes32 indexed jobId, address winner);
-
     event JobCreated(
         bytes32 indexed jobId,
         address indexed client,
@@ -143,7 +144,7 @@ contract JobContract is Escrow, ReentrancyGuard {
     mapping(bytes32 => Bid[]) public jobBids;
     mapping(bytes32 => mapping(address => bool)) public hasBid;
     bytes32[] public allJobIds;
-    
+
     mapping(bytes32 => bool) public clientRatedFreelancer;
     mapping(bytes32 => bool) public freelancerRatedClient;
 
@@ -349,6 +350,11 @@ contract JobContract is Escrow, ReentrancyGuard {
         _releaseFunds(jobId);
         job.status = JobStatus.Completed;
 
+        // Update rich reputation metrics (ratings/defaults)
+        _recordJobCompleted(job.freelancer); // default rating for freelancer
+        _recordJobCompleted(job.client); // clients get reliability credit
+
+        // System-level reputation score adjustments
         _increaseRep(job.freelancer, reputationReward);
         _increaseRep(job.client, reputationReward);
 
@@ -371,7 +377,7 @@ contract JobContract is Escrow, ReentrancyGuard {
         emit JobExpireDeadlineIncreased(jobId, exceedTimeBy);
     }
 
-    function raiseDispute(bytes32 jobId) external {
+    function raiseDispute(bytes32 jobId, string memory reasonIpfs) external {
         Job storage job = jobs[jobId];
         if (job.status != JobStatus.Submitted) revert OnlySubmittedJobs();
         if (job.disputed) revert DisputeAlreadyRaised();
@@ -407,7 +413,12 @@ contract JobContract is Escrow, ReentrancyGuard {
 
         _releaseFunds(jobId);
         job.status = JobStatus.Completed;
+
+        _recordJobCompleted(job.freelancer);
+        _recordJobCompleted(job.client);
+
         _increaseRep(job.freelancer, reputationReward);
+
         emit JobCompleted(jobId, job.freelancer);
     }
 
@@ -423,20 +434,49 @@ contract JobContract is Escrow, ReentrancyGuard {
 
         job.status = JobStatus.Expired;
         _refundClient(jobId);
+
+        // Mark failed job for freelancer and apply penalty
+        _recordJobFailed(job.freelancer);
         _decreaseRep(job.freelancer, reputationPenalty);
+
         emit ClaimAfterExpiredDeadlineSuccessful(jobId);
     }
 
     function _increaseRep(address user, uint256 amount) internal {
         if (address(reputation) == address(0)) return;
-        uint256 tokenId = reputation.getTokenId(user);
+        uint256 tokenId = reputation.userToToken(user);
         reputation.increaseScoreFromSystem(tokenId, amount);
     }
 
     function _decreaseRep(address user, uint256 amount) internal {
         if (address(reputation) == address(0)) return;
-        uint256 tokenId = reputation.getTokenId(user);
+        uint256 tokenId = reputation.userToToken(user);
         reputation.decreaseScoreFromSystem(tokenId, amount);
+    }
+
+    // Helpers to update richer reputation metrics in ReputationSBT
+    function _recordJobCompleted(address user) internal {
+        if (address(reputation) == address(0)) return;
+        uint256 tokenId = reputation.userToToken(user);
+        reputation.recordJobCompleted(tokenId);
+    }
+
+    function _recordJobFailed(address user) internal {
+        if (address(reputation) == address(0)) return;
+        uint256 tokenId = reputation.userToToken(user);
+        reputation.recordJobFailed(tokenId);
+    }
+
+    function _recordDispute(address user) internal {
+        if (address(reputation) == address(0)) return;
+        uint256 tokenId = reputation.userToToken(user);
+        reputation.recordDispute(tokenId);
+    }
+
+    function _recordRating(address user, uint8 rating) internal {
+        if (address(reputation) == address(0)) return;
+        uint256 tokenId = reputation.userToToken(user);
+        reputation.recordRating(tokenId, rating);
     }
 
     function resolveDispute(
@@ -455,10 +495,18 @@ contract JobContract is Escrow, ReentrancyGuard {
         if (winner == job.freelancer) {
             _releaseFunds(jobId); // sends full escrow to freelancer
 
+            // Record dispute for client (loser) and successful completion for freelancer
+            _recordDispute(job.client);
+            _recordJobCompleted(job.freelancer);
+
             _increaseRep(job.freelancer, reputationReward);
             _decreaseRep(job.client, reputationPenalty);
         } else {
             _refundClient(jobId); // sends full escrow back to client
+
+            // Record dispute for freelancer (loser) and failed job
+            _recordDispute(job.freelancer);
+            _recordJobFailed(job.freelancer);
 
             _increaseRep(job.client, reputationReward);
             _decreaseRep(job.freelancer, reputationPenalty);
@@ -479,7 +527,8 @@ contract JobContract is Escrow, ReentrancyGuard {
 
         clientRatedFreelancer[jobId] = true;
 
-        _increaseRep(job.freelancer, rating);
+        // Update rating stats and system score
+        _recordRating(job.freelancer, rating);
     }
 
     function rateClient(bytes32 jobId, uint8 rating) external onlyFreelancer {
@@ -492,7 +541,7 @@ contract JobContract is Escrow, ReentrancyGuard {
 
         freelancerRatedClient[jobId] = true;
 
-        _increaseRep(job.client, rating);
+        _recordRating(job.client, rating);
     }
 
     function getJobStatus(bytes32 jobId) external view returns (JobStatus) {

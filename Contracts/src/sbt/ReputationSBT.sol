@@ -1,187 +1,256 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IERC721} from "./interfaces/IERC721.sol";
-import {IERC165} from "./interfaces/IERC165.sol";
-import {IERC721Metadata} from "./interfaces/IERC721Metadata.sol";
+import {
+    IERC721
+} from "../../lib/openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
+import {
+    ERC721
+} from "../../lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
+import {
+    ERC721URIStorage
+} from "../../lib/openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
-contract ReputationSBT is IERC721, IERC721Metadata {
-    event Transfer(
-        address indexed from,
-        address indexed to,
-        uint256 indexed id
-    );
-    event TokenURISet(uint256 indexed tokenId, string uri);
-    event ReputationIncreased(uint256 indexed tokenId, uint256 newScore);
-    event ReputationDecreased(uint256 indexed tokenId, uint256 newScore);
-    event ReputationSet(uint256 indexed tokenId, uint256 newScore);
-    event AuthorizedAdded(address indexed who);
-    event AuthorizedRemoved(address indexed who);
-    event AdminChanged(address indexed oldAdmin, address indexed newAdmin);
+contract ReputationSBT is ERC721URIStorage {
+    // ------------------------------------------------------------
+    // Events
+    // ------------------------------------------------------------
+    event ReputationMinted(address indexed user, uint256 tokenId);
+    event ReputationUpdated(uint256 indexed tokenId, uint256 newScore);
+    event ReputationSlashed(uint256 indexed tokenId, uint256 newScore);
+    event ReputationRevoked(uint256 indexed tokenId, string reason);
 
-    string public constant name = "NeuroGuild Soul Reputation";
-    string public constant symbol = "NGSR";
+    event JobCompleted(uint256 indexed tokenId, uint32 completedJobs, uint16 reliabilityScore);
+    event JobFailed(uint256 indexed tokenId, uint32 failedJobs, uint16 reliabilityScore);
+    event DisputeRecorded(uint256 indexed tokenId, uint32 disputeCount, uint16 reliabilityScore);
+
+    event RatingRecorded(uint256 indexed tokenId, uint16 newAverageRating, uint8 rating);
+    event MetadataUpdated(uint256 indexed tokenId, string newURI);
+
+    
+    struct Reputation {
+        uint32 completedJobs;
+        uint32 failedJobs;
+        uint32 disputeCount;
+        uint16 ratingAverage; // 0–100
+        uint16 reliabilityScore; // 0–100
+        uint256 totalScore;
+        uint256 lastUpdated;
+        string metadataURI;
+        bool revoked;
+    }
+
+    mapping(uint256 => Reputation) public repData;
+    mapping(address => uint256) public userToToken;
+
+    uint256 private nextTokenId = 1;
     uint256 public constant MAX_REPUTATION = 1000;
 
-    uint256 private _currentTokenId;
+    address public jobContract;
+    address public governor;
 
-    mapping(uint256 => string) internal _tokenUri;
-    mapping(uint256 => address) internal _ownerOf;
-    mapping(address => uint256) internal _tokenIdOf;
-    mapping(address => uint256) internal _balanceOf;
-    mapping(uint256 => uint256) public reputationScore;
-    mapping(address => bool) public authorizedContracts;
+    constructor(address _governor) ERC721("NeuroGuild Reputation", "NGREP") {
+        governor = _governor;
+    }
 
-    address public admin;
-
-    modifier onlyAdmin() {
-        require(msg.sender == admin, "not admin");
+  
+    modifier onlyJobContract() {
+        require(msg.sender == jobContract, "Only JobContract can call this");
         _;
     }
 
-    modifier onlyAuthorized() {
-        require(authorizedContracts[msg.sender], "not authorized");
+    modifier onlyGovernance() {
+        require(msg.sender == governor, "Only governance");
         _;
     }
 
-    constructor() {
-        admin = msg.sender;
+   
+
+    function setJobContract(address _jobContract) external onlyGovernance {
+        require(_jobContract != address(0), "Invalid jobContract address");
+        jobContract = _jobContract;
     }
 
-    function addAuthorized(address contractAddr) external onlyAdmin {
-        require(contractAddr != address(0), "zero address");
-        authorizedContracts[contractAddr] = true;
-        emit AuthorizedAdded(contractAddr);
+    function setGovernor(address _governor) external onlyGovernance {
+        require(_governor != address(0), "Invalid governor address");
+        governor = _governor;
     }
 
-    function removeAuthorized(address contractAddr) external onlyAdmin {
-        authorizedContracts[contractAddr] = false;
-        emit AuthorizedRemoved(contractAddr);
-    }
 
-    function setAdmin(address newAdmin) external onlyAdmin {
-        require(newAdmin != address(0), "zero address");
-        address old = admin;
-        admin = newAdmin;
-        emit AdminChanged(old, newAdmin);
-    }
-
-    function getScore(uint256 tokenId) public view returns (uint256) {
-        return reputationScore[tokenId];
-    }
-
-    function mintFromSystem(
+    function mintReputation(
         address user,
-        string calldata tokenUri
-    ) external returns (uint256) {
-        require(user != address(0), "zero address");
-        require(_balanceOf[user] == 0, "already owns SBT");
+        string memory metadataURI
+    ) external onlyJobContract returns (uint256) {
+        require(userToToken[user] == 0, "User already has Reputation SBT");
 
-        _currentTokenId++;
-        uint256 newId = _currentTokenId;
+        uint256 tokenId = nextTokenId++;
+        _safeMint(user, tokenId);
+        _setTokenURI(tokenId, metadataURI);
 
-        _mint(user, newId);
-        _tokenIdOf[user] = newId;
-        reputationScore[newId] = 0;
-        _setTokenUri(newId, tokenUri);
+        repData[tokenId] = Reputation({
+            completedJobs: 0,
+            failedJobs: 0,
+            disputeCount: 0,
+            ratingAverage: 0,
+            reliabilityScore: 100,
+            totalScore: 0,
+            lastUpdated: block.timestamp,
+            metadataURI: metadataURI,
+            revoked: false
+        });
 
-        return newId;
+        userToToken[user] = tokenId;
+
+        emit ReputationMinted(user, tokenId);
+        return tokenId;
     }
+
+ 
 
     function increaseScoreFromSystem(
         uint256 tokenId,
         uint256 amount
-    ) external onlyAuthorized {
-        _increaseScore(tokenId, amount);
+    ) external onlyJobContract {
+        Reputation storage r = repData[tokenId];
+        require(!r.revoked, "Reputation revoked");
+
+        if (r.totalScore + amount > MAX_REPUTATION) {
+            r.totalScore = MAX_REPUTATION;
+        } else {
+            r.totalScore += amount;
+        }
+
+        r.lastUpdated = block.timestamp;
+        emit ReputationUpdated(tokenId, r.totalScore);
     }
 
     function decreaseScoreFromSystem(
         uint256 tokenId,
         uint256 amount
-    ) external onlyAuthorized {
-        _decreaseScore(tokenId, amount);
-    }
+    ) external onlyJobContract {
+        Reputation storage r = repData[tokenId];
+        require(!r.revoked, "Reputation revoked");
 
-    function adminSetTokenURI(
-        uint256 tokenId,
-        string calldata uri
-    ) external onlyAdmin {
-        require(_exists(tokenId), "token doesn't exist");
-        _setTokenUri(tokenId, uri);
-    }
-
-    function supportsInterface(
-        bytes4 interfaceId
-    ) external pure override returns (bool) {
-        return
-            interfaceId == type(IERC721).interfaceId ||
-            interfaceId == type(IERC721Metadata).interfaceId ||
-            interfaceId == type(IERC165).interfaceId;
-    }
-
-    function ownerOf(uint256 tokenId) public view override returns (address) {
-        address owner = _ownerOf[tokenId];
-        require(owner != address(0), "token doesn't exist");
-        return owner;
-    }
-
-    function balanceOf(address owner) external view override returns (uint256) {
-        require(owner != address(0), "zero address");
-        return _balanceOf[owner];
-    }
-
-    function tokenURI(
-        uint256 tokenId
-    ) public view override returns (string memory) {
-        require(_exists(tokenId), "token doesn't exist");
-        return _tokenUri[tokenId];
-    }
-
-    function getTokenId(address user) external view returns (uint256) {
-        require(_tokenIdOf[user] != 0, "user has no SBT");
-        return _tokenIdOf[user];
-    }
-
-    function _mint(address to, uint256 tokenId) internal {
-        require(to != address(0), "zero address");
-        require(_ownerOf[tokenId] == address(0), "already minted");
-
-        _ownerOf[tokenId] = to;
-        _balanceOf[to] = 1;
-
-        emit Transfer(address(0), to, tokenId);
-    }
-
-    function _exists(uint256 tokenId) internal view returns (bool) {
-        return _ownerOf[tokenId] != address(0);
-    }
-
-    function _increaseScore(uint256 tokenId, uint256 amount) internal {
-        require(_exists(tokenId), "token doesn't exist");
-
-        uint256 current = reputationScore[tokenId];
-        uint256 newScore = current + amount;
-
-        if (newScore > MAX_REPUTATION) {
-            newScore = MAX_REPUTATION;
+        if (amount >= r.totalScore) {
+            r.totalScore = 0;
+        } else {
+            r.totalScore -= amount;
         }
 
-        reputationScore[tokenId] = newScore;
-        emit ReputationIncreased(tokenId, newScore);
+        r.lastUpdated = block.timestamp;
+        emit ReputationSlashed(tokenId, r.totalScore);
     }
 
-    function _decreaseScore(uint256 tokenId, uint256 amount) internal {
-        require(_exists(tokenId), "token doesn't exist");
+  
+    function recordJobCompleted(uint256 tokenId) external onlyJobContract {
+        Reputation storage r = repData[tokenId];
+        require(!r.revoked, "Reputation revoked");
 
-        uint256 current = reputationScore[tokenId];
-        uint256 newScore = current <= amount ? 0 : current - amount;
+        r.completedJobs++;
 
-        reputationScore[tokenId] = newScore;
-        emit ReputationDecreased(tokenId, newScore);
+        uint256 totalJobs = r.completedJobs + r.failedJobs;
+        r.reliabilityScore = uint16((r.completedJobs * 100) / totalJobs);
+
+        r.lastUpdated = block.timestamp;
+
+        emit JobCompleted(tokenId, r.completedJobs, r.reliabilityScore);
     }
 
-    function _setTokenUri(uint256 tokenId, string memory uri) internal {
-        _tokenUri[tokenId] = uri;
-        emit TokenURISet(tokenId, uri);
+    function recordJobFailed(uint256 tokenId) external onlyJobContract {
+        Reputation storage r = repData[tokenId];
+        require(!r.revoked, "Reputation revoked");
+
+        r.failedJobs++;
+
+        uint256 totalJobs = r.completedJobs + r.failedJobs;
+        r.reliabilityScore = uint16((r.completedJobs * 100) / totalJobs);
+
+        r.lastUpdated = block.timestamp;
+
+        emit JobFailed(tokenId, r.failedJobs, r.reliabilityScore);
+    }
+
+    function recordDispute(uint256 tokenId) external onlyJobContract {
+        Reputation storage r = repData[tokenId];
+        require(!r.revoked, "Reputation revoked");
+
+        r.disputeCount++;
+
+        if (r.reliabilityScore > 10) {
+            r.reliabilityScore -= 10;
+        } else {
+            r.reliabilityScore = 0;
+        }
+
+        r.lastUpdated = block.timestamp;
+
+        emit DisputeRecorded(tokenId, r.disputeCount, r.reliabilityScore);
+    }
+
+
+
+    function recordRating(uint256 tokenId, uint8 rating) external onlyJobContract {
+        require(rating <= 10, "Rating must be 0 to 10");
+
+        Reputation storage r = repData[tokenId];
+        require(!r.revoked, "Reputation revoked");
+        require(r.completedJobs > 0, "No completed job to rate");
+
+        uint256 previousCompleted = r.completedJobs;
+
+        // Weighted average: (oldAvg * (n-1) + rating) / n
+        r.ratingAverage = uint16(
+            (uint256(r.ratingAverage) * (previousCompleted - 1) + rating)
+                / previousCompleted
+        );
+
+        r.lastUpdated = block.timestamp;
+
+        emit RatingRecorded(tokenId, r.ratingAverage, rating);
+    }
+
+    // ------------------------------------------------------------
+    // Metadata Update
+    // ------------------------------------------------------------
+
+    function setMetadataURI(
+        uint256 tokenId,
+        string memory newURI
+    ) external onlyJobContract {
+        _setTokenURI(tokenId, newURI);
+        repData[tokenId].metadataURI = newURI;
+
+        emit MetadataUpdated(tokenId, newURI);
+    }
+
+   
+
+    function revokeReputation(
+        uint256 tokenId,
+        string calldata reason
+    ) external onlyGovernance {
+        repData[tokenId].revoked = true;
+        emit ReputationRevoked(tokenId, reason);
+    }
+
+
+    function transferFrom(address, address, uint256)
+        public
+        pure
+        override(ERC721, IERC721)
+    {
+        revert("ReputationSBT: Transfers disabled");
+    }
+
+    function approve(address, uint256) public pure override(ERC721, IERC721) {
+        revert("ReputationSBT: Approvals disabled");
+    }
+
+    function setApprovalForAll(address, bool)
+        public
+        pure
+        override(ERC721, IERC721)
+    {
+        revert("ReputationSBT: Approvals disabled");
     }
 }

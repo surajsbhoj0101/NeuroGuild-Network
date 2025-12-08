@@ -19,11 +19,13 @@ import {
 import {
     TimelockController
 } from "../../../lib/openzeppelin-contracts/contracts/governance/TimelockController.sol";
+
 import {
     IVotes
 } from "../../../lib/openzeppelin-contracts/contracts/governance/utils/IVotes.sol";
 
 import {IReputationSBT} from "../interfaces/IReputation.sol";
+
 
 contract GoverContract is
     Governor,
@@ -32,51 +34,71 @@ contract GoverContract is
     GovernorVotesQuorumFraction,
     GovernorTimelockControl
 {
-    IReputationSBT internal reputation;
+    struct Dispute {
+        bytes32 jobId;
+        address raisedBy;
+        string reason;
+        address client;
+        address freelancer;
+        bool resolved;
+    }
+
+    address public admin; // temporary 
+    IReputationSBT reputation;
     constructor(
         IVotes _token,
         TimelockController _timelock,
-        address _rep
-        //TimelockController timelock = TimelockController(0xABC...); Work like this
+        address _admin
     )
-        Governor("MyGovernor")
+        Governor("NeuroGuildGovernor")
         GovernorVotes(_token)
         GovernorVotesQuorumFraction(4)
         GovernorTimelockControl(_timelock)
     {
-        reputation = IReputationSBT(_rep);
+        admin = _admin;
     }
 
-    /*
-        Time between proposal creation and voting start.
-        Here: 7,200 blocks ≈ 1 day (assuming ~12s per block).
-     */
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Not admin");
+        _;
+    }
+
+    function renounceAdmin() external onlyAdmin {
+        admin = address(0);
+    }
+
     function votingDelay() public pure override returns (uint256) {
-        return 7200; // 1 day
+        return 7200; // approx 1 day
     }
 
-    /*
-        How long voting remains open.
-        Here: 50,400 blocks ≈ 1 week
-     */
     function votingPeriod() public pure override returns (uint256) {
-        return 50400; // 1 week
+        return 50400; // approx 1 week
     }
 
-    /*
-        Minimum number of votes required to create a proposal.
-        0 means any token holder can propose.
-    */
     function proposalThreshold() public pure override returns (uint256) {
         return 0;
     }
 
-    // The functions below are overrides required by Solidity.
+    function getVotes(
+        address voter,
+        uint256 blockNumber
+    ) public view override returns (uint256) {
+        uint256 tokenVotes = super.getVotes(voter, blockNumber);
 
-    /*
-        Returns the current state of a proposal.
-        States: Pending, Active, Defeated, Succeeded, Queued, Executed, Canceled.
-     */
+       
+        uint256 tokenId = reputation.userToToken(voter);
+        uint256 repVotes = 0;
+
+        if (tokenId != 0) {
+            (, , , , , uint256 totalScore, , , ) = reputation.repData(tokenId);
+            repVotes = totalScore;
+        }
+
+        return tokenVotes + (repVotes / 4);
+    }
+
+
+
     function state(
         uint256 proposalId
     )
@@ -88,46 +110,28 @@ contract GoverContract is
         return super.state(proposalId);
     }
 
-    /*    
-        Checks if a proposal must go through Timelock before execution.
-        Needed because you’re combining Governor with Timelock.
-    */
     function proposalNeedsQueuing(
         uint256 proposalId
     )
         public
         view
-        virtual
         override(Governor, GovernorTimelockControl)
         returns (bool)
     {
         return super.proposalNeedsQueuing(proposalId);
     }
 
-    function getVotes(
-        address voter,
-        uint256 blockNumber
-    ) public view override returns (uint256) {
-        uint256 tokenVotes = super.getVotes(voter, blockNumber);
-
-        // SBT reputation votes
-        uint256 tokenId = reputation.getTokenId(voter);
-        uint256 repVotes = reputation.getScore(tokenId);
-
-        return tokenVotes + (repVotes / 4);
-    }
-
-    /*
-        Internal function that queues proposal actions in Timelock after voting succeeds.
-        Returns the ETA (execution timestamp) from Timelock.
-     */
     function _queueOperations(
         uint256 proposalId,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    ) internal override(Governor, GovernorTimelockControl) returns (uint48) {
+    )
+        internal
+        override(Governor, GovernorTimelockControl)
+        returns (uint48)
+    {
         return
             super._queueOperations(
                 proposalId,
@@ -154,17 +158,16 @@ contract GoverContract is
         );
     }
 
-    /*
-        Cancels a proposal before execution.
-        Needed if proposer loses enough voting power, or some condition invalidates the proposal.
-     */
-
     function _cancel(
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    ) internal override(Governor, GovernorTimelockControl) returns (uint256) {
+    )
+        internal
+        override(Governor, GovernorTimelockControl)
+        returns (uint256)
+    {
         return super._cancel(targets, values, calldatas, descriptionHash);
     }
 

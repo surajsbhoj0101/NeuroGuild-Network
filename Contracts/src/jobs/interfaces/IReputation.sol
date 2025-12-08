@@ -2,45 +2,92 @@
 pragma solidity ^0.8.28;
 
 interface IReputationSBT {
-    function name() external view returns (string memory);
+    event ReputationMinted(address indexed user, uint256 tokenId);
+    event ReputationUpdated(uint256 indexed tokenId, uint256 newScore);
+    event ReputationSlashed(uint256 indexed tokenId, uint256 newScore);
+    event ReputationRevoked(uint256 indexed tokenId, string reason);
 
-    function  getScore(uint256 tokenId) external view returns(uint256);
+    event JobCompleted(
+        uint256 indexed tokenId,
+        uint32 completedJobs,
+        uint16 reliabilityScore
+    );
+    event JobFailed(
+        uint256 indexed tokenId,
+        uint32 failedJobs,
+        uint16 reliabilityScore
+    );
+    event DisputeRecorded(
+        uint256 indexed tokenId,
+        uint32 disputeCount,
+        uint16 reliabilityScore
+    );
 
-    function symbol() external view returns (string memory);
+    event RatingRecorded(
+        uint256 indexed tokenId,
+        uint16 newAverageRating,
+        uint8 rating
+    );
+    event MetadataUpdated(uint256 indexed tokenId, string newURI);
 
-    function ownerOf(uint256 tokenId) external view returns (address);
+    struct Reputation {
+        uint32 completedJobs;
+        uint32 failedJobs;
+        uint32 disputeCount;
+        uint16 ratingAverage;
+        uint16 reliabilityScore;
+        uint256 totalScore;
+        uint256 lastUpdated;
+        string metadataURI;
+        bool revoked;
+    }
 
-    function balanceOf(address owner) external view returns (uint256);
-
-    function tokenURI(uint256 tokenId) external view returns (string memory);
-
-    function getTokenId(address user) external view returns (uint256);
-
-    function reputationScore(uint256 tokenId) external view returns (uint256);
-
-    function authorizedContracts(address contractAddr) external view returns (bool);
-
-    function admin() external view returns (address);
-
-    function supportsInterface(bytes4 interfaceId) external view returns (bool);
-
-   
-    
-    function addAuthorized(address contractAddr) external;
-
-    function removeAuthorized(address contractAddr) external;
-
-    function setAdmin(address newAdmin) external;
-
-    function mintFromSystem(address user, string calldata tokenUri)
+    function repData(
+        uint256 tokenId
+    )
         external
-        returns (uint256);
+        view
+        returns (
+            uint32 completedJobs,
+            uint32 failedJobs,
+            uint32 disputeCount,
+            uint16 ratingAverage,
+            uint16 reliabilityScore,
+            uint256 totalScore,
+            uint256 lastUpdated,
+            string memory metadataURI,
+            bool revoked
+        );
+
+    function userToToken(address user) external view returns (uint256);
+
+    function jobContract() external view returns (address);
+    function governor() external view returns (address);
+
+    function MAX_REPUTATION() external view returns (uint256);
+
+    function setJobContract(address _jobContract) external;
+
+    function setGovernor(address _governor) external;
+
+    function mintReputation(
+        address user,
+        string memory metadataURI
+    ) external returns (uint256);
 
     function increaseScoreFromSystem(uint256 tokenId, uint256 amount) external;
 
     function decreaseScoreFromSystem(uint256 tokenId, uint256 amount) external;
 
-    function setScoreFromSystem(uint256 tokenId, uint256 newScore) external;
+    function recordJobCompleted(uint256 tokenId) external;
 
-    function adminSetTokenURI(uint256 tokenId, string calldata uri) external;
+    function recordJobFailed(uint256 tokenId) external;
+
+    function recordDispute(uint256 tokenId) external;
+
+    function recordRating(uint256 tokenId, uint8 rating) external;
+
+    function setMetadataURI(uint256 tokenId, string calldata newURI) external;
+
+    function revokeReputation(uint256 tokenId, string calldata reason) external;
 }
