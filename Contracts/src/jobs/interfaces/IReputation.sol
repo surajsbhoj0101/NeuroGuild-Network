@@ -61,6 +61,8 @@ interface IReputationSBT {
 
     function userToToken(address user) external view returns (uint256);
 
+    function getTokenId(address user) external view returns (uint256);
+
     function jobContract() external view returns (address);
     function governor() external view returns (address);
 
@@ -87,7 +89,7 @@ interface IReputationSBT {
 
     function recordRating(uint256 tokenId, uint8 rating) external;
 
-    function setMetadataURI(uint256 tokenId, string calldata newURI) external;
+    function setMetadataUri(uint256 tokenId, string calldata newUri) external;
 
     function revokeReputation(uint256 tokenId, string calldata reason) external;
 }

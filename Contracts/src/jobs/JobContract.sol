@@ -36,7 +36,11 @@ contract JobContract is Escrow, ReentrancyGuard {
 
     //Events
 
-    event DisputeRaised(bytes32 indexed jobId, address indexed by);
+    event DisputeRaised(
+        bytes32 indexed jobId,
+        address indexed by,
+        string reasonIpfs
+    );
     event DisputeResolved(bytes32 indexed jobId, address winner);
     event JobCreated(
         bytes32 indexed jobId,
@@ -175,8 +179,9 @@ contract JobContract is Escrow, ReentrancyGuard {
         address _governance,
         uint8 initialReward,
         uint8 initialPenalty,
-        address initialRepAddress
-    ) Escrow(token) {
+        address initialRepAddress,
+        address _treasury
+    ) Escrow(token, _treasury, _governance) {
         registry = UserRegistry(_registryAddress);
         reviewPeriod = uint256(initialReviewPeriod) * 1 days; // store as seconds
         governance = _governance;
@@ -255,6 +260,7 @@ contract JobContract is Escrow, ReentrancyGuard {
         uint256 bidAmount,
         string memory proposalIpfs
     ) external onlyFreelancer onlyOpenJob(jobId) {
+        // Bid must be greater than job budget (freelancer quotes higher)
         if (bidAmount <= jobs[jobId].budget)
             revert AmountShouldBeGreaterThanOffer();
         if (jobs[jobId].bidDeadline < block.timestamp)
@@ -350,11 +356,9 @@ contract JobContract is Escrow, ReentrancyGuard {
         _releaseFunds(jobId);
         job.status = JobStatus.Completed;
 
-        // Update rich reputation metrics (ratings/defaults)
-        _recordJobCompleted(job.freelancer); // default rating for freelancer
-        _recordJobCompleted(job.client); // clients get reliability credit
+        _recordJobCompleted(job.freelancer);
+        _recordJobCompleted(job.client);
 
-        // System-level reputation score adjustments
         _increaseRep(job.freelancer, reputationReward);
         _increaseRep(job.client, reputationReward);
 
@@ -390,7 +394,7 @@ contract JobContract is Escrow, ReentrancyGuard {
 
         job.status = JobStatus.Disputed;
         job.disputed = true;
-        emit DisputeRaised(jobId, msg.sender);
+        emit DisputeRaised(jobId, msg.sender, reasonIpfs);
     }
 
     function cancelJob(bytes32 jobId) external onlyClient {
@@ -444,39 +448,53 @@ contract JobContract is Escrow, ReentrancyGuard {
 
     function _increaseRep(address user, uint256 amount) internal {
         if (address(reputation) == address(0)) return;
-        uint256 tokenId = reputation.userToToken(user);
+        _ensureReputationSBT(user);
+        uint256 tokenId = reputation.getTokenId(user);
         reputation.increaseScoreFromSystem(tokenId, amount);
     }
 
     function _decreaseRep(address user, uint256 amount) internal {
         if (address(reputation) == address(0)) return;
-        uint256 tokenId = reputation.userToToken(user);
+        _ensureReputationSBT(user);
+        uint256 tokenId = reputation.getTokenId(user);
         reputation.decreaseScoreFromSystem(tokenId, amount);
     }
 
     // Helpers to update richer reputation metrics in ReputationSBT
     function _recordJobCompleted(address user) internal {
         if (address(reputation) == address(0)) return;
-        uint256 tokenId = reputation.userToToken(user);
+        _ensureReputationSBT(user);
+        uint256 tokenId = reputation.getTokenId(user);
         reputation.recordJobCompleted(tokenId);
     }
 
     function _recordJobFailed(address user) internal {
         if (address(reputation) == address(0)) return;
-        uint256 tokenId = reputation.userToToken(user);
+        _ensureReputationSBT(user);
+        uint256 tokenId = reputation.getTokenId(user);
         reputation.recordJobFailed(tokenId);
     }
 
     function _recordDispute(address user) internal {
         if (address(reputation) == address(0)) return;
-        uint256 tokenId = reputation.userToToken(user);
+        _ensureReputationSBT(user);
+        uint256 tokenId = reputation.getTokenId(user);
         reputation.recordDispute(tokenId);
     }
 
     function _recordRating(address user, uint8 rating) internal {
         if (address(reputation) == address(0)) return;
-        uint256 tokenId = reputation.userToToken(user);
+        _ensureReputationSBT(user);
+        uint256 tokenId = reputation.getTokenId(user);
         reputation.recordRating(tokenId, rating);
+    }
+
+ 
+    function _ensureReputationSBT(address user) internal {
+        uint256 tokenId = reputation.getTokenId(user);
+        if (tokenId == 0) {
+            reputation.mintReputation(user, "");
+        }
     }
 
     function resolveDispute(
@@ -495,7 +513,6 @@ contract JobContract is Escrow, ReentrancyGuard {
         if (winner == job.freelancer) {
             _releaseFunds(jobId); // sends full escrow to freelancer
 
-            // Record dispute for client (loser) and successful completion for freelancer
             _recordDispute(job.client);
             _recordJobCompleted(job.freelancer);
 
@@ -527,7 +544,6 @@ contract JobContract is Escrow, ReentrancyGuard {
 
         clientRatedFreelancer[jobId] = true;
 
-        // Update rating stats and system score
         _recordRating(job.freelancer, rating);
     }
 

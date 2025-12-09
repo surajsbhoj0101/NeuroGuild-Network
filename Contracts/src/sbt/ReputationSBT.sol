@@ -12,9 +12,6 @@ import {
 } from "../../lib/openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
 contract ReputationSBT is ERC721URIStorage {
-    // ------------------------------------------------------------
-    // Events
-    // ------------------------------------------------------------
     event ReputationMinted(address indexed user, uint256 tokenId);
     event ReputationUpdated(uint256 indexed tokenId, uint256 newScore);
     event ReputationSlashed(uint256 indexed tokenId, uint256 newScore);
@@ -76,6 +73,9 @@ contract ReputationSBT is ERC721URIStorage {
         governor = _governor;
     }
 
+    function getTokenId(address user) external view returns (uint256) {
+        return userToToken[user];
+    }
 
     function mintReputation(
         address user,
@@ -209,18 +209,16 @@ contract ReputationSBT is ERC721URIStorage {
         emit RatingRecorded(tokenId, r.ratingAverage, rating);
     }
 
-    // ------------------------------------------------------------
-    // Metadata Update
-    // ------------------------------------------------------------
 
-    function setMetadataURI(
+
+    function setMetadataUri(
         uint256 tokenId,
-        string memory newURI
+        string memory newUri
     ) external onlyJobContract {
-        _setTokenURI(tokenId, newURI);
-        repData[tokenId].metadataURI = newURI;
+        _setTokenURI(tokenId, newUri);
+        repData[tokenId].metadataURI = newUri;
 
-        emit MetadataUpdated(tokenId, newURI);
+        emit MetadataUpdated(tokenId, newUri);
     }
 
    

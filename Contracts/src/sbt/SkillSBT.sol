@@ -12,6 +12,7 @@ import {
 import {
     Ownable
 } from "../../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
+import {ICouncilRegistry} from "./interfaces/ICouncilRegistry.sol";
 
 contract SkillSBT is ERC721URIStorage {
     error InvalidRole();
@@ -50,12 +51,14 @@ contract SkillSBT is ERC721URIStorage {
 
    
     address public governor;
-    mapping(address => bool) public isCouncil;
+    ICouncilRegistry public councilRegistry;
 
     uint256 private nextTokenId = 1;
 
-    constructor(address _governor) ERC721("NeuroGuild Skill SBT", "NGSBT") {
+
+    constructor(address _governor,address _councilRegistry) ERC721("NeuroGuild Skill SBT", "NGSBT") {
         governor = _governor;
+        councilRegistry = ICouncilRegistry(_councilRegistry);
     }
 
     modifier onlyGovernance() {
@@ -64,20 +67,9 @@ contract SkillSBT is ERC721URIStorage {
     }
 
     modifier onlyCouncil() {
-        if (!isCouncil[msg.sender]) revert NotCouncil();
+        if (!councilRegistry.isCouncil(msg.sender)) revert NotCouncil();
         _;
     }
-
-    function addSkillCouncilMember(address member) external onlyGovernance {
-        isCouncil[member] = true;
-    }
-
-    function removeSkillCouncilMember(address member) external onlyGovernance {
-        isCouncil[member] = false;
-    }
-
-    
-    // (Council Only)
     
     function mintSkill(
         address user,
