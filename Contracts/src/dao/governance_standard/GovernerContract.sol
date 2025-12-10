@@ -34,33 +34,27 @@ contract GoverContract is
     GovernorVotesQuorumFraction,
     GovernorTimelockControl
 {
-    struct Dispute {
-        bytes32 jobId;
-        address raisedBy;
-        string reason;
-        address client;
-        address freelancer;
-        bool resolved;
-    }
-
     address public admin; // temporary 
     IReputationSBT reputation;
     constructor(
         IVotes _token,
-        TimelockController _timelock,
-        address _admin
+        TimelockController _timelock
     )
         Governor("NeuroGuildGovernor")
         GovernorVotes(_token)
         GovernorVotesQuorumFraction(4)
         GovernorTimelockControl(_timelock)
     {
-        admin = _admin;
+        admin = msg.sender;
     }
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "Not admin");
         _;
+    }
+
+    function setReputation(address _reputation) external onlyAdmin{
+        reputation = IReputationSBT(_reputation);
     }
 
     function renounceAdmin() external onlyAdmin {

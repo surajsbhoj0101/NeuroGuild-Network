@@ -44,10 +44,10 @@ contract ReputationSBT is ERC721URIStorage {
     uint256 public constant MAX_REPUTATION = 1000;
 
     address public jobContract;
-    address public governor;
+    address public timelock;
 
-    constructor(address _governor) ERC721("NeuroGuild Reputation", "NGREP") {
-        governor = _governor;
+    constructor(address _timelock) ERC721("NeuroGuild Reputation", "NGREP") {
+        timelock = _timelock;
     }
 
   
@@ -56,21 +56,21 @@ contract ReputationSBT is ERC721URIStorage {
         _;
     }
 
-    modifier onlyGovernance() {
-        require(msg.sender == governor, "Only governance");
+    modifier onlyTimelock() {
+        require(msg.sender == timelock, "Only timelock");
         _;
     }
 
    
 
-    function setJobContract(address _jobContract) external onlyGovernance {
+    function setJobContract(address _jobContract) external onlyTimelock {
         require(_jobContract != address(0), "Invalid jobContract address");
         jobContract = _jobContract;
     }
 
-    function setGovernor(address _governor) external onlyGovernance {
-        require(_governor != address(0), "Invalid governor address");
-        governor = _governor;
+    function settimelock(address _timelock) external onlyTimelock {
+        require(_timelock != address(0), "Invalid timelock address");
+        timelock = _timelock;
     }
 
     function getTokenId(address user) external view returns (uint256) {
@@ -226,7 +226,7 @@ contract ReputationSBT is ERC721URIStorage {
     function revokeReputation(
         uint256 tokenId,
         string calldata reason
-    ) external onlyGovernance {
+    ) external onlyTimelock {
         repData[tokenId].revoked = true;
         emit ReputationRevoked(tokenId, reason);
     }

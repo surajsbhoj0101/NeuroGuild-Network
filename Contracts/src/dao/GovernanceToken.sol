@@ -6,18 +6,12 @@ import "../../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
 contract GovernanceToken is ERC20Votes, ERC20Permit, Ownable {
     uint256 public constant MAX_SUPPLY = 1_000_00 * 10 ** 18; //100k
-    address public jobContract;
     constructor()
         Ownable(msg.sender)
         ERC20("NeuroSigil", "NSG")
         ERC20Permit("NeuroSigil") // Needed for off-chain signatures
     {
         _mint(msg.sender, 100000);
-    }
-
-    function setJobContract(address _jobContract) external onlyOwner {
-        require(_jobContract != address(0), "Invalid job contract");
-        jobContract = _jobContract;
     }
 
     // Required overrides

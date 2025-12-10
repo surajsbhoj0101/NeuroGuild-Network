@@ -5,9 +5,9 @@ import {IERC20} from "../../lib/openzeppelin-contracts/contracts/token/ERC20/IER
 import {ICouncilRegistry} from "./interfaces/ICouncilRegistry.sol";
 
 contract Treasury {
-    error OnlyGovernance();
+    error OnlyTimelock();
 
-    address public governor;
+    address public timelock;
     IERC20 public stableToken; 
     ICouncilRegistry public councilRegistry;
 
@@ -15,23 +15,23 @@ contract Treasury {
     mapping(address => uint256) public pendingCouncilRewards;
     mapping(address => uint256) public pendingDevRewards;
 
-    modifier onlyGovernance() {
-        if (msg.sender != governor) revert OnlyGovernance();
+    modifier onlyTimelock() {
+        if (msg.sender != timelock) revert OnlyTimelock();
         _;
     }
 
-    constructor(address _governor, address _stableToken, address _councilRegistry) {
-        governor = _governor;
+    constructor(address _timelock, address _stableToken, address _councilRegistry) {
+        timelock = _timelock;
         stableToken = IERC20(_stableToken);
         councilRegistry = ICouncilRegistry(_councilRegistry);
     }
 
-    function setGovernor(address _governor) external onlyGovernance {
-        require(_governor != address(0), "Invalid governor");
-        governor = _governor;
+    function setTimelock(address _timelock) external onlyTimelock {
+        require(_timelock != address(0), "Invalid timelock");
+        timelock = _timelock;
     }
 
-    function setCouncilRegistry(address _registry) external onlyGovernance {
+    function setCouncilRegistry(address _registry) external onlyTimelock {
         require(_registry != address(0), "Invalid registry");
         councilRegistry = ICouncilRegistry(_registry);
     }
@@ -46,7 +46,7 @@ contract Treasury {
 
     function addCouncilReward(address council, uint256 amount)
         external
-        onlyGovernance
+        onlyTimelock
     {
         require(councilRegistry.isCouncil(council), "Not a council member");
         pendingCouncilRewards[council] += amount;
@@ -54,12 +54,12 @@ contract Treasury {
 
     function addDeveloperReward(address dev, uint256 amount)
         external
-        onlyGovernance
+        onlyTimelock
     {
         pendingDevRewards[dev] += amount;
     }
 
-    function payCouncil(address council) external onlyGovernance {
+    function payCouncil(address council) external onlyTimelock {
         uint256 amount = pendingCouncilRewards[council];
         pendingCouncilRewards[council] = 0;
         require(amount > 0, "Nothing to pay");
@@ -67,7 +67,7 @@ contract Treasury {
         stableToken.transfer(council, amount);
     }
 
-    function payDeveloper(address dev) external onlyGovernance {
+    function payDeveloper(address dev) external onlyTimelock {
         uint256 amount = pendingDevRewards[dev];
         pendingDevRewards[dev] = 0;
         require(amount > 0, "Nothing to pay");
@@ -77,7 +77,7 @@ contract Treasury {
 
     function emergencyWithdraw(address to, uint256 amount)
         external
-        onlyGovernance
+        onlyTimelock
     {
         stableToken.transfer(to, amount);
     }

@@ -13,7 +13,7 @@ contract Escrow {
 
     error cannotLockedTwice();
     error InvalidState();
-    error OnlyGovernance();
+    error OnlyTimelock();
 
     event FundLocked(
         bytes32 indexed jobId,
@@ -46,36 +46,36 @@ contract Escrow {
 
     IERC20 public immutable USDC;
     address public treasury;
-    address public governor;
+    address public timelock;
 
     uint256 public clientFeeBps;
     uint256 public protocolFeeBps;
 
-    constructor(address _usdc, address _treasury, address _governor) {
+    constructor(address _usdc, address _treasury, address _timelock) {
         USDC = IERC20(_usdc);
         treasury = _treasury;
-        governor = _governor;
+        timelock = _timelock;
         clientFeeBps = 400;
         protocolFeeBps = 800;
     }
 
-    modifier onlyGovernor() {
-        if (msg.sender != governor) revert OnlyGovernance();
+    modifier onlyTimelock() virtual {
+        if (msg.sender != timelock) revert OnlyTimelock();
         _;
     }
 
-    function setGovernance(address _governor) external onlyGovernor {
-        governor = _governor;
+    function setTimelock(address _timelock) external virtual onlyTimelock {
+        timelock = _timelock;
     }
 
-    function setTreasury(address _treasury) external onlyGovernor {
+    function setTreasury(address _treasury) external onlyTimelock {
         treasury = _treasury;
     }
 
     function setFee(
         uint256 _clientFeeBps,
         uint256 _protocolFeeBps
-    ) external onlyGovernor {
+    ) external onlyTimelock {
         clientFeeBps = _clientFeeBps;
         protocolFeeBps = _protocolFeeBps;
     }

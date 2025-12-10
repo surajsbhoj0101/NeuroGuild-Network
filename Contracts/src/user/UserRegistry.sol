@@ -15,31 +15,31 @@ contract UserRegistry {
         Freelancer
     }
 
-    modifier onlyGovernance() {
-        require(msg.sender == governance, "Only governance");
+    modifier onlyTimelock() {
+        require(msg.sender == timelock, "Only timelock");
         _;
     }
 
-    constructor(address _governance) {
-        governance = _governance;
+    constructor(address _timelock) {
+        timelock = _timelock;
     }
 
     struct User {
         address wallet;
         Role role;
         bool exists;
-        bool blocked; 
+        bool blocked;
     }
 
-    address public governance;
-   
+    address public timelock;
+
     mapping(address => User) public users;
 
-    function setGovernor(address _resolver) external onlyGovernance {
-        governance = _resolver;
+    function setTimelock(address _resolver) external onlyTimelock {
+        timelock = _resolver;
     }
 
-    function registerUser(Role _role ) external {
+    function registerUser(Role _role) external {
         require(!users[msg.sender].exists, "User already registered");
 
         if (!(_role == Role.Client || _role == Role.Freelancer)) {
@@ -64,17 +64,17 @@ contract UserRegistry {
     }
 
     function isClient(address _wallet) external view returns (bool) {
-        if(users[_wallet].blocked) revert ClientIsBlocked();
+        if (users[_wallet].blocked) revert ClientIsBlocked();
         return users[_wallet].role == Role.Client;
     }
 
     function isFreelancer(address _wallet) external view returns (bool) {
-        if(users[_wallet].blocked) revert FreelancerIsBlocked();
+        if (users[_wallet].blocked) revert FreelancerIsBlocked();
         return users[_wallet].role == Role.Freelancer;
     }
 
-    // Governance: Block user
-    function blockUser(address _wallet) external onlyGovernance {
+    // Timelock: Block user
+    function blockUser(address _wallet) external onlyTimelock {
         require(users[_wallet].exists, "User not found");
         require(!users[_wallet].blocked, "Already blocked");
 
@@ -83,7 +83,7 @@ contract UserRegistry {
         emit UserBlocked(_wallet);
     }
 
-    function unblockUser(address _wallet) external onlyGovernance {
+    function unblockUser(address _wallet) external onlyTimelock {
         require(users[_wallet].exists, "User not found");
         require(users[_wallet].blocked, "Not blocked");
 

@@ -50,19 +50,19 @@ contract SkillSBT is ERC721URIStorage {
     mapping(address => mapping(bytes32 => bool)) public hasSkill;
 
    
-    address public governor;
+    address public timelock;
     ICouncilRegistry public councilRegistry;
 
     uint256 private nextTokenId = 1;
 
 
-    constructor(address _governor,address _councilRegistry) ERC721("NeuroGuild Skill SBT", "NGSBT") {
-        governor = _governor;
+    constructor(address _timelock,address _councilRegistry) ERC721("NeuroGuild Skill SBT", "NGSBT") {
+        timelock = _timelock;
         councilRegistry = ICouncilRegistry(_councilRegistry);
     }
 
-    modifier onlyGovernance() {
-        if (msg.sender != governor) revert InvalidRole();
+    modifier onlyTimelock() {
+        if (msg.sender != timelock) revert InvalidRole();
         _;
     }
 

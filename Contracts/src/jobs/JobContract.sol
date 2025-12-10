@@ -141,7 +141,7 @@ contract JobContract is Escrow, ReentrancyGuard {
     uint8 public reputationPenalty;
     address public owner;
     UserRegistry public registry;
-    address public governance;
+    
     uint256 public totalJobs;
     uint256 public reviewPeriod;
     mapping(bytes32 => Job) public jobs;
@@ -152,8 +152,8 @@ contract JobContract is Escrow, ReentrancyGuard {
     mapping(bytes32 => bool) public clientRatedFreelancer;
     mapping(bytes32 => bool) public freelancerRatedClient;
 
-    modifier onlyGovernance() {
-        require(msg.sender == governance, "Only governance");
+    modifier onlyTimelock() override {
+        require(msg.sender == Escrow.timelock, "Only timelock");
         _;
     }
 
@@ -176,32 +176,32 @@ contract JobContract is Escrow, ReentrancyGuard {
         address _registryAddress,
         address token,
         uint8 initialReviewPeriod, // in days
-        address _governance,
+        address _timelock,
         uint8 initialReward,
         uint8 initialPenalty,
         address initialRepAddress,
         address _treasury
-    ) Escrow(token, _treasury, _governance) {
+    ) Escrow(token, _treasury, _timelock) {
         registry = UserRegistry(_registryAddress);
         reviewPeriod = uint256(initialReviewPeriod) * 1 days; // store as seconds
-        governance = _governance;
+        Escrow.timelock = _timelock;
         reputationReward = initialReward;
         reputationPenalty = initialPenalty;
         reputation = IReputationSBT(initialRepAddress);
     }
 
-    function setReviewPeriod(uint8 _reviewPeriod) external onlyGovernance {
+    function setReviewPeriod(uint8 _reviewPeriod) external onlyTimelock {
         if (_reviewPeriod <= 1) revert ReviewPeriodMustBeGreaterThanOne(); // days
         reviewPeriod = uint256(_reviewPeriod) * 1 days;
     }
 
-    function setReputationAddress(address _rep) external onlyGovernance {
+    function setReputationAddress(address _rep) external onlyTimelock {
         reputation = IReputationSBT(_rep);
     }
 
-    function setGovernor(address _governance) external onlyGovernance {
-        require(_governance != address(0), "Invalid governance address");
-        governance = _governance;
+    function setTimelock(address _timelock) external override onlyTimelock {
+        require(_timelock != address(0), "Invalid timelock address");
+        Escrow.timelock = _timelock;
     }
 
     function createJob(
@@ -247,11 +247,11 @@ contract JobContract is Escrow, ReentrancyGuard {
         );
     }
 
-    function setRepReward(uint8 reward) external onlyGovernance {
+    function setRepReward(uint8 reward) external onlyTimelock {
         reputationReward = reward;
     }
 
-    function setRepPenalty(uint8 penalty) external onlyGovernance {
+    function setRepPenalty(uint8 penalty) external onlyTimelock {
         reputationPenalty = penalty;
     }
 
@@ -500,7 +500,7 @@ contract JobContract is Escrow, ReentrancyGuard {
     function resolveDispute(
         bytes32 jobId,
         address winner
-    ) external onlyGovernance nonReentrant {
+    ) external onlyTimelock nonReentrant {
         Job storage job = jobs[jobId];
 
         require(job.status == JobStatus.Disputed, "Not disputed");

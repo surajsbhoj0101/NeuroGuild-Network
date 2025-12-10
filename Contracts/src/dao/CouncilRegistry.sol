@@ -2,37 +2,37 @@
 pragma solidity ^0.8.28;
 
 contract CouncilRegistry {
-    address public governor;
+    address public timelock;
 
     mapping(address => bool) public isCouncil;
     address[] public councilMembers;
 
-    error OnlyGovernance();
+    error OnlyTimelock();
     error AlreadyCouncil();
     error NotCouncil();
 
-    modifier onlyGovernance() {
-        if (msg.sender != governor) revert OnlyGovernance();
+    modifier onlyTimelock() {
+        if (msg.sender != timelock) revert OnlyTimelock();
         _;
     }
 
-    constructor(address _governor) {
-        governor = _governor;
+    constructor(address _timelock) {
+        timelock = _timelock;
     }
 
-    function setGovernor(address _governor) external onlyGovernance {
-        require(_governor != address(0), "Invalid governor");
-        governor = _governor;
+    function setTimelock(address _timelock) external onlyTimelock {
+        require(_timelock != address(0), "Invalid timelock");
+        timelock = _timelock;
     }
 
-    function addCouncil(address member) external onlyGovernance {
+    function addCouncil(address member) external onlyTimelock {
         if (isCouncil[member]) revert AlreadyCouncil();
         isCouncil[member] = true;
         councilMembers.push(member);
         
     }
 
-    function removeCouncil(address member) external onlyGovernance {
+    function removeCouncil(address member) external onlyTimelock {
         if (!isCouncil[member]) revert NotCouncil();
         isCouncil[member] = false;
         
