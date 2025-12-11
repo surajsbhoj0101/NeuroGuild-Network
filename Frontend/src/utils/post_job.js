@@ -1,7 +1,7 @@
 import { jobContract } from "../abis/JobContract";
 import { Contract } from "ethers";
 
-const contractAddress = "0xb8f70934C48B2D733CD97D5550c9FC4DA77af317";
+const contractAddress = "0x99cC070581894D736e6FC91dc9D2084490427a21";
 
 const toUnixSeconds = (v) => {
     if (v == null || v === "") return null;

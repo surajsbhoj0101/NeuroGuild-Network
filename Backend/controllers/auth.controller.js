@@ -1,67 +1,67 @@
 import User from "../models/user.model.js";
-import Freelancer from "../models/freelancer_models/freelancers.model.js"
-import Client from "../models/client_models/clients.model.js"
-import { registerUser } from "../services/register_user_onChain.js";
+import Freelancer from "../models/freelancer_models/freelancers.model.js";
+import Client from "../models/client_models/clients.model.js";
+import { getOchainUser } from "../services/get_user.js";
 
 export const getUser = async (req, res) => {
     const { address } = req.body;
     const walletAddress = address.toLowerCase();
-
+    console.log(walletAddress)
     try {
         const user = await User.findOne({ wallets: walletAddress });
 
-        if (!user) {
-            return res.status(200).json({ isFound: false });
+        if (user) {
+            return res.status(200).json({ isFound: true, user });
         }
 
-        res.status(200).json({ isFound: true, user: user });
+        console.log("Getting onchain")
+        const onchainUser = await getOchainUser(walletAddress);
+        if (!onchainUser.exists) {
+            return res.status(200).json({ isFound: false });
+        }
+        console.log("Onchain user got")
+        console.log(Number(onchainUser.data[1]))
+        const roles = ["client", "freelancer"];
+        const usr = await User.create({
+            role: roles[Number(onchainUser.data[1])],
+            wallets: walletAddress
+        });
+
+        console.log(usr.role);
+        if (usr.role === "client") {
+            await Client.create({ user: usr._id, walletAddress });
+        } else {
+            console.log("Creating freelancer")
+            await Freelancer.create({ user: usr._id, walletAddress });
+        }
+
+        return res.status(200).json({ isFound: true, user: usr });
+
     } catch (error) {
-        res.status(500).json({ error: error.message || error });
+        return res.status(500).json({ error: error.message || error });
     }
-}
+};
 
 export const createUser = async (req, res) => {
     const { address, role } = req.body;
     const walletAddress = address.toLowerCase();
+    const roleLowerCase = role.toLowerCase();
 
     try {
-        console.log("the role is", role)
-        let user = await User.findOne({ wallets: walletAddress });
+        const user = await User.create({
+            role: roleLowerCase,
+            wallets: walletAddress
+        });
 
-        if (user) {
-            return res.status(200).json({ user });
-        }
-      
-        let result = false;
-        if (role === "client") {
-            result = await registerUser(0, walletAddress);
+        if (roleLowerCase === "client") {
+            await Client.create({ user: user._id, walletAddress });
         } else {
-            result = await registerUser(1, walletAddress);
+            await Freelancer.create({ user: user._id, walletAddress });
         }
 
-        if (result) {
-            const newUser = await User.create({
-                role,
-                wallets: walletAddress
-            });
-            console.log("Got here ")
-            if (role == "Freelancer") {
-                console.log("Creating freelancer")
-                await Freelancer.create({
-                    user: newUser._id,
-                    walletAddress: walletAddress
-                });
-            } else {
-                console.log("Creating Client")
-                await Client.create({
-                    user: newUser._id,
-                    walletAddress: walletAddress
-                })
-            }
-            console.log("Create user ....")
-            return res.status(201).json({ user: newUser });
-        }
+        return res.status(200).json({ isFound: true, user });
+
     } catch (error) {
-        res.status(500).json({ error: error.message || error });
+        return res.status(500).json({ error: error.message || error });
     }
-}
+};

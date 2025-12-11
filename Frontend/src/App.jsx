@@ -5,11 +5,13 @@ import { GiBrain } from "react-icons/gi";
 import { RiExchangeDollarLine } from "react-icons/ri";
 import { BsPeople } from "react-icons/bs";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useAccount } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import Snowfall from "react-snowfall";
 import logo from "./assets/images/logo.png";
 import axios from "axios";
 import "./index.css";
+import { BrowserProvider } from 'ethers'
+import { createUserOnchain } from "./utils/create_user";
 
 
 const orbitronStyle = { fontFamily: "Orbitron, sans-serif" };
@@ -19,10 +21,20 @@ export default function App() {
 
   const { address, isConnected } = useAccount();
   const navigate = useNavigate();
+  const { data: walletClient } = useWalletClient();
 
   const [notice, setNotice] = useState(null);
   const [redNotice, setRedNotice] = useState(false);
   const [loadingUser, setLoadingUser] = useState(false);
+
+  async function getSigner(params) {
+    let signer;
+    if (walletClient) {
+      const provider = new BrowserProvider(window.ethereum);
+      signer = await provider.getSigner();
+    }
+    return signer;
+  }
 
   useEffect(() => {
     if (!isConnected || !address) return;
@@ -40,7 +52,7 @@ export default function App() {
             setNotice("User found Redirecting...");
           }, 1500);
 
-          const role = user.role == 'Freelancer' ? navigate('/freelancer/my-profile') : navigate('/client/my-profile')
+          const role = user.role == 'freelancer' ? navigate('/freelancer/my-profile') : navigate('/client/my-profile')
         }
 
       } catch (error) {
@@ -61,36 +73,64 @@ export default function App() {
 
   async function handleCreateUser(role) {
     setLoadingUser(true);
-    if (!address || !isConnected) {
-      setRedNotice(true);
-      setNotice("Connect wallet first!!");
-      setLoadingUser(false);
-      return;
-    }
 
     try {
-      console.log(role)
-      const response = await axios.post('http://localhost:5000/api/auth/create-user', {
-        address,
-        role
-      });
+     
+      if (!address || !isConnected) {
+        return showError("Connect wallet first!");
+      }
 
-      const user = response.data.user;
+      const signer = await getSigner();
+      if (!signer) {
+        return showError("Please connect your wallet first.");
+      }
 
-      setTimeout(() => {
-        setRedNotice(false);
-        setNotice("User Creation successful. Redirecting...");
-      }, 1500);
+     
+      const RoleEnum = {
+        Client: 0,
+        Freelancer: 1,
+      };
 
-      const r = (role || "").toLowerCase();
-      navigate(`/${r}/my-profile`);
+      const roleEnum = RoleEnum[role];
+      if (roleEnum === undefined) {
+        return showError("Invalid role selected!");
+      }
+
+      const onchainResult = await createUserOnchain(signer, roleEnum);
+      if (!onchainResult) {
+        setRedNotice(true);
+        setNotice("Backend user creation failed.")
+        return
+      }
+
+
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/create-user",
+        { address, role }
+      );
+
+      if (!response.data?.isFound || !response.data?.user) {
+        setRedNotice(true);
+        setNotice("Backend user creation failed.")
+        return
+      }
+
+      setRedNotice(false)
+      setNotice("User creation successful! Redirecting...");
+
+
+      const route = `/${role.toLowerCase()}/my-profile`;
+      setTimeout(() => navigate(route), 1200);
+
     } catch (error) {
       console.error("Error creating user:", error);
-      setRedNotice(true);
-      setNotice("User creation failed!");
+      showError("Unexpected error occurred during user creation.");
+
+    } finally {
       setLoadingUser(false);
     }
   }
+
 
   return (
     <div className="min-h-screen relative overflow-hidden dark:bg-[#0f111d] bg-[#0f1422] text-white">
@@ -142,7 +182,7 @@ export default function App() {
 
             <div className="flex-wrap flex items-center gap-3">
               <Link
-                to="/browse-jobs"
+                
                 onClick={() => { handleCreateUser("Freelancer") }}
                 className="px-6 py-3 bg-[#14a19f] hover:bg-cyan-700 rounded-md text-white shadow-md transform hover:-translate-y-0.5 transition"
                 style={robotoStyle}
@@ -151,8 +191,8 @@ export default function App() {
               </Link>
 
               <Link
-                to="/post-job"
-                onClick={() => { handleCreateUser("client") }}
+               
+                onClick={() => { handleCreateUser("Client") }}
                 className="px-5 py-3 bg-transparent border border-gray-700 hover:border-gray-600 rounded-md text-white"
                 style={robotoStyle}
               >

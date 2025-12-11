@@ -8,6 +8,12 @@ import Freelancer from "../models/freelancer_models/freelancers.model.js";
 import { uploadToIpfs } from "../services/upload_to_pinata.js";
 import JobInteraction from "../models/job_models/jobInteraction.model.js";
 import Bid from "../models/job_models/bid.model.js";
+import { GraphQLClient, gql } from "graphql-request";
+
+
+const SUBGRAPH_URL = new GraphQLClient(
+  "http://localhost:8000/subgraphs/name/neuroguild/neuroguild-subgraph"
+);
 
 dotenv.config();
 
@@ -405,6 +411,28 @@ export const fetchClientsJobs = async (req, res) => {
   const clientAddress = address.toLowerCase();
 
   try {
+    const query = `
+    {
+      JobCreated {
+        id
+        jobId
+        client
+        budget
+        bidDeadline
+        expireDeadline
+        blockNumber
+        blockTimestamp
+        transactionHash
+      }
+    }
+    `;
+
+    const response = await axios.post(SUBGRAPH_URL, {
+      query
+    });
+
+    console.log(response.data.data.jobs);
+
     const jobs = await Job.find({ clientAddress });
     res.status(200).json({ success: true, jobs: jobs })
   } catch (error) {

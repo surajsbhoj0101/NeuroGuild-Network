@@ -1,22 +1,7 @@
 import {
-  UserBlocked as UserBlockedEvent,
   UserRegistered as UserRegisteredEvent,
-  UserUnblocked as UserUnblockedEvent,
 } from "../generated/UserRegistry/UserRegistry"
-import { UserBlocked, UserRegistered, UserUnblocked } from "../generated/schema"
-
-export function handleUserBlocked(event: UserBlockedEvent): void {
-  let entity = new UserBlocked(
-    event.transaction.hash.concatI32(event.logIndex.toI32()),
-  )
-  entity.wallet = event.params.wallet
-
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
-}
+import { UserRegistered } from "../generated/schema"
 
 export function handleUserRegistered(event: UserRegisteredEvent): void {
   let entity = new UserRegistered(
@@ -32,15 +17,4 @@ export function handleUserRegistered(event: UserRegisteredEvent): void {
   entity.save()
 }
 
-export function handleUserUnblocked(event: UserUnblockedEvent): void {
-  let entity = new UserUnblocked(
-    event.transaction.hash.concatI32(event.logIndex.toI32()),
-  )
-  entity.wallet = event.params.wallet
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
-}

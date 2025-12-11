@@ -42,19 +42,6 @@ export const jobContract = [
     },
     {
         "type": "function",
-        "name": "MAX_REPUTATION",
-        "inputs": [],
-        "outputs": [
-            {
-                "name": "",
-                "type": "uint256",
-                "internalType": "uint256"
-            }
-        ],
-        "stateMutability": "view"
-    },
-    {
-        "type": "function",
         "name": "USDC",
         "inputs": [],
         "outputs": [
@@ -204,39 +191,6 @@ export const jobContract = [
     },
     {
         "type": "function",
-        "name": "editJobDetails",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "internalType": "bytes32"
-            },
-            {
-                "name": "ipfsLink",
-                "type": "string",
-                "internalType": "string"
-            },
-            {
-                "name": "budget",
-                "type": "uint256",
-                "internalType": "uint256"
-            },
-            {
-                "name": "bidDeadline",
-                "type": "uint256",
-                "internalType": "uint256"
-            },
-            {
-                "name": "expireDeadline",
-                "type": "uint256",
-                "internalType": "uint256"
-            }
-        ],
-        "outputs": [],
-        "stateMutability": "nonpayable"
-    },
-    {
-        "type": "function",
         "name": "escrows",
         "inputs": [
             {
@@ -341,6 +295,16 @@ export const jobContract = [
                         "name": "createdAt",
                         "type": "uint256",
                         "internalType": "uint256"
+                    },
+                    {
+                        "name": "proposalIpfs",
+                        "type": "string",
+                        "internalType": "string"
+                    },
+                    {
+                        "name": "status",
+                        "type": "uint8",
+                        "internalType": "enum JobContract.BidStatus"
                     }
                 ]
             }
@@ -537,6 +501,16 @@ export const jobContract = [
                 "name": "createdAt",
                 "type": "uint256",
                 "internalType": "uint256"
+            },
+            {
+                "name": "proposalIpfs",
+                "type": "string",
+                "internalType": "string"
+            },
+            {
+                "name": "status",
+                "type": "uint8",
+                "internalType": "enum JobContract.BidStatus"
             }
         ],
         "stateMutability": "view"
@@ -692,6 +666,24 @@ export const jobContract = [
     },
     {
         "type": "function",
+        "name": "rejectBid",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            },
+            {
+                "name": "bidIndex",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
         "name": "reputation",
         "inputs": [],
         "outputs": [
@@ -838,6 +830,11 @@ export const jobContract = [
                 "name": "bidAmount",
                 "type": "uint256",
                 "internalType": "uint256"
+            },
+            {
+                "name": "proposalIpfs",
+                "type": "string",
+                "internalType": "string"
             }
         ],
         "outputs": [],
@@ -907,6 +904,37 @@ export const jobContract = [
     },
     {
         "type": "event",
+        "name": "BidRejected",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "indexed": true,
+                "internalType": "bytes32"
+            },
+            {
+                "name": "freelancer",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            },
+            {
+                "name": "amount",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            },
+            {
+                "name": "bidIndex",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
         "name": "BidSubmitted",
         "inputs": [
             {
@@ -932,6 +960,12 @@ export const jobContract = [
                 "type": "uint256",
                 "indexed": false,
                 "internalType": "uint256"
+            },
+            {
+                "name": "proposalIpfs",
+                "type": "string",
+                "indexed": false,
+                "internalType": "string"
             }
         ],
         "anonymous": false
@@ -1237,16 +1271,6 @@ export const jobContract = [
     },
     {
         "type": "error",
-        "name": "CannotEditAfterBids",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "CannotEditAfterExpiry",
-        "inputs": []
-    },
-    {
-        "type": "error",
         "name": "DeadlineMustBeInFuture",
         "inputs": []
     },
@@ -1317,6 +1341,11 @@ export const jobContract = [
     },
     {
         "type": "error",
+        "name": "OnlyPendingBid",
+        "inputs": []
+    },
+    {
+        "type": "error",
         "name": "OnlySubmittedJobs",
         "inputs": []
     },
@@ -1332,12 +1361,12 @@ export const jobContract = [
     },
     {
         "type": "error",
-        "name": "ReviewPeriodStillActive",
+        "name": "ReviewPeriodMustBeGreaterThanOne",
         "inputs": []
     },
     {
         "type": "error",
-        "name": "ReviewPeroidMustBeGreaterThanOne",
+        "name": "ReviewPeriodStillActive",
         "inputs": []
     },
     {
@@ -1364,6 +1393,11 @@ export const jobContract = [
     {
         "type": "error",
         "name": "cannotLockedTwice",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "cannotRejectBidDeadlineExceed",
         "inputs": []
     },
     {

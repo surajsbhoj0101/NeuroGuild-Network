@@ -12,11 +12,12 @@
   },
   "dependencies": {
     "@google/genai": "^1.25.0",
-    "axios": "^1.12.2",
+    "axios": "^1.13.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "ethers": "^6.15.0",
     "express": "^5.1.0",
+    "graphql-request": "^7.3.5",
     "mongoose": "^8.19.1",
     "pinata": "^2.5.1",
     "uuid": "^13.0.0",

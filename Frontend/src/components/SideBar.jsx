@@ -52,7 +52,7 @@ function SideBar() {
   ];
 
 
-  const menuItems = role === "Freelancer" ? freelancerMenu : clientMenu;
+  const menuItems = role === "freelancer" ? freelancerMenu : clientMenu;
 
 
   useEffect(() => {
