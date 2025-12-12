@@ -172,7 +172,7 @@ function PostJobs() {
             experienceLevel: jobDetails.experienceLevel || "not-specified",
             deadline: jobDetails.deadline,
             completion: jobDetails.completion,
-            budget:jobDetails.budget
+            budget: jobDetails.budget
         };
 
         try {
@@ -314,9 +314,6 @@ function PostJobs() {
                 return;
             }
 
-
-         
-            let jobId;
             try {
                 const tx = await postJob(
                     signer,
@@ -330,36 +327,13 @@ function PostJobs() {
                     setNotice("Blockchain error: job not created.");
                     return;
                 }
-
-                jobId = tx.jobId;
-
+                
+                setRedNotice(false);
+                setNotice("Job Created successfully !!");
             } catch (err) {
                 console.error("Blockchain transaction failed:", err);
                 setRedNotice(true);
                 setNotice("Transaction failed or rejected.");
-                return;
-            }
-
-
-            try {
-                payload.jobId = jobId;
-                const res = await axios.post(
-                    "http://localhost:5000/api/jobs/create-job",
-                    { payload }
-                );
-
-                if (res?.data?.success) {
-                    setRedNotice(false);
-                    setNotice("Job posted successfully!");
-                } else {
-                    setRedNotice(true);
-                    setNotice(res?.data?.message || "Failed to save job in backend.");
-                }
-
-            } catch (err) {
-                console.error("Backend save failed:", err);
-                setRedNotice(true);
-                setNotice("Failed to save job in backend.");
                 return;
             }
 

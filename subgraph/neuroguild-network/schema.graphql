@@ -1,7 +1,23 @@
+type UserBlocked @entity(immutable: true) {
+  id: Bytes!
+  wallet: Bytes! # address
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
 type UserRegistered @entity(immutable: true) {
   id: Bytes!
   wallet: Bytes! # address
   role: Int! # uint8
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type UserUnblocked @entity(immutable: true) {
+  id: Bytes!
+  wallet: Bytes! # address
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!

@@ -1,7 +1,7 @@
-import { jobContract } from "../abis/JobContract";
+import { JobContract } from "../abis/JobContract";
 import { Contract } from "ethers";
 
-const contractAddress = "0x99cC070581894D736e6FC91dc9D2084490427a21";
+const contractAddress = "0x426141f2B1cF59295d2B339BCe7bBA2793f9Fd0c";
 
 const toUnixSeconds = (v) => {
     if (v == null || v === "") return null;
@@ -32,12 +32,12 @@ export const postJob = async (signer, ipfs, budget, bidDeadline, expireDeadline)
             return false;
         }
 
-        const amountInUsd = Number(budget);  
+        const amountInUsd = Number(budget);
         const amountInToken = BigInt(Math.round(amountInUsd * 1e6));
         console.log(amountInToken)
 
 
-        const contract = new Contract(contractAddress, jobContract, signer);
+        const contract = new Contract(contractAddress, JobContract, signer);
 
         const tx = await contract.createJob(
             ipfs,

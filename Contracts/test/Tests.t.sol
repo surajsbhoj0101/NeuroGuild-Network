@@ -475,28 +475,25 @@ contract Tests is Test {
         job.acceptBid(jobId, 0);
         vm.stopPrank();
 
-       
-
         //By Pass governance
         vm.startPrank(address(deployed.timelock));
         ReputationSBT rep = ReputationSBT(address(deployed.reputationSBT));
         rep.setJobContract(address(deployed.jobContract));
         vm.stopPrank();
 
-        vm.warp(block.timestamp+ expireDeadline);
+        vm.warp(block.timestamp + expireDeadline);
         vm.startPrank(client);
         job.claimAfterExpiredDeadline(jobId);
         vm.stopPrank();
 
-        console.log("Balance of client: ",usdc.balanceOf(client)/1e18);
+        console.log("Balance of client: ", usdc.balanceOf(client) / 1e18);
     }
 
     function testFundDev() public {
-        address member = vm.addr(1);//dev
+        address member = vm.addr(1); //dev
         deal(address(deployed.usdc), address(deployed.treasury), 100 * 1e18);
 
         vm.startPrank(address(deployed.timelock));
-        
 
         Treasury treasury = Treasury(deployed.treasury);
         treasury.addDeveloperReward(member, 50 * 1e18);
@@ -505,5 +502,46 @@ contract Tests is Test {
 
         ERC20Usdc usdc = ERC20Usdc(deployed.usdc);
         assertEq(usdc.balanceOf(member), 50 * 1e18);
+    }
+
+    function testCancelJob() public {
+        //declare
+        address client = vm.addr(1);
+        address freelancer = vm.addr(2);
+        //send usd to client
+        deal(address(deployed.usdc), client, 100 * 1e18);
+
+        //register Client
+        vm.startPrank(client);
+        UserRegistry reg = UserRegistry(deployed.registry);
+        reg.registerUser(UserRegistry.Role.Client);
+        vm.stopPrank();
+
+        //Post Job
+        JobContract job = JobContract(deployed.jobContract);
+        uint256 START = 1000;
+        vm.warp(START);
+        uint256 budget = 8 * 1e18;
+        uint256 bidDeadline = START + 1 days;
+        uint256 expireDeadline = START + 2 days;
+
+        vm.startPrank(client);
+        job.createJob("ipfs:https://", budget, bidDeadline, expireDeadline);
+        vm.stopPrank();
+
+        bytes32[] memory ids = job.getAllJobIds();
+        require(ids.length > 0, "No jobs found");
+        bytes32 jobId = ids[0];
+
+        vm.startPrank(client);
+        job.cancelJob(jobId);
+        vm.stopPrank();
+
+        vm.startPrank(freelancer);
+        reg.registerUser(UserRegistry.Role.Freelancer);
+        vm.stopPrank();
+
+        vm.expectRevert();
+        job.submitBid(jobId, 10 * 1e18, "My Proposal");
     }
 }

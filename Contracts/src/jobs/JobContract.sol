@@ -68,10 +68,6 @@ contract JobContract is Escrow, ReentrancyGuard {
         string proposalIpfs
     );
 
-    event JobExpireDeadlineIncreased(
-        bytes32 indexed jobId,
-        uint256 exceedTimeBy
-    );
     event JobStarted(bytes32 indexed jobId, address indexed freelancer);
     event JobCompleted(bytes32 indexed jobId, address indexed freelancer);
     event BidAccepted(
@@ -141,7 +137,7 @@ contract JobContract is Escrow, ReentrancyGuard {
     uint8 public reputationPenalty;
     address public owner;
     UserRegistry public registry;
-    
+
     uint256 public totalJobs;
     uint256 public reviewPeriod;
     mapping(bytes32 => Job) public jobs;
@@ -244,6 +240,41 @@ contract JobContract is Escrow, ReentrancyGuard {
             bidDeadline,
             expireDeadline,
             ipfsLink
+        );
+    }
+
+    function updateJobDetails(
+        bytes32 jobId,
+        string memory newIpfsLink,
+        uint256 newBudget,
+        uint256 newBidDeadline,
+        uint256 newExpireDeadline
+    ) external onlyClient {
+        Job storage job = jobs[jobId];
+        if (job.client != msg.sender) revert NotJobClient();
+
+        if (job.status != JobStatus.Open) revert OnlyOpenJobs();
+
+        if (jobBids[jobId].length > 0)
+            revert("Cannot update: bids already exist");
+
+        if (newBudget <= 0) revert("Budget Should be greater than zero");
+        if (newBidDeadline <= block.timestamp) revert DeadlineMustBeInFuture();
+        if (newBidDeadline >= newExpireDeadline)
+            revert ExpireDeadlineMustBeGreaterThanBid();
+
+        job.ipfs = newIpfsLink;
+        job.budget = newBudget;
+        job.bidDeadline = newBidDeadline;
+        job.expireDeadline = newExpireDeadline;
+
+        emit JobDetailsUpdated(
+            jobId,
+            msg.sender,
+            newBudget,
+            newBidDeadline,
+            newExpireDeadline,
+            newIpfsLink
         );
     }
 
@@ -365,22 +396,6 @@ contract JobContract is Escrow, ReentrancyGuard {
         emit JobCompleted(jobId, job.freelancer);
     }
 
-    function increaseExpireDeadline(
-        bytes32 jobId,
-        uint256 exceedTimeBy
-    ) external onlyClient {
-        Job storage job = jobs[jobId];
-        require(
-            job.status == JobStatus.InProgress,
-            "Job should be in progress"
-        );
-        require(exceedTimeBy < 30 days, "Cannot exceed time more than 30 days");
-        if (job.client != msg.sender) revert NotJobClient();
-
-        job.expireDeadline += exceedTimeBy;
-        emit JobExpireDeadlineIncreased(jobId, exceedTimeBy);
-    }
-
     function raiseDispute(bytes32 jobId, string memory reasonIpfs) external {
         Job storage job = jobs[jobId];
         if (job.status != JobStatus.Submitted) revert OnlySubmittedJobs();
@@ -489,7 +504,6 @@ contract JobContract is Escrow, ReentrancyGuard {
         reputation.recordRating(tokenId, rating);
     }
 
- 
     function _ensureReputationSBT(address user) internal {
         uint256 tokenId = reputation.getTokenId(user);
         if (tokenId == 0) {

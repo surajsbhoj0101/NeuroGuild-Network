@@ -8,19 +8,25 @@ dataSources:
     name: UserRegistry
     network: base-sepolia
     source:
-      address: "0xFfB8D0b2D015eB0399168661226F87693F5C811A"
+      address: "0xc1a6140dbce2298B2Ad92a4d9e1b6B6a80bFB84D"
       abi: UserRegistry
-      startBlock: 34808885
+      startBlock: 34897177
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
       language: wasm/assemblyscript
       entities:
+        - UserBlocked
         - UserRegistered
+        - UserUnblocked
       abis:
         - name: UserRegistry
           file: ./abis/UserRegistry.json
       eventHandlers:
+        - event: UserBlocked(indexed address)
+          handler: handleUserBlocked
         - event: UserRegistered(indexed address,uint8)
           handler: handleUserRegistered
+        - event: UserUnblocked(indexed address)
+          handler: handleUserUnblocked
       file: ./src/user-registry.ts

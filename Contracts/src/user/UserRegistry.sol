@@ -56,10 +56,13 @@ contract UserRegistry {
         emit UserRegistered(msg.sender, _role);
     }
 
+    function isUserExist(address _wallet) external view returns (bool) {
+        return users[_wallet].exists;
+    }
+
     function getUser(address _wallet) external view returns (User memory) {
         User memory u = users[_wallet];
         require(u.exists, "User not found");
-        require(!u.blocked, "User is blocked");
         return u;
     }
 

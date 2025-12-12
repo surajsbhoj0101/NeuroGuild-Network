@@ -133,44 +133,6 @@ export const getJobIpfs = async (req, res) => {
   }
 }
 
-//onchain
-
-export const createJob = async (req, res) => {
-  const { payload } = req.body;
-
-  try {
-
-    if (!payload?.clientAddress) {
-      console.log("client address required")
-      return res.status(400).json({ success: false, message: "clientAddress is required" });
-    }
-
-    const walletAddress = payload.clientAddress.toLowerCase();
-    console.log(walletAddress)
-
-    const user = await User.findOne({ wallets: walletAddress });
-    if (!user) {
-      console.log("Unable to find the user")
-      return res.status(404).json({ success: false, message: "Unable to find the user" });
-
-    }
-
-
-    console.log("creating job ...")
-    payload.client = user._id;
-    console.log("creating job ...")
-    const job = await Job.create(payload);
-
-    return res.status(201).json({
-      success: true,
-      message: "Job created successfully",
-    });
-
-  } catch (error) {
-    console.log("Error in creating job", error);
-    return res.status(500).json({ success: false, message: "Server error", error });
-  }
-}
 //Backend
 export const fetchJobs = async (req, res) => {
   try {
