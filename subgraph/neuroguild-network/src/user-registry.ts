@@ -1,46 +1,66 @@
+import { UserRegistered as UserRegisteredEvent } from "../generated/UserRegistry/UserRegistry";
+import { UserBlocked as UserBlockedEvent } from "../generated/UserRegistry/UserRegistry";
+import { UserUnblocked as UserUnblockedEvent } from "../generated/UserRegistry/UserRegistry";
 import {
-  UserBlocked as UserBlockedEvent,
-  UserRegistered as UserRegisteredEvent,
-  UserUnblocked as UserUnblockedEvent
-} from "../generated/UserRegistry/UserRegistry"
-import { UserBlocked, UserRegistered, UserUnblocked } from "../generated/schema"
-
-export function handleUserBlocked(event: UserBlockedEvent): void {
-  let entity = new UserBlocked(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.wallet = event.params.wallet
-
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
-}
+  UserBlocked,
+  UserRegistered,
+  UserUnblocked,
+} from "../generated/schema";
+import { User } from "../generated/schema";
 
 export function handleUserRegistered(event: UserRegisteredEvent): void {
-  let entity = new UserRegistered(
+  let userId = event.params.wallet.toHex();
+
+  let user = new User(userId);
+  user.wallet = event.params.wallet;
+  user.role = event.params.role;
+  user.createdAt = event.block.timestamp;
+  user.isBlocked = false;
+  user.save();
+
+  let history = new UserRegistered(
     event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.wallet = event.params.wallet
-  entity.role = event.params.role
+  );
+  history.wallet = event.params.wallet;
+  history.role = event.params.role;
+  history.blockNumber = event.block.number;
+  history.blockTimestamp = event.block.timestamp;
+  history.transactionHash = event.transaction.hash;
+  history.save();
+}
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
+export function handleUserBlocked(event: UserBlockedEvent): void {
+  let userId = event.params.wallet.toHex();
+  let user = User.load(userId);
+  if (!user) return;
 
-  entity.save()
+  user.isBlocked = true;
+  user.save();
+
+  let history = new UserBlocked(
+    event.transaction.hash.concatI32(event.logIndex.toI32())
+  );
+  history.wallet = event.params.wallet;
+  history.blockNumber = event.block.number;
+  history.blockTimestamp = event.block.timestamp;
+  history.transactionHash = event.transaction.hash;
+  history.save();
 }
 
 export function handleUserUnblocked(event: UserUnblockedEvent): void {
-  let entity = new UserUnblocked(
+  let userId = event.params.wallet.toHex();
+  let user = User.load(userId);
+  if (!user) return;
+
+  user.isBlocked = false;
+  user.save();
+
+  let history = new UserUnblocked(
     event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.wallet = event.params.wallet
-
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
+  );
+  history.wallet = event.params.wallet;
+  history.blockNumber = event.block.number;
+  history.blockTimestamp = event.block.timestamp;
+  history.transactionHash = event.transaction.hash;
+  history.save();
 }

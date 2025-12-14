@@ -57,7 +57,6 @@ function Dashboard() {
                 `http://localhost:5000/api/jobs/client-jobs/${address}`
             );
 
-
             setJobs(response.data?.jobs || []);
             setRedNotice(false);
         } catch (error) {
@@ -144,8 +143,6 @@ function Dashboard() {
         showConfirm(`Accept bid from ${bid.freelancerName}?`, async () => {
             setConfirmLoading(true);
             try {
-                
-
                 await axios.put(
                     `http://localhost:5000/api/jobs/accept-bid`,
                     {

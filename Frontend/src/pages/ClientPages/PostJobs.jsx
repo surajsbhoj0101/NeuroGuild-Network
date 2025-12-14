@@ -8,8 +8,6 @@ import { BrowserProvider } from 'ethers';
 import { postJob } from '../../utils/post_job';
 // import { funkiMainnet } from 'viem/chains';
 
-
-
 function PostJobs() {
     const { isConnected, address } = useAccount();
     const navigate = useNavigate();
@@ -98,7 +96,6 @@ function PostJobs() {
         if (copy.completion) copy.completion = toDateInputValue(copy.completion);
         return copy;
     };
-
 
     // ADD SKILL
     const addSkill = useCallback(
@@ -327,7 +324,7 @@ function PostJobs() {
                     setNotice("Blockchain error: job not created.");
                     return;
                 }
-                
+
                 setRedNotice(false);
                 setNotice("Job Created successfully !!");
             } catch (err) {
@@ -336,7 +333,6 @@ function PostJobs() {
                 setNotice("Transaction failed or rejected.");
                 return;
             }
-
         } catch (err) {
             setRedNotice(true);
             setNotice("Unexpected error. Try again.");

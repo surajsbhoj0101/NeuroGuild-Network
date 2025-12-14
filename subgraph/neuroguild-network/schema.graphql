@@ -1,15 +1,27 @@
-type UserBlocked @entity(immutable: true) {
+# -----------------------------------------
+# UserRegistry Events (unchanged)
+# -----------------------------------------
+
+type User @entity(immutable: false) {
+  id: ID! # wallet.toHex()
+  wallet: Bytes!
+  role: Int!
+  createdAt: BigInt!
+  isBlocked: Boolean!
+}
+
+type UserRegistered @entity(immutable: true) {
   id: Bytes!
-  wallet: Bytes! # address
+  wallet: Bytes!
+  role: Int!
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
 }
 
-type UserRegistered @entity(immutable: true) {
+type UserBlocked @entity(immutable: true) {
   id: Bytes!
-  wallet: Bytes! # address
-  role: Int! # uint8
+  wallet: Bytes!
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
@@ -17,7 +29,208 @@ type UserRegistered @entity(immutable: true) {
 
 type UserUnblocked @entity(immutable: true) {
   id: Bytes!
-  wallet: Bytes! # address
+  wallet: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+# -----------------------------------------
+# JobContract Events
+# -----------------------------------------
+
+enum JobStatus {
+  OPEN
+  IN_PROGRESS
+  SUBMITTED
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
+type Job @entity(immutable: false) {
+  id: ID!
+  jobId: Bytes!
+  client: Bytes!
+  freelancer: Bytes #nullable for data transition
+  status: JobStatus!
+  budget: BigInt!
+
+  bidDeadline: BigInt!
+  expireDeadline: BigInt!
+
+  ipfsHash: String
+  ipfsProof: String
+
+  createdAt: BigInt!
+  submittedAt: BigInt
+  completedAt: BigInt
+
+  disputed: Boolean!
+
+  fundLockedAt: BigInt
+  fundReleasedAt: BigInt
+  fundRefundedAt: BigInt
+
+  fundLockedAmount: BigInt
+  fundReleasedAmount: BigInt
+  fundRefundedAmount: BigInt
+
+  bids: [Bid!]! @derivedFrom(field: "job")
+}
+
+type Bid @entity(immutable: false) {
+  id: ID!
+  job: Job!
+  bidder: Bytes!
+  amount: BigInt!
+  createdAt: BigInt!
+  accepted: Boolean!
+}
+
+type DisputeRaised @entity(immutable: true) {
+  id: Bytes!
+  jobId: Bytes! # bytes32
+  by: Bytes! # indexed address
+  reasonIpfs: String! # string
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type DisputeResolved @entity(immutable: true) {
+  id: Bytes!
+  jobId: Bytes!
+  winner: Bytes! # address
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type JobCreated @entity(immutable: true) {
+  id: Bytes!
+  jobId: Bytes!
+  client: Bytes!
+  budget: BigInt!
+  bidDeadline: BigInt!
+  expireDeadline: BigInt!
+  ipfs: String!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type JobDetailsUpdated @entity(immutable: true) {
+  id: Bytes!
+  jobId: Bytes!
+  client: Bytes!
+  budget: BigInt!
+  bidDeadline: BigInt!
+  expireDeadline: BigInt!
+  ipfs: String!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type BidSubmitted @entity(immutable: true) {
+  id: Bytes!
+  jobId: Bytes!
+  freelancer: Bytes!
+  amount: BigInt!
+  bidIndex: BigInt!
+  proposalIpfs: String!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type JobStarted @entity(immutable: true) {
+  id: Bytes!
+  jobId: Bytes!
+  freelancer: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type JobCompleted @entity(immutable: true) {
+  id: Bytes!
+  jobId: Bytes!
+  freelancer: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type BidAccepted @entity(immutable: true) {
+  id: Bytes!
+  jobId: Bytes!
+  freelancer: Bytes!
+  amount: BigInt!
+  bidIndex: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type BidRejected @entity(immutable: true) {
+  id: Bytes!
+  jobId: Bytes!
+  freelancer: Bytes!
+  amount: BigInt!
+  bidIndex: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type WorkSubmitted @entity(immutable: true) {
+  id: Bytes!
+  jobId: Bytes!
+  freelancer: Bytes!
+  ipfsProof: String!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type JobCancelled @entity(immutable: true) {
+  id: Bytes!
+  jobId: Bytes!
+  client: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type FundLocked @entity(immutable: true) {
+  id: Bytes!
+  jobId: Bytes!
+  amountLocked: BigInt!
+  bidAmount: BigInt!
+  client: Bytes!
+  freelancer: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type FundReleased @entity(immutable: true) {
+  id: Bytes!
+  jobId: Bytes!
+  amountToFreelancer: BigInt!
+  feeToTreasury: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type FundRefunded @entity(immutable: true) {
+  id: Bytes!
+  jobId: Bytes!
+  amountRefunded: BigInt!
+  client: Bytes!
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!

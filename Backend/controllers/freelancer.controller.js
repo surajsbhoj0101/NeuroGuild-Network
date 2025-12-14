@@ -11,6 +11,7 @@ import { updateHolderSkill } from "../services/update_user_skill.js"
 import JobInteraction from "../models/job_models/jobInteraction.model.js";
 import Bid from "../models/job_models/bid.model.js";
 import Job from "../models/job_models/job.model.js";
+import { getJsonFromIpfs } from "../services/ipfs_to_json.js";
 
 
 
@@ -275,34 +276,6 @@ export const checkUserPassedQuiz = async (req, res) => {
     } catch (error) {
         console.error(error)
         res.status(500).json({ error: error });
-    }
-}
-
-export async function getJsonFromIpfs(uri) {
-    try {
-        if (!uri) {
-            console.error("No URI provided to fetch from IPFS");
-            return false;
-        }
-
-        console.log("Fetching from IPFS:", uri);
-        const url = uri.replace("ipfs://", "https://ipfs.io/ipfs/");
-
-        const response = await axios.get(url, {
-            headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
-                    "(KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
-            }
-        });
-
-        const json = response.data;
-
-        console.log("JSON fetched:", json);
-        return json;
-
-    } catch (error) {
-        console.error("Error fetching JSON from IPFS:", error.message);
-        return false;
     }
 }
 

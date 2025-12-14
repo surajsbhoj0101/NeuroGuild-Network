@@ -1,7 +1,7 @@
 import {user as userAbi} from "../abis/UserRegistry.js";
 import {Contract} from "ethers";
 
-const contractAddress = "0xc6a744BA0DC08dc7ae09B9429A030aEDD9Bcb8E2";
+const contractAddress = import.meta.env.VITE_USER_CONTRACT_ADDRESS;
 
 export const createUserOnchain = async (signer, role)=>{
     try {

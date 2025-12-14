@@ -405,7 +405,7 @@ function BrowseJobs() {
                                                     border-gray-700
                                                     rounded-full
                                                 ">
-                                                    {item.budgetType}
+                                                    Fixed
                                                 </span>
                                             </div>
                                         </div>

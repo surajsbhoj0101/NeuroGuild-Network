@@ -3,23 +3,53 @@ import dotenv from "dotenv";
 import Job from "../models/job_models/job.model.js";
 import User from "../models/user.model.js";
 import jobModel from "../models/job_models/job.model.js";
-import Client from "../models/client_models/clients.model.js"
+import Client from "../models/client_models/clients.model.js";
 import Freelancer from "../models/freelancer_models/freelancers.model.js";
 import { uploadToIpfs } from "../services/upload_to_pinata.js";
 import JobInteraction from "../models/job_models/jobInteraction.model.js";
 import Bid from "../models/job_models/bid.model.js";
 import { GraphQLClient, gql } from "graphql-request";
-
-
-const SUBGRAPH_URL = new GraphQLClient(
-  "http://localhost:8000/subgraphs/name/neuroguild/neuroguild-subgraph"
-);
+import { querySubgraph } from "../services/subgraphClient.js";
+import { getJsonFromIpfs } from "../services/ipfs_to_json.js";
 
 dotenv.config();
 
+const clientJobFetchQuery = `
+  query GetMyJobs($client: Bytes!){
+    jobs(where: {client: $client}) {
+      budget
+      client
+      createdAt
+      bidDeadline
+      expireDeadline
+      status
+      jobId
+      ipfsHash
+      freelancer
+    }
+  }
+`;
+
+const fetchOpenJobsQuery = `
+  query GetOpenJobs($status: JobStatus){
+    jobs(where: {status: $status}){
+      jobId
+      client
+      ipfsHash
+      budget
+      createdAt
+      bidDeadline
+      expireDeadline
+      bids{
+        createdAt
+      }
+    }
+  }
+`;
+
 export const aiEnhanceJobDetails = async (req, res) => {
   const { payload } = req.body;
-  console.log(payload)
+  console.log(payload);
 
   const prompt = `You are a professional job posting enhancement model specialized in improving gig listings for a technical freelancing platform called NeuroGuild.
 
@@ -60,7 +90,6 @@ Raw Job Payload:
 ${JSON.stringify(payload)}
 `;
 
-
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.AI_API_KEY });
 
@@ -89,7 +118,6 @@ ${JSON.stringify(payload)}
       enhanced: jobDetailsJSON.enhanced,
       notes: jobDetailsJSON.notes || [],
     });
-
   } catch (err) {
     console.error("AI Enhancement Error:", err);
     return res.status(500).json({
@@ -102,91 +130,107 @@ ${JSON.stringify(payload)}
 export const getJobIpfs = async (req, res) => {
   const { payload } = req.body;
   try {
-
     if (!payload?.clientAddress) {
-      console.log("client address required")
-      return res.status(400).json({ success: false, message: "clientAddress is required" });
+      console.log("client address required");
+      return res
+        .status(400)
+        .json({ success: false, message: "clientAddress is required" });
     }
 
     const walletAddress = payload.clientAddress.toLowerCase();
-    console.log(walletAddress)
+    console.log(walletAddress);
 
     const user = await User.findOne({ wallets: walletAddress });
     if (!user) {
-      console.log("Unable to find the user")
-      return res.status(404).json({ success: false, message: "Unable to find the user" });
-
+      console.log("Unable to find the user");
+      return res
+        .status(404)
+        .json({ success: false, message: "Unable to find the user" });
     }
 
     //create ipfs
     const json = JSON.stringify(payload);
     const uriCid = await uploadToIpfs(json);
     const jobIpfs = `ipfs://${uriCid}`;
-    console.log('got job ipfs', jobIpfs)
+    console.log("got job ipfs", jobIpfs);
     res.status(200).json({
-      success: true, ipfs: jobIpfs
-    })
-
+      success: true,
+      ipfs: jobIpfs,
+    });
   } catch {
     console.log("Error in creating job", error);
-    return res.status(500).json({ success: false, message: "Server error", error });
+    return res
+      .status(500)
+      .json({ success: false, message: "Server error", error });
   }
-}
+};
 
 //Backend
 export const fetchJobs = async (req, res) => {
   try {
-    const jobs = await Job.find().populate({
-      path: "clientDetails",
-      select: "companyDetails.logoUrl companyDetails.companyName stats.averageRating"
+    const openJobs = await querySubgraph(fetchOpenJobsQuery, {
+      status: "OPEN",
     });
 
-    const now = new Date();
-
-    const filteredJobs = jobs.filter(job =>
-      job.status === "open" &&
-      job.deadline &&
-      new Date(job.deadline) >= now
+    const jobs = await Promise.all(
+      openJobs.jobs.map(async (job) => {
+        const data = await getJsonFromIpfs(job.ipfsHash);
+        return {
+          ...data,
+          jobId: job.jobId,
+        };
+      })
     );
 
-    res.status(200).json({ success: true, jobs: filteredJobs })
+    console.log("jobs:", jobs);
+
+    const filteredJobs = jobs.filter((job) => {
+      if (!job.deadline) return false;
+
+      return new Date(job.deadline).getTime() >= Date.now();
+    });
+
+    console.log("Filtered Jobs: ", filteredJobs);
+
+    res.status(200).json({ success: true, jobs: filteredJobs });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Job fetching failed" })
+    res.status(500).json({ success: false, message: "Job fetching failed" });
   }
-}
+};
 
 export const fetchJob = async (req, res) => {
   const { jobId } = req.params;
 
-
   try {
     const job = await Job.findOne({ jobId }).populate({
       path: "clientDetails",
-      select: "companyDetails.logoUrl walletAddress companyDetails.location companyDetails.companyName stats.averageRating "
+      select:
+        "companyDetails.logoUrl walletAddress companyDetails.location companyDetails.companyName stats.averageRating ",
     });
-
 
     const clientAddress = job.clientAddress;
 
     //Used to Get all jobs posted by this client
     const jobsByClient = await Job.find({
-      clientAddress: clientAddress
+      clientAddress: clientAddress,
     });
 
     const categorized = {
-      open: jobsByClient.filter(j => j.status === "open"),
-      inProgress: jobsByClient.filter(j => j.status === "in-progress"),
-      completed: jobsByClient.filter(j => j.status === "completed"),
-      cancelled: jobsByClient.filter(j => j.status === "cancelled"),
+      open: jobsByClient.filter((j) => j.status === "open"),
+      inProgress: jobsByClient.filter((j) => j.status === "in-progress"),
+      completed: jobsByClient.filter((j) => j.status === "completed"),
+      cancelled: jobsByClient.filter((j) => j.status === "cancelled"),
     };
 
-
-
     if (!job) {
-      return res.status(404).json({ isFound: false, message: "Job not found", jobId: jobId });
+      return res
+        .status(404)
+        .json({ isFound: false, message: "Job not found", jobId: jobId });
     }
 
-    res.status(200).json({ isFound: true, jobDetails: job, categorized: categorized });
+    res
+      .status(200)
+      .json({ isFound: true, jobDetails: job, categorized: categorized });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -196,7 +240,6 @@ export const fetchAiScoreAndJobInteraction = async (req, res) => {
   try {
     const { address, jobId } = req.body;
     const walletAddress = address?.toLowerCase();
-
 
     if (!walletAddress || !jobId) {
       return res.status(400).json({
@@ -208,7 +251,7 @@ export const fetchAiScoreAndJobInteraction = async (req, res) => {
     const [candidateProfile, jobDescription, interaction] = await Promise.all([
       Freelancer.findOne({ walletAddress }),
       Job.findOne({ jobId }),
-      JobInteraction.findOne({ walletAddress, jobId })
+      JobInteraction.findOne({ walletAddress, jobId }),
     ]);
 
     if (!candidateProfile || !jobDescription) {
@@ -217,7 +260,6 @@ export const fetchAiScoreAndJobInteraction = async (req, res) => {
         message: "Candidate or Job not found.",
       });
     }
-
 
     const isSaved = interaction?.isSaved || false;
     const isApplied = interaction?.isApplied || false;
@@ -243,7 +285,6 @@ export const fetchAiScoreAndJobInteraction = async (req, res) => {
       }
     `;
 
-
     const ai = new GoogleGenAI({ apiKey: process.env.AI_API_KEY });
 
     const response = await ai.models.generateContent({
@@ -257,22 +298,23 @@ export const fetchAiScoreAndJobInteraction = async (req, res) => {
     let scoreDetailsJSON;
     try {
       scoreDetailsJSON = JSON.parse(resultText);
-
+    } catch (err) {
+      console.error("AI output error:", resultText);
+      return res.status(500).json({
+        success: false,
+        message: "Invalid AI response format. Please try again.",
+      });
     }
-    catch (err) {
-      console.error("AI output error:", resultText); return res.status(500).json({ success: false, message: "Invalid AI response format. Please try again.", });
-    }
 
-    console.log()
+    console.log();
 
     return res.status(200).json({
       success: true,
 
       aiScore: scoreDetailsJSON,
       isSaved,
-      isApplied
+      isApplied,
     });
-
   } catch (error) {
     console.error("fetchAiScore Error:", error);
     return res.status(500).json({
@@ -292,8 +334,8 @@ export const saveJob = async (req, res) => {
       {
         $set: {
           isSaved: true,
-          savedAt: new Date()
-        }
+          savedAt: new Date(),
+        },
       },
       { upsert: true, new: true }
     );
@@ -301,14 +343,13 @@ export const saveJob = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Job saved successfully",
-      data: updated
+      data: updated,
     });
-
   } catch (error) {
     console.error("saveJob error:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to save job"
+      message: "Failed to save job",
     });
   }
 };
@@ -323,22 +364,20 @@ export const saveBid = async (req, res) => {
   const walletAddress = address.toLowerCase();
 
   try {
-
     const bid = await Bid.create({
       jobId: jobId,
       bidderAddress: walletAddress,
       bidAmount: amount,
-      proposal: proposal
+      proposal: proposal,
     });
-
 
     const updated = await JobInteraction.findOneAndUpdate(
       { walletAddress, jobId },
       {
         $set: {
           isApplied: true,
-          appliedAt: new Date()
-        }
+          appliedAt: new Date(),
+        },
       },
       { upsert: true, new: true }
     );
@@ -349,21 +388,19 @@ export const saveBid = async (req, res) => {
       { new: true }
     );
 
-
     return res.status(201).json({
       success: true,
       message: "Bid submitted successfully",
       bid,
       interaction: updated,
-      updatedJob: updatedJob
+      updatedJob: updatedJob,
     });
-
   } catch (error) {
     console.error("saveBid error:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -373,64 +410,46 @@ export const fetchClientsJobs = async (req, res) => {
   const clientAddress = address.toLowerCase();
 
   try {
-    const query = `
-    {
-      JobCreated {
-        id
-        jobId
-        client
-        budget
-        bidDeadline
-        expireDeadline
-        blockNumber
-        blockTimestamp
-        transactionHash
-      }
-    }
-    `;
-
-    const response = await axios.post(SUBGRAPH_URL, {
-      query
+    const jobs = await querySubgraph(clientJobFetchQuery, {
+      client: clientAddress,
     });
 
-    console.log(response.data.data.jobs);
-
-    const jobs = await Job.find({ clientAddress });
-    res.status(200).json({ success: true, jobs: jobs })
+    console.log(jobs);
+    res.status(200).json({ success: true, jobs: jobs });
   } catch (error) {
     console.error("Fetch job posted by client error", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error.message
+      error: error.message,
     });
   }
-}
+};
 
 export const fetchJobBids = async (req, res) => {
   const { jobId } = req.params;
-  console.log(jobId)
+  console.log(jobId);
   try {
     const bids = await Bid.find({ jobId })
-      .populate({ path: "FreelancerDetails" }).lean({ virtuals: true });
-    console.log(bids)
-    res.status(200).json({ success: true, bids: bids })
+      .populate({ path: "FreelancerDetails" })
+      .lean({ virtuals: true });
+    console.log(bids);
+    res.status(200).json({ success: true, bids: bids });
   } catch (error) {
     console.error("Fetch Bids error", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error.message
+      error: error.message,
     });
   }
-}
+};
 
 export const deleteJobs = async (req, res) => {
-  console.log("came to delete")
+  console.log("came to delete");
   const { jobId } = req.params;
 
   try {
-
     const deletedJobs = await Job.findOneAndDelete({ jobId });
     if (!deletedJobs) {
       return res.status(404).json({ message: "Job not found" });
@@ -446,7 +465,7 @@ export const deleteJobs = async (req, res) => {
 
 export const rejectBid = async (req, res) => {
   const { bidId, jobId } = req.body;
-  console.log("Came to reject")
+  console.log("Came to reject");
   try {
     const rejected = await Bid.findOneAndUpdate(
       { _id: bidId, jobId },
@@ -459,7 +478,6 @@ export const rejectBid = async (req, res) => {
     }
 
     res.json({ message: "Bid rejected", bid: rejected });
-
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -469,9 +487,6 @@ export const rejectBid = async (req, res) => {
 
 // }
 
-
-
-
 // Bid.find({ bidderAddress })
 // .populate({
 //   path: "BidDetails",
@@ -479,6 +494,3 @@ export const rejectBid = async (req, res) => {
 //     path: "FreelancerDetails",
 //   }
 // }).lean({ virtuals: true });
-
-
-

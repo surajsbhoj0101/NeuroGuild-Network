@@ -1,7 +1,7 @@
 import { JobContract } from "../abis/JobContract";
 import { Contract } from "ethers";
 
-const contractAddress = "0x426141f2B1cF59295d2B339BCe7bBA2793f9Fd0c";
+const contractAddress = import.meta.env.VITE_JOB_CONTRACT_ADDRESS;
 
 const toUnixSeconds = (v) => {
     if (v == null || v === "") return null;
