@@ -460,24 +460,6 @@ export const JobContract = [
     },
     {
         "type": "function",
-        "name": "increaseExpireDeadline",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "internalType": "bytes32"
-            },
-            {
-                "name": "exceedTimeBy",
-                "type": "uint256",
-                "internalType": "uint256"
-            }
-        ],
-        "outputs": [],
-        "stateMutability": "nonpayable"
-    },
-    {
-        "type": "function",
         "name": "jobBids",
         "inputs": [
             {
@@ -957,6 +939,39 @@ export const JobContract = [
         "stateMutability": "view"
     },
     {
+        "type": "function",
+        "name": "updateJobDetails",
+        "inputs": [
+            {
+                "name": "jobId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+            },
+            {
+                "name": "newIpfsLink",
+                "type": "string",
+                "internalType": "string"
+            },
+            {
+                "name": "newBudget",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "newBidDeadline",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "newExpireDeadline",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
         "type": "event",
         "name": "BidAccepted",
         "inputs": [
@@ -1319,25 +1334,6 @@ export const JobContract = [
                 "type": "string",
                 "indexed": false,
                 "internalType": "string"
-            }
-        ],
-        "anonymous": false
-    },
-    {
-        "type": "event",
-        "name": "JobExpireDeadlineIncreased",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "indexed": true,
-                "internalType": "bytes32"
-            },
-            {
-                "name": "exceedTimeBy",
-                "type": "uint256",
-                "indexed": false,
-                "internalType": "uint256"
             }
         ],
         "anonymous": false

@@ -1,6 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
-import Job from "../models/job_models/job.model.js";
 import User from "../models/user.model.js";
 import jobModel from "../models/job_models/job.model.js";
 import Client from "../models/client_models/clients.model.js";
@@ -42,6 +41,19 @@ const fetchOpenJobsQuery = `
       expireDeadline
       bids{
         createdAt
+      }
+    }
+  }
+`;
+
+const fetchJobQuery = `
+  query GetJobById($jobId: Bytes!){
+    jobs( where: {jobId: $jobId}){
+      ipfsHash
+      client
+      bids{
+        createdAt
+        bidder
       }
     }
   }
@@ -175,9 +187,13 @@ export const fetchJobs = async (req, res) => {
     const jobs = await Promise.all(
       openJobs.jobs.map(async (job) => {
         const data = await getJsonFromIpfs(job.ipfsHash);
+        const clientDetails = await Client.findOne({
+          walletAddress: job.client,
+        });
         return {
           ...data,
           jobId: job.jobId,
+          clientDetails: clientDetails,
         };
       })
     );
@@ -202,37 +218,56 @@ export const fetchJob = async (req, res) => {
   const { jobId } = req.params;
 
   try {
-    const job = await Job.findOne({ jobId }).populate({
-      path: "clientDetails",
-      select:
-        "companyDetails.logoUrl walletAddress companyDetails.location companyDetails.companyName stats.averageRating ",
-    });
-
-    const clientAddress = job.clientAddress;
-
-    //Used to Get all jobs posted by this client
-    const jobsByClient = await Job.find({
-      clientAddress: clientAddress,
-    });
-
-    const categorized = {
-      open: jobsByClient.filter((j) => j.status === "open"),
-      inProgress: jobsByClient.filter((j) => j.status === "in-progress"),
-      completed: jobsByClient.filter((j) => j.status === "completed"),
-      cancelled: jobsByClient.filter((j) => j.status === "cancelled"),
-    };
-
-    if (!job) {
-      return res
-        .status(404)
-        .json({ isFound: false, message: "Job not found", jobId: jobId });
+    if (!jobId) {
+      return res.status(400).json({
+        isFound: false,
+        error: "jobId is required",
+      });
     }
 
-    res
-      .status(200)
-      .json({ isFound: true, jobDetails: job, categorized: categorized });
+    const jobIpfs = await querySubgraph(fetchJobQuery, { jobId });
+
+    const job = jobIpfs?.jobs?.[0];
+
+    if (!job) {
+      return res.status(404).json({
+        isFound: false,
+        error: "Job not found",
+      });
+    }
+
+    const clientDetails = await Client.findOne({
+      walletAddress: job.client,
+    });
+
+    const clientPlain = clientDetails.toObject({ virtuals: false });
+
+    const jobDetails = {
+      ...clientPlain,
+      ...(await getJsonFromIpfs(job.ipfsHash)),
+    };
+    
+    if (!jobDetails) {
+      return res.status(500).json({
+        isFound: false,
+        error: "Failed to fetch job metadata from IPFS",
+      });
+    }
+
+    const totalBids = job.bids?.length ?? 0;
+
+    return res.status(200).json({
+      isFound: true,
+      jobDetails,
+      totalBids,
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("fetchJob error:", error);
+
+    return res.status(500).json({
+      isFound: false,
+      error: error.message || "Internal Server Error",
+    });
   }
 };
 
@@ -248,70 +283,82 @@ export const fetchAiScoreAndJobInteraction = async (req, res) => {
       });
     }
 
-    const [candidateProfile, jobDescription, interaction] = await Promise.all([
+    const [candidateProfile, jobIpfs, interaction] = await Promise.all([
       Freelancer.findOne({ walletAddress }),
-      Job.findOne({ jobId }),
+      querySubgraph(fetchJobQuery, { jobId }),
       JobInteraction.findOne({ walletAddress, jobId }),
     ]);
 
-    if (!candidateProfile || !jobDescription) {
+    const job = jobIpfs?.jobs?.[0];
+
+    if (!candidateProfile || !job) {
       return res.status(404).json({
         success: false,
         message: "Candidate or Job not found.",
       });
     }
 
-    const isSaved = interaction?.isSaved || false;
-    const isApplied = interaction?.isApplied || false;
+    const jobDescription = await getJsonFromIpfs(job.ipfsHash);
 
-    const prompt = `
-      You are an AI recruitment assistant.
-      Evaluate how well a candidate fits the given job description.
-
-      Provide a match score from 0 to 100 and explain the key strengths and weaknesses.
-
-      Job Description:
-      ${JSON.stringify(jobDescription, null, 2)}
-
-      Candidate Profile:
-      ${JSON.stringify(candidateProfile, null, 2)}
-
-      Output JSON format:
-      {
-        "match_score": number,
-        "strengths": ["skill1", ...],
-        "gaps": ["gap1", ...],
-        "summary": "One-sentence summary"
-      }
-    `;
-
-    const ai = new GoogleGenAI({ apiKey: process.env.AI_API_KEY });
-
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-    });
-
-    let resultText = response.text;
-    resultText = resultText.replace(/```json|```/g, "").trim();
-
-    let scoreDetailsJSON;
-    try {
-      scoreDetailsJSON = JSON.parse(resultText);
-    } catch (err) {
-      console.error("AI output error:", resultText);
-      return res.status(500).json({
+    if (!jobDescription) {
+      return res.status(404).json({
         success: false,
-        message: "Invalid AI response format. Please try again.",
+        message: "Job description not found.",
       });
     }
 
-    console.log();
+    const isSaved = interaction?.isSaved ?? false;
+
+    const isApplied =
+      job.bids?.some((bid) => bid.bidder?.toLowerCase() === walletAddress) ??
+      false;
+
+    let aiScore = null;
+    let aiAvailable = false;
+
+    try {
+      const prompt = `
+        You are an AI recruitment assistant.
+        Evaluate how well a candidate fits the given job description.
+
+        Provide a match score from 0 to 100 and explain the key strengths and weaknesses.
+
+        Job Description:
+        ${JSON.stringify(jobDescription, null, 2)}
+
+        Candidate Profile:
+        ${JSON.stringify(candidateProfile, null, 2)}
+
+        Output JSON format:
+        {
+          "match_score": number,
+          "strengths": ["skill1", ...],
+          "gaps": ["gap1", ...],
+          "summary": "One-sentence summary"
+        }
+      `;
+
+      const ai = new GoogleGenAI({
+        apiKey: process.env.AI_API_KEY,
+      });
+
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+      });
+
+      const cleaned = response.text.replace(/```json|```/g, "").trim();
+
+      aiScore = JSON.parse(cleaned);
+      aiAvailable = true;
+    } catch (aiError) {
+      console.warn("AI score generation failed:", aiError.message);
+    }
 
     return res.status(200).json({
       success: true,
-
-      aiScore: scoreDetailsJSON,
+      aiAvailable,
+      aiScore,
       isSaved,
       isApplied,
     });
@@ -382,12 +429,6 @@ export const saveBid = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    const updatedJob = await Job.findOneAndUpdate(
-      { jobId },
-      { $inc: { proposalsCount: 1 } },
-      { new: true }
-    );
-
     return res.status(201).json({
       success: true,
       message: "Bid submitted successfully",
@@ -444,53 +485,3 @@ export const fetchJobBids = async (req, res) => {
     });
   }
 };
-
-export const deleteJobs = async (req, res) => {
-  console.log("came to delete");
-  const { jobId } = req.params;
-
-  try {
-    const deletedJobs = await Job.findOneAndDelete({ jobId });
-    if (!deletedJobs) {
-      return res.status(404).json({ message: "Job not found" });
-    }
-
-    await Bid.deleteMany({ jobId });
-
-    res.json({ success: true, message: "Job and its bids deleted" });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-};
-
-export const rejectBid = async (req, res) => {
-  const { bidId, jobId } = req.body;
-  console.log("Came to reject");
-  try {
-    const rejected = await Bid.findOneAndUpdate(
-      { _id: bidId, jobId },
-      { $set: { status: "rejected" } },
-      { new: true }
-    );
-
-    if (!rejected) {
-      return res.status(404).json({ message: "Bid not found" });
-    }
-
-    res.json({ message: "Bid rejected", bid: rejected });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// export const acceptBid = async() =>{
-
-// }
-
-// Bid.find({ bidderAddress })
-// .populate({
-//   path: "BidDetails",
-//   populate: {
-//     path: "FreelancerDetails",
-//   }
-// }).lean({ virtuals: true });

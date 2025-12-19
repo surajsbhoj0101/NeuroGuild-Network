@@ -19,8 +19,9 @@ export async function getJsonFromIpfs(uri) {
     });
 
     const json = response.data;
+    
 
-    console.log("JSON fetched:", json);
+    // console.log("JSON fetched:", json);
     return  JSON.parse(json); ;
   } catch (error) {
     console.error("Error fetching JSON from IPFS:", error.message);

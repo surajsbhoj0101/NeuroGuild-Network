@@ -7,7 +7,7 @@ export const submitBid = async (signer, amount, jobId) => {
 
 
     const amountInUsd = Number(amount);
-    const amountInToken = BigInt(Math.round(amountInUsd * 1e6));
+    const amountInToken = BigInt(Math.round(amountInUsd * 1e18));
 
 
     // const idBytes = keccak256(toUtf8Bytes(jobId));
