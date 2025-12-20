@@ -1,9 +1,9 @@
 # -----------------------------------------
-# UserRegistry Events (unchanged)
+# User Registry
 # -----------------------------------------
 
 type User @entity(immutable: false) {
-  id: ID! # wallet.toHex()
+  id: ID!                 # wallet address (hex)
   wallet: Bytes!
   role: Int!
   createdAt: BigInt!
@@ -36,7 +36,7 @@ type UserUnblocked @entity(immutable: true) {
 }
 
 # -----------------------------------------
-# JobContract Events
+# Enums
 # -----------------------------------------
 
 enum JobStatus {
@@ -48,11 +48,21 @@ enum JobStatus {
   DISPUTED
 }
 
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+# -----------------------------------------
+# Core State Entities
+# -----------------------------------------
+
 type Job @entity(immutable: false) {
-  id: ID!
-  jobId: Bytes!
+  id: ID!                  # jobId (bytes32 hex)
   client: Bytes!
-  freelancer: Bytes #nullable for data transition
+  freelancer: Bytes
+
   status: JobStatus!
   budget: BigInt!
 
@@ -66,8 +76,6 @@ type Job @entity(immutable: false) {
   submittedAt: BigInt
   completedAt: BigInt
 
-  disputed: Boolean!
-
   fundLockedAt: BigInt
   fundReleasedAt: BigInt
   fundRefundedAt: BigInt
@@ -75,36 +83,16 @@ type Job @entity(immutable: false) {
   fundLockedAmount: BigInt
   fundReleasedAmount: BigInt
   fundRefundedAmount: BigInt
-
-  bids: [Bid!]! @derivedFrom(field: "job")
 }
 
 type Bid @entity(immutable: false) {
-  id: ID!
+  id: ID!                  # jobId-bidIndex
   job: Job!
   bidder: Bytes!
+  status: BidStatus!
   amount: BigInt!
   createdAt: BigInt!
-  accepted: Boolean!
-}
-
-type DisputeRaised @entity(immutable: true) {
-  id: Bytes!
-  jobId: Bytes! # bytes32
-  by: Bytes! # indexed address
-  reasonIpfs: String! # string
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type DisputeResolved @entity(immutable: true) {
-  id: Bytes!
-  jobId: Bytes!
-  winner: Bytes! # address
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+  ipfsProposal: String!
 }
 
 type JobCreated @entity(immutable: true) {
@@ -145,24 +133,6 @@ type BidSubmitted @entity(immutable: true) {
   transactionHash: Bytes!
 }
 
-type JobStarted @entity(immutable: true) {
-  id: Bytes!
-  jobId: Bytes!
-  freelancer: Bytes!
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type JobCompleted @entity(immutable: true) {
-  id: Bytes!
-  jobId: Bytes!
-  freelancer: Bytes!
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
 type BidAccepted @entity(immutable: true) {
   id: Bytes!
   jobId: Bytes!
@@ -185,11 +155,29 @@ type BidRejected @entity(immutable: true) {
   transactionHash: Bytes!
 }
 
+type JobStarted @entity(immutable: true) {
+  id: Bytes!
+  jobId: Bytes!
+  freelancer: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
 type WorkSubmitted @entity(immutable: true) {
   id: Bytes!
   jobId: Bytes!
   freelancer: Bytes!
   ipfsProof: String!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type JobCompleted @entity(immutable: true) {
+  id: Bytes!
+  jobId: Bytes!
+  freelancer: Bytes!
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
@@ -203,6 +191,33 @@ type JobCancelled @entity(immutable: true) {
   blockTimestamp: BigInt!
   transactionHash: Bytes!
 }
+
+# -----------------------------------------
+# Disputes
+# -----------------------------------------
+
+type DisputeRaised @entity(immutable: true) {
+  id: Bytes!
+  jobId: Bytes!
+  by: Bytes!
+  reasonIpfs: String!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type DisputeResolved @entity(immutable: true) {
+  id: Bytes!
+  jobId: Bytes!
+  winner: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+# -----------------------------------------
+# Funds
+# -----------------------------------------
 
 type FundLocked @entity(immutable: true) {
   id: Bytes!

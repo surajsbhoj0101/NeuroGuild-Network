@@ -7,3 +7,9 @@
 [submodule "Contracts/USER_Store/lib/forge-std"]
 	path = Contracts/USER_Store/lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
+[submodule "Contracts/lib/forge-std"]
+	path = Contracts/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
+[submodule "Contracts/lib/openzeppelin-contracts"]
+	path = Contracts/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts

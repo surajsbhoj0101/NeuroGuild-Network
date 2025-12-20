@@ -1,4 +1,5 @@
 specVersion: 1.3.0
+
 indexerHints:
   prune: auto
 
@@ -10,14 +11,15 @@ dataSources:
     name: UserRegistry
     network: base-sepolia
     source:
-      address: "0xc6a744BA0DC08dc7ae09B9429A030aEDD9Bcb8E2"
+      address: "0xAf02A773636C562A22486F167Ad175076965EA0f"
       abi: UserRegistry
-      startBlock: 34839315
+      startBlock: 35228101
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
       language: wasm/assemblyscript
       entities:
+        - User
         - UserRegistered
         - UserBlocked
         - UserUnblocked
@@ -37,40 +39,37 @@ dataSources:
     name: JobContract
     network: base-sepolia
     source:
-      address: "0x426141f2B1cF59295d2B339BCe7bBA2793f9Fd0c"
+      address: "0x5a23bc4648953ACAf90d5B44792E5BAEf89f11DA"
       abi: JobContract
-      startBlock: 34839315
+      startBlock: 35228101
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
       language: wasm/assemblyscript
       entities:
-        - DisputeRaised
-        - DisputeResolved
+        - Job
+        - Bid
+
         - JobCreated
         - JobDetailsUpdated
         - BidSubmitted
-        - JobStarted
-        - JobCompleted
         - BidAccepted
         - BidRejected
+        - JobStarted
         - WorkSubmitted
+        - JobCompleted
         - JobCancelled
+        - DisputeRaised
+        - DisputeResolved
         - FundLocked
-        - FundRefunded
         - FundReleased
+        - FundRefunded
 
       abis:
         - name: JobContract
           file: ./abis/JobContract.json
 
       eventHandlers:
-        - event: DisputeRaised(indexed bytes32,indexed address,string)
-          handler: handleDisputeRaised
-
-        - event: DisputeResolved(indexed bytes32,address)
-          handler: handleDisputeResolved
-
         - event: JobCreated(indexed bytes32,indexed address,uint256,uint256,uint256,string)
           handler: handleJobCreated
 
@@ -80,30 +79,36 @@ dataSources:
         - event: BidSubmitted(indexed bytes32,indexed address,uint256,uint256,string)
           handler: handleBidSubmitted
 
-        - event: JobStarted(indexed bytes32,indexed address)
-          handler: handleJobStarted
-
-        - event: JobCompleted(indexed bytes32,indexed address)
-          handler: handleJobCompleted
-
         - event: BidAccepted(indexed bytes32,indexed address,uint256,uint256)
           handler: handleBidAccepted
 
         - event: BidRejected(indexed bytes32,indexed address,uint256,uint256)
           handler: handleBidRejected
 
+        - event: JobStarted(indexed bytes32,indexed address)
+          handler: handleJobStarted
+
         - event: WorkSubmitted(indexed bytes32,indexed address,string)
           handler: handleWorkSubmitted
 
+        - event: JobCompleted(indexed bytes32,indexed address)
+          handler: handleJobCompleted
+
         - event: JobCancelled(indexed bytes32,indexed address)
           handler: handleJobCancelled
-        
+
+        - event: DisputeRaised(indexed bytes32,indexed address,string)
+          handler: handleDisputeRaised
+
+        - event: DisputeResolved(indexed bytes32,address)
+          handler: handleDisputeResolved
+
         - event: FundLocked(indexed bytes32,uint256,uint256,indexed address,indexed address)
           handler: handleFundLocked
-        
+
         - event: FundReleased(indexed bytes32,uint256,uint256)
           handler: handleFundReleased
-        
+
         - event: FundRefunded(indexed bytes32,uint256,indexed address)
           handler: handleFundRefunded
 
