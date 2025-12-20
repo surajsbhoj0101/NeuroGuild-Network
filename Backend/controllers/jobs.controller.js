@@ -10,6 +10,7 @@ import Bid from "../models/job_models/bid.model.js";
 import { GraphQLClient, gql } from "graphql-request";
 import { querySubgraph } from "../services/subgraphClient.js";
 import { getJsonFromIpfs } from "../services/ipfs_to_json.js";
+import { json } from "express";
 
 dotenv.config();
 
@@ -22,7 +23,7 @@ const clientJobFetchQuery = `
       bidDeadline
       expireDeadline
       status
-      jobId
+      id
       ipfsHash
       freelancer
     }
@@ -32,31 +33,62 @@ const clientJobFetchQuery = `
 const fetchOpenJobsQuery = `
   query GetOpenJobs($status: JobStatus){
     jobs(where: {status: $status}){
-      jobId
+      id
       client
       ipfsHash
       budget
       createdAt
       bidDeadline
       expireDeadline
-      bids{
-        createdAt
-      }
     }
   }
 `;
 
 const fetchJobQuery = `
-  query GetJobById($jobId: Bytes!){
-    jobs( where: {jobId: $jobId}){
-      ipfsHash
+  query GetJobById($jobId: ID!) {
+    jobs(where: { id: $jobId }) {
+      id
       client
-      bids{
-        createdAt
-        bidder
-      }
+      ipfsHash
+      status
+      budget
+      bidDeadline
+      expireDeadline
+      createdAt
     }
   }
+`;
+
+const fetchOpenJobBids = `
+  query GetBidsByJob($jobId: ID!) {
+    bids(
+      where: { job: $jobId }
+    ) {
+      id
+      bidder
+      amount
+      status
+      createdAt
+      ipfsProposal
+    }
+  }
+`;
+
+const fetchMyJobs = `
+  query MyQuery($bidder : Bytes!) {
+  bids(where: {bidder: $bidder}) {
+    status
+    ipfsProposal
+    createdAt
+    amount
+    job {
+      id
+      ipfsHash
+      client
+      status
+    }
+  }
+}
 `;
 
 export const aiEnhanceJobDetails = async (req, res) => {
@@ -192,7 +224,7 @@ export const fetchJobs = async (req, res) => {
         });
         return {
           ...data,
-          jobId: job.jobId,
+          jobId: job.id,
           clientDetails: clientDetails,
         };
       })
@@ -216,6 +248,7 @@ export const fetchJobs = async (req, res) => {
 
 export const fetchJob = async (req, res) => {
   const { jobId } = req.params;
+  const walletAddress = req.user?.walletAddress?.toLowerCase();
 
   try {
     if (!jobId) {
@@ -226,7 +259,6 @@ export const fetchJob = async (req, res) => {
     }
 
     const jobIpfs = await querySubgraph(fetchJobQuery, { jobId });
-
     const job = jobIpfs?.jobs?.[0];
 
     if (!job) {
@@ -236,25 +268,38 @@ export const fetchJob = async (req, res) => {
       });
     }
 
-    const clientDetails = await Client.findOne({
-      walletAddress: job.client,
+    const bidsResult = await querySubgraph(fetchOpenJobBids, {
+      jobId: job.id,
     });
 
-    const clientPlain = clientDetails.toObject({ virtuals: false });
+    const bids = bidsResult?.bids || [];
+    const totalBids = bids.length;
 
-    const jobDetails = {
-      ...clientPlain,
-      ...(await getJsonFromIpfs(job.ipfsHash)),
-    };
-    
-    if (!jobDetails) {
+    const isApplied = walletAddress
+      ? bids.some((b) => b.bidder.toLowerCase() === walletAddress)
+      : false;
+
+    const clientDetails = await Client.findOne({
+      walletAddress: job.client.toLowerCase(),
+    });
+
+    const clientPlain = clientDetails
+      ? clientDetails.toObject({ virtuals: false })
+      : {};
+
+    const ipfsData = await getJsonFromIpfs(job.ipfsHash);
+
+    if (!ipfsData) {
       return res.status(500).json({
         isFound: false,
         error: "Failed to fetch job metadata from IPFS",
       });
     }
 
-    const totalBids = job.bids?.length ?? 0;
+    const jobDetails = {
+      ...clientPlain,
+      ...ipfsData,
+    };
 
     return res.status(200).json({
       isFound: true,
@@ -309,9 +354,15 @@ export const fetchAiScoreAndJobInteraction = async (req, res) => {
 
     const isSaved = interaction?.isSaved ?? false;
 
-    const isApplied =
-      job.bids?.some((bid) => bid.bidder?.toLowerCase() === walletAddress) ??
-      false;
+    const bidsResult = await querySubgraph(fetchOpenJobBids, {
+      jobId: job.id,
+    });
+
+    const bids = bidsResult?.bids || [];
+
+    const isApplied = walletAddress
+      ? bids.some((b) => b.bidder.toLowerCase() === walletAddress)
+      : false;
 
     let aiScore = null;
     let aiAvailable = false;
@@ -482,6 +533,97 @@ export const fetchJobBids = async (req, res) => {
       success: false,
       message: "Internal Server Error",
       error: error.message,
+    });
+  }
+};
+
+export const fetchProposalIpfs = async (req, res) => {
+  const {payload } = req.body;
+  try {
+    const json = JSON.stringify(payload);
+    const uriCid = await uploadToIpfs(json);
+    const proposalIpfs = `ipfs://${uriCid}`;
+    console.log("got job ipfs", proposalIpfs);
+    res.status(200).json({
+      success: true,
+      ipfs: proposalIpfs,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+export const fetchFreelancerJobs = async (req, res) => {
+  try {
+    const { address } = req.body;
+    const walletAddress = address.toLowerCase();
+    const resp = await querySubgraph(fetchMyJobs, { bidder: walletAddress });
+    const bids = resp?.bids || [];
+
+    const categorized = {
+      open: [],
+      inProgress: [],
+      completed: [],
+    };
+
+    const buildJobPayload = async (bid) => {
+      const job = bid.job;
+
+      const [clientDetails, bidData, jobDetails] = await Promise.all([
+        Client.findOne({ walletAddress: job.client }),
+        getJsonFromIpfs(bid.ipfsProposal),
+        getJsonFromIpfs(job.ipfsHash),
+      ]);
+     
+      return {
+        jobId: job.id,
+        status: job.status,
+        createdAt: bid.createdAt,
+
+        bidAmount: bid?.amount/ 1e18,
+        proposal: bidData?.payload?.proposal || "",
+        milestones: bidData?.milestones || [],
+
+        JobDetails: {
+          ...jobDetails,
+          budget: jobDetails?.budget,
+          deadline: jobDetails?.deadline,
+          clientAddress: jobDetails?.client,
+          clientDetails,
+        },
+      };
+    };
+
+    for (const bid of bids) {
+      const jobStatus = bid?.job?.status;
+
+      if (!jobStatus) continue;
+
+      const jobPayload = await buildJobPayload(bid);
+
+      if (jobStatus === "OPEN") {
+        categorized.open.push(jobPayload);
+      } else if (jobStatus === "IN_PROGRESS") {
+        categorized.inProgress.push(jobPayload);
+      } else if (jobStatus === "COMPLETED") {
+        categorized.completed.push(jobPayload);
+      }
+    }
+    console.log(categorized)
+    return res.status(200).json({
+      success: true,
+      categorized,
+    });
+  } catch (error) {
+    console.error("fetchFreelancerJobs error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch freelancer jobs",
     });
   }
 };

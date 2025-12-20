@@ -8,6 +8,8 @@ import { saveJob } from "../controllers/jobs.controller.js";
 import { saveBid } from "../controllers/jobs.controller.js";
 import { fetchClientsJobs } from "../controllers/jobs.controller.js";
 import { fetchJobBids } from "../controllers/jobs.controller.js";
+import { fetchProposalIpfs } from "../controllers/jobs.controller.js";
+import { fetchFreelancerJobs } from "../controllers/jobs.controller.js";
 
 const jobRoutes = express.Router();
 
@@ -20,5 +22,7 @@ jobRoutes.put('/save-job',saveJob)
 jobRoutes.put('/submit-bid',saveBid)
 jobRoutes.get('/client-jobs/:address',fetchClientsJobs);
 jobRoutes.get('/get-job-bids/:jobId',fetchJobBids)
+jobRoutes.post('/get-bid-proposal-ipfs', fetchProposalIpfs)
+jobRoutes.post('/fetch-freelancer-jobs',fetchFreelancerJobs)
 
 export default jobRoutes

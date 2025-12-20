@@ -86,7 +86,7 @@ function jobPage() {
   };
 
   const getMatchScore = async () => {
-    console.log(jobDetails)
+    console.log(jobDetails);
     if (!address) {
       setRedNotice(true);
       setNotice("Wallet not connected");
@@ -175,44 +175,61 @@ function jobPage() {
       return;
     }
 
-    setSubmitingBid(true);
+    const payload = {
+      proposal: bidData.proposal.trim(),
+      amount: bidData.amount ? Number(bidData.amount) : 0,
+      freelancer: address.toLowerCase,
+    };
+
     try {
-      const signer = await getSigner();
+      setSubmitingBid(true);
+      let ipfs;
 
-      const res = await submitBid(signer, bidData.amount, jobId);
+      try {
+        const getProposalIpfs = await axios.post(
+          "http://localhost:5000/api/jobs/get-bid-proposal-ipfs",
+          { payload }
+        );
 
-      if (!res) {
+        ipfs = getProposalIpfs?.data?.ipfs;
+        if (!ipfs || typeof ipfs !== "string" || ipfs.trim() === "") {
+          setRedNotice(true);
+          setNotice("Failed to upload job metadata to IPFS.");
+          return;
+        }
+      } catch (error) {
         setRedNotice(true);
-        setNotice("Bid submit failed");
+        setNotice("Unable to upload bid metadata.");
+        return;
+      }
+      try {
+        const signer = await getSigner();
+
+        const res = await submitBid(signer, bidData.amount, jobId, ipfs);
+
+        if (!res) {
+          setRedNotice(true);
+          setNotice("Bid submit failed");
+          setSubmitingBid(false);
+          return;
+        }
+
+        setRedNotice(false);
+
+        setNotice("Bid Submitted Successfully");
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+      } catch (error) {
+        console.log(error);
+        setRedNotice(true);
+        setNotice("Blockchain submit failed");
         setSubmitingBid(false);
         return;
       }
     } catch (error) {
       console.log(error);
-      setRedNotice(true);
-      setNotice("Blockchain submit failed");
-      setSubmitingBid(false);
-      return;
-    }
-
-    try {
-      const res = await axios.put("http://localhost:5000/api/jobs/submit-bid", {
-        jobId,
-        amount: bidData.amount,
-        proposal: bidData.proposal,
-        address,
-      });
-
-      setRedNotice(false);
-      setNotice("Submit Bid successfull");
-      setJobInteraction((prev) => ({
-        ...prev,
-        isApplied: true,
-      }));
-    } catch (error) {
-      console.log(error);
-      setRedNotice(true);
-      setNotice("DB save failed");
     } finally {
       setSubmitingBid(false);
       setIsBidding(false);
@@ -647,8 +664,7 @@ function jobPage() {
                         <Star size={18} fill="currentColor" />
                       </span>
                       <span className="text-sm font-medium text-white">
-                        {jobDetails?.stats?.averageRating}/5
-                        Average Rating
+                        {jobDetails?.stats?.averageRating}/5 Average Rating
                       </span>
                     </div>
                   </div>

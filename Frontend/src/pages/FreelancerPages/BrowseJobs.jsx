@@ -65,7 +65,7 @@ function BrowseJobs() {
   }, [jobs]); // run once
 
   useEffect(() => {
-    let t;
+    let timer;
     if (!isConnected) {
       // ⏳ Grace period for auto-connect
       timer = setTimeout(() => {
@@ -79,7 +79,7 @@ function BrowseJobs() {
     } else {
       setNotice(null);
     }
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [isConnected, navigate]);
 
   function toggleSkill(skill) {
