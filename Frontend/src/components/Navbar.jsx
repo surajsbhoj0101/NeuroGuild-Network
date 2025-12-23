@@ -22,7 +22,6 @@ function Navbar() {
         <Snowfall snowflakeCount={18} />
 
         <div className="max-w-6xl mx-auto flex items-center gap-4 justify-between">
-          {/* logo (larger, left-aligned) */}
           <div className="flex items-center gap-4">
             <Link to="/" className="flex items-center no-underline">
               <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg   flex items-center justify-center shadow-inner  ring-white/6">
@@ -40,7 +39,6 @@ function Navbar() {
             </Link>
           </div>
 
-          {/* center: search (desktop) */}
           <div className="hidden md:flex flex-1 items-center justify-center px-6">
             <div className="w-full max-w-2xl">
               <div className="flex items-center bg-[#0c1422]/60 dark:bg-[#07101a]/60 border border-[#2a3847] rounded-2xl px-3 py-2 hover:shadow-[0_6px_24px_rgba(20,161,159,0.06)] transition">
@@ -60,7 +58,6 @@ function Navbar() {
             </div>
           </div>
 
-          {/* right controls */}
           <div className="flex items-center gap-3">
             <div className="hidden md:flex items-center gap-3">
               <CustomConnectButton className="!px-3 !py-1.5" />
@@ -75,7 +72,6 @@ function Navbar() {
               </button>
             </div>
 
-            {/* mobile menu toggle */}
             <button
               className="md:hidden text-white text-2xl p-2 rounded-lg hover:bg-white/6 transition"
               onClick={() => setMenuOpen(!menuOpen)}

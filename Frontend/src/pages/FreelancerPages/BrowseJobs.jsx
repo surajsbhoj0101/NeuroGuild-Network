@@ -67,9 +67,8 @@ function BrowseJobs() {
   useEffect(() => {
     let timer;
     if (!isConnected) {
-      // ⏳ Grace period for auto-connect
+     
       timer = setTimeout(() => {
-        // Check again AFTER delay
         if (!isConnected) {
           setRedNotice(true);
           setNotice("Wallet not connected — redirecting to home...");
@@ -351,7 +350,7 @@ function BrowseJobs() {
             </div>
           ) : visibleItems?.length === 0 ? (
             <div className="text-center text-gray-400 py-8">
-              No jobs match your filters.
+              No jobs match your filters or No Jobs exists
             </div>
           ) : (
             <div className="w-full px-2">

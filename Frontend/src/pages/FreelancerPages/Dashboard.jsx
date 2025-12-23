@@ -358,8 +358,6 @@ function Dashboard() {
                         <ActiveProjectCard
                           key={project.jobId}
                           project={project}
-                          onMessage={handleMessageClient}
-                          onViewContract={handleViewContract}
                         />
                       ))}
                     </div>
@@ -389,8 +387,6 @@ function Dashboard() {
                         <CompletedProjectCard
                           key={project.jobId}
                           project={project}
-                          onLeaveReview={handleLeaveReview}
-                          onViewDetails={handleViewDetails}
                         />
                       ))}
                     </div>

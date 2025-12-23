@@ -1,69 +1,29 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { MdSecurity } from "react-icons/md";
 import { GiBrain } from "react-icons/gi";
 import { RiExchangeDollarLine } from "react-icons/ri";
 import { BsPeople } from "react-icons/bs";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useAccount, useWalletClient } from "wagmi";
+import { useAccount } from "wagmi";
 import Snowfall from "react-snowfall";
-import logo from "./assets/images/logo.png";
-import axios from "axios";
-import "./index.css";
-import { BrowserProvider } from 'ethers'
-import { createUserOnchain } from "./utils/create_user";
+import Logout from "./components/Logout.jsx";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
+import CustomConnectButton from "./components/CustomConnectButton.jsx";
+import Login from "./components/Login";
+import logo from "./assets/images/logo.png";
+import "./index.css";
+import { LogOut } from "lucide-react";
 
 const orbitronStyle = { fontFamily: "Orbitron, sans-serif" };
 const robotoStyle = { fontFamily: "Roboto, sans-serif" };
 
 export default function App() {
-
   const { address, isConnected } = useAccount();
-  const navigate = useNavigate();
-  const { data: walletClient } = useWalletClient();
 
   const [notice, setNotice] = useState(null);
   const [redNotice, setRedNotice] = useState(false);
   const [loadingUser, setLoadingUser] = useState(false);
-
-  async function getSigner(params) {
-    let signer;
-    if (walletClient) {
-      const provider = new BrowserProvider(window.ethereum);
-      signer = await provider.getSigner();
-    }
-    return signer;
-  }
-
-  useEffect(() => {
-    if (!isConnected || !address) return;
-
-    const getUser = async () => {
-      setLoadingUser(true);
-      try {
-        const response = await axios.post(`http://localhost:5000/api/auth/get-user`, { address });
-
-        if (response.data.isFound) {
-          const user = response.data.user
-          localStorage.setItem("userId", user._id)
-          setTimeout(() => {
-            setRedNotice(false);
-            setNotice("User found Redirecting...");
-          }, 1500);
-
-          const role = user.role == 'freelancer' ? navigate('/freelancer/my-profile') : navigate('/client/my-profile')
-        }
-
-      } catch (error) {
-        console.error("Error fetching or creating user:", error);
-      } finally {
-        setLoadingUser(false);
-      }
-    };
-
-    getUser();
-  }, [isConnected, address]);
 
   useEffect(() => {
     if (!notice) return;
@@ -71,198 +31,160 @@ export default function App() {
     return () => clearTimeout(id);
   }, [notice]);
 
-  async function handleCreateUser(role) {
-    setLoadingUser(true);
-
-    try {
-     
-      if (!address || !isConnected) {
-        return showError("Connect wallet first!");
-      }
-
-      const signer = await getSigner();
-      if (!signer) {
-        return showError("Please connect your wallet first.");
-      }
-
-     
-      const RoleEnum = {
-        Client: 0,
-        Freelancer: 1,
-      };
-
-      const roleEnum = RoleEnum[role];
-      if (roleEnum === undefined) {
-        return showError("Invalid role selected!");
-      }
-
-      const onchainResult = await createUserOnchain(signer, roleEnum);
-      if (!onchainResult) {
-        setRedNotice(true);
-        setNotice("Backend user creation failed.")
-        return
-      }
-
-
-      const response = await axios.post(
-        "http://localhost:5000/api/auth/create-user",
-        { address, role }
-      );
-
-      if (!response.data?.isFound || !response.data?.user) {
-        setRedNotice(true);
-        setNotice("Backend user creation failed.")
-        return
-      }
-
-      setRedNotice(false)
-      setNotice("User creation successful! Redirecting...");
-
-
-      const route = `/${role.toLowerCase()}/my-profile`;
-      setTimeout(() => navigate(route), 1200);
-
-    } catch (error) {
-      console.error("Error creating user:", error);
-      showError("Unexpected error occurred during user creation.");
-
-    } finally {
-      setLoadingUser(false);
-    }
-  }
-
-
   return (
-    <div className="min-h-screen relative overflow-hidden dark:bg-[#0f111d] bg-[#0f1422] text-white">
-      {/* loader */}
+    <div className="min-h-screen relative overflow-hidden bg-[#0f1422] text-white">
+      <Login
+        setLoadingUser={setLoadingUser}
+        setNotice={setNotice}
+        setRedNotice={setRedNotice}
+      />
+      <Logout />
+
       {loadingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="flex flex-col items-center gap-3">
             <div className="w-12 h-12 border-4 border-t-[#14a19f] border-gray-700 rounded-full animate-spin"></div>
-            <div className="text-sm text-white">Please wait…</div>
+            <div className="text-sm text-white">Authenticating…</div>
           </div>
         </div>
       )}
+
       <Snowfall snowflakeCount={60} />
-      {/* decorative background blobs */}
-      <div className="pointer-events-none absolute -left-32 -top-32 w-[520px] h-[520px] rounded-full bg-gradient-to-br from-[#122033] via-[#0f2540] to-[#08101a] opacity-40 blur-3xl mix-blend-screen"></div>
-      <div className="pointer-events-none absolute right-[-120px] top-48 w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
 
-      {/* notice */}
+      <div className="pointer-events-none absolute -left-32 -top-32 w-[520px] h-[520px] rounded-full bg-gradient-to-br from-[#122033] via-[#0f2540] to-[#08101a] opacity-40 blur-3xl"></div>
+      <div className="pointer-events-none absolute right-[-120px] top-48 w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl"></div>
+
       {notice && (
-        <div className="fixed top-4 right-4 z-50 animate-pulse">
-          <div className={`flex items-center gap-3 bg-[#14a19f] text-white px-4 py-2 rounded shadow-lg border border-[#1ecac7]/30 ${redNotice ? 'bg-red-600 border-red-700' : 'bg-[#14a19f] border-[#1ecac7]/30'} `}>
-            <div className="text-sm">{notice}</div>
-            <button
-              onClick={() => setNotice(null)}
-              className="ml-2 text-xs text-white/90 px-2 py-1 rounded hover:opacity-90 transition-opacity"
-            >
-              Dismiss
-            </button>
+        <div className="fixed top-4 right-4 z-50">
+          <div
+            className={`px-4 py-2 rounded shadow-lg border ${
+              redNotice
+                ? "bg-red-600 border-red-700"
+                : "bg-[#14a19f] border-[#1ecac7]/30"
+            }`}
+          >
+            {notice}
           </div>
         </div>
       )}
 
-      {/* hero */}
-      <section className="max-w-6xl mx-auto px-6 pt-6 pb-12 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center relative z-10">
+      <section className="max-w-6xl mx-auto px-6 pt-10 pb-16 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center relative z-10">
         <div className="space-y-6">
-          <h1 style={orbitronStyle} className="text-4xl md:text-5xl font-extrabold leading-tight">
+          <h1
+            style={orbitronStyle}
+            className="text-4xl md:text-5xl font-extrabold"
+          >
             NeuroGuild — decentralized freelancing, reimagined
           </h1>
 
-          <p style={robotoStyle} className="mt-2 text-gray-300 max-w-xl">
-            Match with verified talent, escrow payments on-chain, and build reputation using skill SBTs.
-            NeuroGuild gives projects and freelancers a secure, composable and privacy-focused marketplace.
+          <p style={robotoStyle} className="text-gray-300 max-w-xl">
+            Match with verified talent, escrow payments on-chain, and build
+            reputation using skill SBTs. A trust-minimized marketplace for the
+            future of work.
           </p>
 
-          <div className="flex  flex-col gap-3 ">
-            <p style={robotoStyle} className="mt-2 text-gray-300 max-w-xl">
-              How do you want to get started
-            </p>
-
-            <div className="flex-wrap flex items-center gap-3">
-              <Link
-                
-                onClick={() => { handleCreateUser("Freelancer") }}
-                className="px-6 py-3 bg-[#14a19f] hover:bg-cyan-700 rounded-md text-white shadow-md transform hover:-translate-y-0.5 transition"
-                style={robotoStyle}
-              >
-                Browse Gigs
-              </Link>
-
-              <Link
-               
-                onClick={() => { handleCreateUser("Client") }}
-                className="px-5 py-3 bg-transparent border border-gray-700 hover:border-gray-600 rounded-md text-white"
-                style={robotoStyle}
-              >
-                Post a Job
-              </Link>
-
-              <div className="ml-2 text-sm text-gray-400" style={robotoStyle}>
-                {isConnected ? `Connected: ${address?.slice(0, 6)}...${address?.slice(-4)}` : "Wallet not connected"}
+          <div className="mt-6 flex justify-center flex-col  gap-4">
+            {!isConnected ? (
+              <div className="text-md text-blue-500">
+                Connect Wallet to Continue
               </div>
+            ) : (
+              <div className="text-sm text-green-400">
+                Wallet connected Successfully
+              </div>
+            )}
+
+            <div>
+              <CustomConnectButton />
             </div>
-
-
           </div>
 
-          <ul className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <ul className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <li className="flex items-start gap-3">
-              <div className="p-2 bg-[#111827] rounded text-cyan-300"><GiBrain /></div>
+              <div className="p-2 bg-[#111827] rounded text-cyan-300">
+                <GiBrain />
+              </div>
               <div>
-                <div style={orbitronStyle} className="text-sm font-semibold">AI-Powered Matches</div>
-                <div style={robotoStyle} className="text-xs text-gray-400">Smart discovery of best-fit gigs and freelancers.</div>
+                <div style={orbitronStyle} className="text-sm font-semibold">
+                  AI-Powered Matches
+                </div>
+                <div style={robotoStyle} className="text-xs text-gray-400">
+                  Smart discovery of best-fit gigs and freelancers.
+                </div>
               </div>
             </li>
 
             <li className="flex items-start gap-3">
-              <div className="p-2 bg-[#111827] rounded text-yellow-400"><MdSecurity /></div>
+              <div className="p-2 bg-[#111827] rounded text-yellow-400">
+                <MdSecurity />
+              </div>
               <div>
-                <div style={orbitronStyle} className="text-sm font-semibold">On-chain Escrow</div>
-                <div style={robotoStyle} className="text-xs text-gray-400">Payments held in contract until delivery.</div>
+                <div style={orbitronStyle} className="text-sm font-semibold">
+                  On-chain Escrow
+                </div>
+                <div style={robotoStyle} className="text-xs text-gray-400">
+                  Payments locked until delivery.
+                </div>
               </div>
             </li>
 
             <li className="flex items-start gap-3">
-              <div className="p-2 bg-[#111827] rounded text-green-300"><RiExchangeDollarLine /></div>
+              <div className="p-2 bg-[#111827] rounded text-green-300">
+                <RiExchangeDollarLine />
+              </div>
               <div>
-                <div style={orbitronStyle} className="text-sm font-semibold">Transparent Fees</div>
-                <div style={robotoStyle} className="text-xs text-gray-400">Low predictable platform overhead.</div>
+                <div style={orbitronStyle} className="text-sm font-semibold">
+                  Transparent Fees
+                </div>
+                <div style={robotoStyle} className="text-xs text-gray-400">
+                  Low predictable platform overhead.
+                </div>
               </div>
             </li>
 
             <li className="flex items-start gap-3">
-              <div className="p-2 bg-[#111827] rounded text-blue-300"><BsPeople /></div>
+              <div className="p-2 bg-[#111827] rounded text-blue-300">
+                <BsPeople />
+              </div>
               <div>
-                <div style={orbitronStyle} className="text-sm font-semibold">SBT Reputation</div>
-                <div style={robotoStyle} className="text-xs text-gray-400">Skill-bound tokens verify expertise.</div>
+                <div style={orbitronStyle} className="text-sm font-semibold">
+                  SBT Reputation
+                </div>
+                <div style={robotoStyle} className="text-xs text-gray-400">
+                  Skill-bound tokens verify expertise.
+                </div>
               </div>
             </li>
           </ul>
         </div>
 
-        {/* mock preview card */}
-        <aside onClick={() => { handleCreateUser("Freelancer") }} className="w-full ">
-          <div className="rounded-2xl p-6 backdrop-blur-md shadow-2xl border border-[#162036] transform hover:scale-[1.01] transition">
+        <aside className="w-full">
+          <div className="rounded-2xl p-6 backdrop-blur-md shadow-2xl border border-[#162036]">
             <div className="flex items-start gap-4">
-              <div className="w-15 h-15 rounded-lg overflow-hidden  flex items-center justify-center">
-                <div className="text-white font-bold" style={orbitronStyle}>
-                  <img src={logo} alt="" />
-                </div>
+              <div className="w-16 h-16 rounded-lg overflow-hidden flex items-center justify-center">
+                <img src={logo} alt="logo" />
               </div>
 
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <h3 style={orbitronStyle} className="text-lg font-bold">AI Job match — Frontend React</h3>
-                  <div className="text-xs px-2 py-1 bg-[#1f2a45] rounded text-gray-200">Hourly</div>
+                  <h3 style={orbitronStyle} className="text-lg font-bold">
+                    AI Job Match — Frontend React
+                  </h3>
+                  <div className="text-xs px-2 py-1 bg-[#1f2a45] rounded">
+                    Hourly
+                  </div>
                 </div>
 
-                <p style={robotoStyle} className="text-sm text-gray-300 mt-2">Build a responsive admin dashboard using React, TypeScript and Tailwind — 20 hours estimated.</p>
+                <p style={robotoStyle} className="text-sm text-gray-300 mt-2">
+                  Build a responsive dashboard using React, TypeScript and
+                  Tailwind — 20 hours estimated.
+                </p>
 
-                <div className="flex items-center gap-2 mt-4">
-
-                  <div className="ml-auto text-lg font-extrabold" style={orbitronStyle}>$55/hr</div>
+                <div
+                  className="ml-auto mt-4 text-lg font-extrabold"
+                  style={orbitronStyle}
+                >
+                  $55/hr
                 </div>
               </div>
             </div>
@@ -275,40 +197,57 @@ export default function App() {
           </div>
 
           <div className="mt-6 text-sm text-gray-400" style={robotoStyle}>
-            Built for builders — privacy-forward, modular, and extensible. Integrates with wallets for identity and payments.
+            Built for builders — privacy-forward, modular, and composable.
           </div>
         </aside>
       </section>
 
-      {/* features */}
-      <section className="max-w-6xl mx-auto px-6 py-10 relative z-10">
-        <div className="bg-[#0f121e] rounded-lg p-6 grid grid-cols-1 md:grid-cols-3 gap-6 shadow-inner border border-[#162036]">
-          <div className="p-4">
-            <h4 style={orbitronStyle} className="text-lg">For Clients</h4>
-            <p style={robotoStyle} className="text-gray-300 text-sm mt-2">Post transparent gigs, hold funds in escrow and pick from verified talent.</p>
+      <section className="max-w-6xl mx-auto px-6 py-10">
+        <div className="bg-[#0f121e] rounded-lg p-6 grid grid-cols-1 md:grid-cols-3 gap-6 border border-[#162036]">
+          <div>
+            <h4 style={orbitronStyle} className="text-lg">
+              For Clients
+            </h4>
+            <p style={robotoStyle} className="text-sm text-gray-300 mt-2">
+              Post transparent gigs and hold funds in escrow.
+            </p>
           </div>
 
-          <div className="p-4">
-            <h4 style={orbitronStyle} className="text-lg">For Freelancers</h4>
-            <p style={robotoStyle} className="text-gray-300 text-sm mt-2">Showcase SBT-verified skills, get matched and get paid securely on completion.</p>
+          <div>
+            <h4 style={orbitronStyle} className="text-lg">
+              For Freelancers
+            </h4>
+            <p style={robotoStyle} className="text-sm text-gray-300 mt-2">
+              Get matched, build reputation, and get paid securely.
+            </p>
           </div>
 
-          <div className="p-4">
-            <h4 style={orbitronStyle} className="text-lg">Open Ecosystem</h4>
-            <p style={robotoStyle} className="text-gray-300 text-sm mt-2">Composable contracts, token-gated features and integrations for teams and DAOs.</p>
+          <div>
+            <h4 style={orbitronStyle} className="text-lg">
+              Open Ecosystem
+            </h4>
+            <p style={robotoStyle} className="text-sm text-gray-300 mt-2">
+              Composable contracts, token-gated features, DAO-ready.
+            </p>
           </div>
         </div>
       </section>
 
-
-      {/* footer */}
-      <footer className="max-w-6xl mx-auto px-6 py-10 relative z-10">
+      <footer className="max-w-6xl mx-auto px-6 py-10">
         <div className="flex flex-col sm:flex-row items-center justify-between text-gray-400">
-          <div style={robotoStyle} className="text-sm">© {new Date().getFullYear()} NeuroGuild</div>
+          <div style={robotoStyle} className="text-sm">
+            © {new Date().getFullYear()} NeuroGuild
+          </div>
           <div className="flex gap-4 mt-4 sm:mt-0">
-            <Link to="/terms" className="hover:text-white" style={robotoStyle}>Terms</Link>
-            <Link to="/privacy" className="hover:text-white" style={robotoStyle}>Privacy</Link>
-            <Link to="/contact" className="hover:text-white" style={robotoStyle}>Contact</Link>
+            <Link to="/terms" className="hover:text-white">
+              Terms
+            </Link>
+            <Link to="/privacy" className="hover:text-white">
+              Privacy
+            </Link>
+            <Link to="/contact" className="hover:text-white">
+              Contact
+            </Link>
           </div>
         </div>
       </footer>

@@ -44,7 +44,6 @@ const router = createBrowserRouter([
     element: (
       <>
         {/* <Snowfall snowflakeCount={60} /> */}
-        <Navbar />
         <App />
       </>
     )
@@ -53,7 +52,7 @@ const router = createBrowserRouter([
     path: "/freelancer/dashboard",
     element: (
       <>
-        {/* <Snowfall snowflakeCount={60} /> */}
+        <Snowfall snowflakeCount={60} />
         <Navbar />
         <FreelancerDashboard />
       </>
@@ -106,7 +105,7 @@ const router = createBrowserRouter([
     path: "/client/my-profile",
     element: (
       <>
-        <Snowfall snowflakeCount={60} />
+        {/* <Snowfall snowflakeCount={60} /> */}
         <Navbar />
         <ClientProfile />
       </>
