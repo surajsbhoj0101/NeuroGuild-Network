@@ -10,19 +10,23 @@ import { fetchClientsJobs } from "../controllers/jobs.controller.js";
 import { fetchJobBids } from "../controllers/jobs.controller.js";
 import { fetchProposalIpfs } from "../controllers/jobs.controller.js";
 import { fetchFreelancerJobs } from "../controllers/jobs.controller.js";
+import { requireAuth } from "../middleware/auth.middleware.js";
 
 const jobRoutes = express.Router();
 
-jobRoutes.post('/ai-enhancement', aiEnhanceJobDetails)
-jobRoutes.get('/fetch-jobs', fetchJobs)
-jobRoutes.get('/fetch-job/:jobId', fetchJob)
-jobRoutes.post('/fetch-ai-score-and-job-interaction', fetchAiScoreAndJobInteraction)
-jobRoutes.post('/get-job-ipfs',getJobIpfs)
-jobRoutes.put('/save-job',saveJob)
-jobRoutes.put('/submit-bid',saveBid)
-jobRoutes.get('/client-jobs/:address',fetchClientsJobs);
-jobRoutes.get('/get-job-bids/:jobId',fetchJobBids)
-jobRoutes.post('/get-bid-proposal-ipfs', fetchProposalIpfs)
-jobRoutes.post('/fetch-freelancer-jobs',fetchFreelancerJobs)
+jobRoutes.post("/ai-enhancement", aiEnhanceJobDetails);
+jobRoutes.get("/fetch-jobs", fetchJobs);
+jobRoutes.get("/fetch-job/:jobId", requireAuth, fetchJob);
+jobRoutes.post(
+  "/fetch-ai-score-and-job-interaction",
+  fetchAiScoreAndJobInteraction
+);
+jobRoutes.post("/get-job-ipfs", getJobIpfs);
+jobRoutes.put("/save-job", requireAuth, saveJob);
+jobRoutes.put("/submit-bid", saveBid);
+jobRoutes.get("/client-jobs", requireAuth,fetchClientsJobs);
+jobRoutes.get("/get-job-bids/:jobId", fetchJobBids);
+jobRoutes.post("/get-bid-proposal-ipfs", fetchProposalIpfs);
+jobRoutes.get("/fetch-freelancer-jobs",requireAuth, fetchFreelancerJobs);
 
-export default jobRoutes
+export default jobRoutes;

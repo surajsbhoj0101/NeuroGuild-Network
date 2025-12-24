@@ -248,7 +248,7 @@ export const fetchJobs = async (req, res) => {
 
 export const fetchJob = async (req, res) => {
   const { jobId } = req.params;
-  const walletAddress = req.user?.walletAddress?.toLowerCase();
+  const walletAddress = req.walletAddress?.toLowerCase();
 
   try {
     if (!jobId) {
@@ -423,8 +423,8 @@ export const fetchAiScoreAndJobInteraction = async (req, res) => {
 };
 
 export const saveJob = async (req, res) => {
-  const { address, jobId } = req.body;
-  const walletAddress = address?.toLowerCase();
+  const { jobId } = req.body;
+  const walletAddress = req.walletAddress?.toLowerCase();
 
   try {
     const updated = await JobInteraction.findOneAndUpdate(
@@ -498,8 +498,7 @@ export const saveBid = async (req, res) => {
 };
 
 export const fetchClientsJobs = async (req, res) => {
-  const { address } = req.params;
-  const clientAddress = address.toLowerCase();
+  const clientAddress = req.walletAddress?.toLowerCase();
 
   try {
     const jobs = await querySubgraph(clientJobFetchQuery, {
@@ -538,7 +537,7 @@ export const fetchJobBids = async (req, res) => {
 };
 
 export const fetchProposalIpfs = async (req, res) => {
-  const {payload } = req.body;
+  const { payload } = req.body;
   try {
     const json = JSON.stringify(payload);
     const uriCid = await uploadToIpfs(json);
@@ -560,8 +559,8 @@ export const fetchProposalIpfs = async (req, res) => {
 
 export const fetchFreelancerJobs = async (req, res) => {
   try {
-    const { address } = req.body;
-    const walletAddress = address.toLowerCase();
+    const walletAddress = req.walletAddress?.toLowerCase();
+
     const resp = await querySubgraph(fetchMyJobs, { bidder: walletAddress });
     const bids = resp?.bids || [];
 
@@ -579,13 +578,13 @@ export const fetchFreelancerJobs = async (req, res) => {
         getJsonFromIpfs(bid.ipfsProposal),
         getJsonFromIpfs(job.ipfsHash),
       ]);
-     
+
       return {
         jobId: job.id,
         status: job.status,
         createdAt: bid.createdAt,
 
-        bidAmount: bid?.amount/ 1e18,
+        bidAmount: bid?.amount / 1e18,
         proposal: bidData?.payload?.proposal || "",
         milestones: bidData?.milestones || [],
 
@@ -614,7 +613,7 @@ export const fetchFreelancerJobs = async (req, res) => {
         categorized.completed.push(jobPayload);
       }
     }
-    console.log(categorized)
+    console.log(categorized);
     return res.status(200).json({
       success: true,
       categorized,

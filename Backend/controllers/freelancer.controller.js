@@ -22,8 +22,7 @@ export const test = async (req, res) => {
 
 
 export const getFreelancer = async (req, res) => {
-    const { address } = req.body;
-    const walletAddress = address.toLowerCase();
+    const walletAddress = req.walletAddress?.toLowerCase();
     try {
         const freelancer = await Freelancer.findOne({ walletAddress });
 
@@ -44,12 +43,11 @@ export const getFreelancer = async (req, res) => {
 export const updateFreelancer = async (req, res) => {
 
 
-    const { payload, address } = req.body;
+    const { payload } = req.body;
 
-    console.log("Address:", address);
 
     try {
-        const walletAddress = address.toLowerCase();
+        const walletAddress = req.walletAddress?.toLowerCase();
 
         //solved a big bug here
         const { isVerified, ...otherUpdates } = payload;

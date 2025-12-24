@@ -71,16 +71,11 @@ export const createUser = async (req, res) => {
     if (!role) {
       return res.status(400).json({ message: "Role is required" });
     }
-
-    const token = req.cookies?.access_token;
-    if (!token) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
     
-    const walletAddress = req.walletAddress.toLowerCase();
+    const walletAddress = req.walletAddress?.toLowerCase();
 
     const roleLowerCase = role.toLowerCase();
+    console.log(walletAddress, roleLowerCase)
 
     const existingUser = await User.findOne({ wallets: walletAddress });
     if (existingUser) {

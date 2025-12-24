@@ -71,7 +71,8 @@ function jobPage() {
   const fetchJob = async (params) => {
     try {
       const job = await axios.get(
-        `http://localhost:5000/api/jobs/fetch-job/${jobId}`
+        `http://localhost:5000/api/jobs/fetch-job/${jobId}`,
+        { withCredentials: true }
       );
       setJobDetails(job.data.jobDetails);
       setTotalApplied(job.data.totalBids);
@@ -131,10 +132,13 @@ function jobPage() {
     }
 
     try {
-      const res = await axios.put("http://localhost:5000/api/jobs/save-job", {
-        address,
-        jobId,
-      });
+      const res = await axios.put(
+        "http://localhost:5000/api/jobs/save-job",
+        {
+          jobId,
+        },
+        { withCredentials: true }
+      );
 
       if (res.data?.success) {
         setJobInteraction((prev) => ({

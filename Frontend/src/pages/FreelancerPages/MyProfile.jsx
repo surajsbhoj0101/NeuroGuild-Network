@@ -91,10 +91,10 @@ export default function MyProfile() {
    
 
     try {
-      const response = await axios.post(
+      const response = await axios.get(
         "http://localhost:5000/api/freelancer/get-freelancer",
         {
-          address
+          withCredentials: true
         }
       );
 
@@ -187,7 +187,7 @@ export default function MyProfile() {
         skills: skills
       };
       console.log(payload)
-      await axios.put(`http://localhost:5000/api/freelancer/update-profile`, { payload, address });
+      await axios.put(`http://localhost:5000/api/freelancer/update-profile`, { payload}, {withCredentials: true});
       setRedNotice(false)
       setNotice("Profile updated successfully");
 

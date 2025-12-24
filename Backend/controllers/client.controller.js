@@ -3,8 +3,8 @@ import Freelancer from "../models/freelancer_models/freelancers.model.js"
 import Client from "../models/client_models/clients.model.js"
 
 export const getClient = async (req, res) => {
-    const { address } = req.body;
-    const walletAddress = address.toLowerCase();
+   
+    const walletAddress = req.walletAddress?.toLowerCase();
 
     try {
         const client = await Client.findOne({ walletAddress });
@@ -22,12 +22,11 @@ export const getClient = async (req, res) => {
 }
 
 export const updateClient = async (req, res) => {
-    const { payload, address } = req.body;
+    const { payload } = req.body;
 
     try {
-        const walletAddress = address?.toLowerCase();
+        const walletAddress = req.walletAddress?.toLowerCase();
 
-       
         const { stats, ...otherUpdates } = payload;
 
         const updatedUser = await Client.findOneAndUpdate(
