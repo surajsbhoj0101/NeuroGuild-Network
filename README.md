@@ -9,7 +9,7 @@ This project is under active development and is **not production-ready**.
 
 ---
 
-## 🎯 What Problem This Explores
+## What Problem This Explores
 
 Traditional hiring systems rely on:
 - Self-claimed resumes
@@ -37,7 +37,7 @@ NeuroGuild explores a different idea:
 
 ---
 
-## 🧩 What Exists Right Now
+## What Exists Right Now
 
 ### 🔐 Authentication
 - Wallet-based login (SIWE-style)
