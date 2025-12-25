@@ -30,8 +30,9 @@ NeuroGuild explores a different idea:
 - Subgraph indexing: ✅ live
 - Reputation model: ✅ 
 - UI/UX polish: 🚧 ongoing
-- Governance & DAO logic: ✅ implemented
-- - DAO-based dispute resolution: ✅ implemented
+- Governance & DAO logic(Votes with token and Repuation points): ✅ implemented
+- DAO-based dispute resolution: ✅ implemented
+- Contracts Testing(with more than 60% coverage) and Deployment: ✅ implemented
 - Skill Test Mechanism: 🚧 ongoing
 
 ---
@@ -69,6 +70,7 @@ NeuroGuild explores a different idea:
 - Early reputation logic based on:
   - Participation
   - Interaction history
+  - Job Completion
 - AI-assisted scoring experiments (non-final)
 
 ---
