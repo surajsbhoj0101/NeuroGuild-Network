@@ -100,7 +100,7 @@ export const createUser = async (req, res) => {
         userId: user._id,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "30m" }
+      { expiresIn: "230m" }
     );
 
     res.cookie("access_token", newToken, {

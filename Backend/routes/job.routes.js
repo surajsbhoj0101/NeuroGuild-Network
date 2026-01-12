@@ -24,9 +24,9 @@ jobRoutes.post(
 jobRoutes.post("/get-job-ipfs", getJobIpfs);
 jobRoutes.put("/save-job", requireAuth, saveJob);
 jobRoutes.put("/submit-bid", saveBid);
-jobRoutes.get("/client-jobs", requireAuth,fetchClientsJobs);
 jobRoutes.get("/get-job-bids/:jobId", fetchJobBids);
 jobRoutes.post("/get-bid-proposal-ipfs", fetchProposalIpfs);
 jobRoutes.get("/fetch-freelancer-jobs",requireAuth, fetchFreelancerJobs);
+jobRoutes.get("/fetch-client-jobs",requireAuth, fetchClientsJobs);
 
 export default jobRoutes;

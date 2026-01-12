@@ -68,16 +68,6 @@ function ClientProfile() {
 
   const loadProfileData = async () => {
     if (!address) return;
-
-    const storedUserId = localStorage.getItem("userId");
-
-    if (!storedUserId) {
-      setRedNotice(true);
-      setNotice("Redirecting home — userId not found!");
-      setTimeout(() => navigate("/"), 1600);
-      return;
-    }
-
     try {
       setIsLoading(true);
 

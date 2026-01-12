@@ -15,19 +15,21 @@ import { json } from "express";
 dotenv.config();
 
 const clientJobFetchQuery = `
-  query GetMyJobs($client: Bytes!){
-    jobs(where: {client: $client}) {
-      budget
-      client
-      createdAt
-      bidDeadline
-      expireDeadline
+  query MyQuery($client: Bytes!) {
+  bids(where: {job_: {client: $client}}) {
+    status
+    id
+    ipfsProposal
+    createdAt
+    bidder
+    job {
+      ipfsHash
       status
       id
-      ipfsHash
-      freelancer
     }
+    amount
   }
+}
 `;
 
 const fetchOpenJobsQuery = `
@@ -497,26 +499,6 @@ export const saveBid = async (req, res) => {
   }
 };
 
-export const fetchClientsJobs = async (req, res) => {
-  const clientAddress = req.walletAddress?.toLowerCase();
-
-  try {
-    const jobs = await querySubgraph(clientJobFetchQuery, {
-      client: clientAddress,
-    });
-
-    console.log(jobs);
-    res.status(200).json({ success: true, jobs: jobs });
-  } catch (error) {
-    console.error("Fetch job posted by client error", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal Server Error",
-      error: error.message,
-    });
-  }
-};
-
 export const fetchJobBids = async (req, res) => {
   const { jobId } = req.params;
   console.log(jobId);
@@ -623,6 +605,83 @@ export const fetchFreelancerJobs = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch freelancer jobs",
+    });
+  }
+};
+
+export const fetchClientsJobs = async (req, res) => {
+  const clientAddress = req.walletAddress?.toLowerCase();
+  console.log("Hey")
+  try {
+    const resp = await querySubgraph(clientJobFetchQuery, {
+      client: clientAddress,
+    });
+
+    const bids = resp?.bids || [];
+    console.log(bids)
+    const categorized = {
+      open: [],
+      inProgress: [],
+      completed: [],
+      cancelled: [],
+      disputed: [],
+      submitted: [],
+    };
+
+    const buildJobPayload = async (bid) => {
+      const job = bid.job;
+
+      const [freelancerDetails, bidData, jobDetails] = await Promise.all([
+        Freelancer.findOne({ walletAddress: bid.bidder }),
+        getJsonFromIpfs(bid.ipfsProposal),
+        getJsonFromIpfs(job.ipfsHash),
+      ]);
+
+      return {
+        jobId: job.id,
+        status: job.status,
+        createdAt: bid.createdAt,
+        bidId: bid.id.at(-1),
+        bidAmount: bid?.amount / 1e18,
+        proposal: bidData?.payload?.proposal || "",
+        milestones: bidData?.milestones || [],
+        bidder: bid?.bidder,
+        JobDetails: {
+          ...jobDetails,
+          budget: jobDetails?.budget,
+          deadline: jobDetails?.deadline,
+          clientAddress: jobDetails?.client,
+          freelancerDetails: freelancerDetails,
+        },
+      };
+    };
+
+    for (const bid of bids) {
+      const jobStatus =  bid?.job?.status;
+
+      if (!jobStatus) continue;
+
+      const jobPayload = await buildJobPayload(bid);
+      if (jobStatus === "OPEN") {
+        categorized.open.push(jobPayload);
+      } else if (jobStatus === "IN_PROGRESS") {
+        categorized.inProgress.push(jobPayload);
+      } else if (jobStatus === "COMPLETED") {
+        categorized.completed.push(jobPayload);
+      } else if (jobStatus === "CANCELLED") {
+        categorized.completed.push(jobPayload);
+      } else if (jobStatus === "DISPUTED") {
+        categorized.completed.push(jobPayload);
+      }
+    }
+    console.log(categorized)
+    res.status(200).json({ success: true, categorized: categorized });
+  } catch (error) {
+    console.error("Fetch job posted by client error", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
     });
   }
 };
