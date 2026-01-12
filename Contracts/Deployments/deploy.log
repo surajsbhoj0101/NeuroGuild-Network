@@ -1,12 +1,144 @@
-Deploying with: 0xb3C8Ec7c00Ca69e2B456382C46711153f80854e0
-  USDC: 0xd8e3dAa3094A0d09392e9Ae63796344C6CdC9510
-  GovernanceToken: 0x3ae27691EcbF2C6cF9283306B026A85D3dF8aca1
-  Timelock: 0x2662594bFeD11a19653D10E6117aa229900172a7
-  Governor: 0x5dBB38Fb4d0D1d9e76843B01CD9DE2444a23911A
-  CouncilRegistry: 0x75B592Cb63a25e87F9FEDa81FE527191C4038C5E
-  ReputationSBT: 0xDc5B55797Ab83536cf8D9f6799752f3b22B74C36
-  SkillSBT: 0x61748698C04b4f3B138cb13d71eC2c5DdbB7aE8a
-  UserRegistry: 0xc1a6140dbce2298B2Ad92a4d9e1b6B6a80bFB84D
-  Treasury: 0x90B481202eC6e44aE6De250245F4b0C4A7f9557B
-  JobContract: 0xE66995568689251bbAD9ABcbae2A28092a64A28a
-  Box: 0xa3a681de2439510bA752913A84bAD7FB58729Ff0
+== Logs ==
+  Deploying with: 0xb3C8Ec7c00Ca69e2B456382C46711153f80854e0
+  USDC: 0xB5C7d42fcbF8d5a8e95EF15bD970ccA5B86332AE
+  GovernanceToken: 0x6a047d43ad87677dd1fA2F617D26Df845167b105
+  Timelock: 0xb123e7868ac59de9D088B878Fd9e70C6958eD512
+  Governor: 0xDD90e185b6cf36CD73A8Fa4DC724B4B9262109b3
+  CouncilRegistry: 0x8681CD068d2D45e9eF11484EDEAA6AC799599eFa
+  ReputationSBT: 0xcEfAD7bFF0510FF2a599e1aB7eA5be4a7A7927a4
+  SkillSBT: 0x4Fb65775Ce2Eba0AD8b5963Db80aF7678a4e824C
+  UserRegistry: 0xAf02A773636C562A22486F167Ad175076965EA0f
+  Treasury: 0x487D119B59878b82f6047C715F3ED5684e8c7DD4
+  JobContract: 0x5a23bc4648953ACAf90d5B44792E5BAEf89f11DA
+  Box: 0xBb5DDB4aDA80f9e4610a008FE533f772B4037153
+
+## Setting up 1 EVM.
+
+==========================
+
+Chain 84532
+
+Estimated gas price: 0.0014 gwei
+
+Estimated total gas used for script: 19663706
+
+Estimated amount required: 0.0000275291884 ETH
+
+==========================
+
+##### base-sepolia
+✅  [Success] Hash: 0x616dbce4ca2383cec99c16760fbc76ee3a7d25a81356ba99a04960028dcf25da
+Contract Address: 0xb123e7868ac59de9D088B878Fd9e70C6958eD512
+Block: 35228100
+Paid: 0.0000016813188 ETH (1401099 gas * 0.0012 gwei)
+
+
+##### base-sepolia
+✅  [Success] Hash: 0x922ba7480103729c001b8e6224748c51739202f7d39cbda334e7a7d2837d5242
+Contract Address: 0xB5C7d42fcbF8d5a8e95EF15bD970ccA5B86332AE
+Block: 35228100
+Paid: 0.0000005906316 ETH (492193 gas * 0.0012 gwei)
+
+
+##### base-sepolia
+✅  [Success] Hash: 0xd834abbc3dfc0f4d4d575124df46ad5962d4359d3e2a144e2c631c7b0ff55e73
+Contract Address: 0x6a047d43ad87677dd1fA2F617D26Df845167b105
+Block: 35228100
+Paid: 0.000002185422 ETH (1821185 gas * 0.0012 gwei)
+
+
+##### base-sepolia
+✅  [Success] Hash: 0x5872283e60b04d1d67e8285809ed8b2d0a1101ee6e633d5d0a046bf87b1d5605
+Contract Address: 0xDD90e185b6cf36CD73A8Fa4DC724B4B9262109b3
+Block: 35228100
+Paid: 0.000004044234 ETH (3370195 gas * 0.0012 gwei)
+
+
+##### base-sepolia
+✅  [Success] Hash: 0xd799c5cd0e39bccf1b34c27a143353bf959117970de13ea2d7e4b57e6ae662b7
+Block: 35228100
+Paid: 0.000000061554 ETH (51295 gas * 0.0012 gwei)
+
+
+##### base-sepolia
+✅  [Success] Hash: 0x6f623f4b8289e944e57e3c0f946b242bc569224147dc139d5c23ed5882d78b2c
+Contract Address: 0x487D119B59878b82f6047C715F3ED5684e8c7DD4
+Block: 35228101
+Paid: 0.000000583164 ETH (485970 gas * 0.0012 gwei)
+
+
+##### base-sepolia
+✅  [Success] Hash: 0x8d3ac0e081d3200d8f5a69334d4821e2d2c022c7e22efdf9f39dd734a35b876b
+Contract Address: 0x5a23bc4648953ACAf90d5B44792E5BAEf89f11DA
+Block: 35228101
+Paid: 0.0000039697824 ETH (3308152 gas * 0.0012 gwei)
+
+
+##### base-sepolia
+✅  [Success] Hash: 0x40c1cca4d22c1e25414290cdfb2d52efb13c67fc720eec161482b68f0ed758a4
+Contract Address: 0x4Fb65775Ce2Eba0AD8b5963Db80aF7678a4e824C
+Block: 35228101
+Paid: 0.000001438002 ETH (1198335 gas * 0.0012 gwei)
+
+
+##### base-sepolia
+✅  [Success] Hash: 0xe14c81bec45c300f5572de2ca0932c6130407cad623cbba7205e605b2792eab1
+Block: 35228101
+Paid: 0.000000061266 ETH (51055 gas * 0.0012 gwei)
+
+
+##### base-sepolia
+✅  [Success] Hash: 0x30e9065de7241a3a86c9c235dcff3ce78495b9357ee64c2c6f8f9393eb39a94d
+Contract Address: 0xBb5DDB4aDA80f9e4610a008FE533f772B4037153
+Block: 35228101
+Paid: 0.0000002376648 ETH (198054 gas * 0.0012 gwei)
+
+
+##### base-sepolia
+✅  [Success] Hash: 0x27c408c367db491e9cbc008bb13023b2b717405fe1f81be40cfc49882dc8f0ec
+Block: 35228101
+Paid: 0.0000000563532 ETH (46961 gas * 0.0012 gwei)
+
+
+##### base-sepolia
+✅  [Success] Hash: 0x9e3d5409cae8803a9296912c50c60f438b7a8bac8dc5c30ae8ecaaef3ce22de8
+Block: 35228101
+Paid: 0.000000026448 ETH (22040 gas * 0.0012 gwei)
+
+
+##### base-sepolia
+✅  [Success] Hash: 0x2aef43afdcab30c1675f07848c9228e88af88730d173a1e14e2c1680f1f630e5
+Contract Address: 0x8681CD068d2D45e9eF11484EDEAA6AC799599eFa
+Block: 35228101
+Paid: 0.0000004197228 ETH (349769 gas * 0.0012 gwei)
+
+
+##### base-sepolia
+✅  [Success] Hash: 0x1fd2d8dc4f190c90d20cfc2de16dd43aec5751f5c8a72ef9fc2c47c7bb5aebd7
+Block: 35228101
+Paid: 0.000000029514 ETH (24595 gas * 0.0012 gwei)
+
+
+##### base-sepolia
+✅  [Success] Hash: 0x08d5db5c5f6acf1715f7f07f4b1887c250847010cc072d4d949399ad3775ec18
+Contract Address: 0xAf02A773636C562A22486F167Ad175076965EA0f
+Block: 35228101
+Paid: 0.000000628698 ETH (523915 gas * 0.0012 gwei)
+
+
+##### base-sepolia
+✅  [Success] Hash: 0xfb3e17468bc4a5b203b743b589b3e214652d665e65265e62d6869a68436d93dc
+Contract Address: 0xcEfAD7bFF0510FF2a599e1aB7eA5be4a7A7927a4
+Block: 35228101
+Paid: 0.0000021172848 ETH (1764404 gas * 0.0012 gwei)
+
+✅ Sequence #1 on base-sepolia | Total Paid: 0.0000181310604 ETH (15109217 gas * avg 0.0012 gwei)
+                                                                                                                            
+
+==========================
+
+ONCHAIN EXECUTION COMPLETE & SUCCESSFUL.
+
+Transactions saved to: /home/suraj/Documents/NeuroGuild-Network/Contracts/broadcast/DeploymentScript.sol/84532/run-latest.json
+
+Sensitive values saved to: /home/suraj/Documents/NeuroGuild-Network/Contracts/cache/DeploymentScript.sol/84532/run-latest.json
