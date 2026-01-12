@@ -42,6 +42,8 @@ interface IReputationSBT {
         bool revoked;
     }
 
+    function getTokenId(address user) external view returns (uint256);
+
     function repData(
         uint256 tokenId
     )
@@ -62,6 +64,7 @@ interface IReputationSBT {
     function userToToken(address user) external view returns (uint256);
 
     function jobContract() external view returns (address);
+
     function governor() external view returns (address);
 
     function MAX_REPUTATION() external view returns (uint256);

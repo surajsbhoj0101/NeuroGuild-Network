@@ -80,7 +80,7 @@ contract GoverContract is
         uint256 tokenVotes = super.getVotes(voter, blockNumber);
 
        
-        uint256 tokenId = reputation.userToToken(voter);
+        uint256 tokenId = reputation.getTokenId(voter);
         uint256 repVotes = 0;
 
         if (tokenId != 0) {

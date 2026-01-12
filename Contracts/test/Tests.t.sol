@@ -11,9 +11,7 @@ import {ReputationSBT} from "../src/sbt/ReputationSBT.sol";
 import {SkillSBT} from "../src/sbt/SkillSBT.sol";
 import {JobContract} from "../src/jobs/JobContract.sol";
 import {GovernanceToken} from "../src/dao/GovernanceToken.sol";
-import {
-    GoverContract
-} from "../src/dao/governance_standard/GovernerContract.sol";
+import {GoverContract} from "../src/dao/governance_standard/GovernerContract.sol";
 import {TimeLock} from "../src/dao/governance_standard/TimeLock.sol";
 import {Box} from "../src/dao/Box.sol";
 import {CouncilRegistry} from "../src/dao/CouncilRegistry.sol";
@@ -21,6 +19,7 @@ import {Treasury} from "../src/dao/Treasury.sol";
 
 contract Tests is Test {
     DeployHelper.Deployment public deployed;
+
     function setUp() public {
         // call deployAll from test context; deployer will be address(this)
         deployed = DeployHelper.deployAll(address(this), 2 minutes, 7, 50, 50);
@@ -543,5 +542,102 @@ contract Tests is Test {
 
         vm.expectRevert();
         job.submitBid(jobId, 10 * 1e18, "My Proposal");
+    }
+
+    function testProposalVotingWithReputation() public {
+        address voter = vm.addr(1);
+        address client = vm.addr(2);
+
+        //By Pass governance
+        vm.startPrank(address(deployed.timelock));
+        ReputationSBT rep = ReputationSBT(address(deployed.reputationSBT));
+        rep.setJobContract(address(deployed.jobContract));
+        vm.stopPrank();
+
+        // Mint reputation as system
+        vm.startPrank(address(deployed.jobContract));
+        rep.mintReputation(voter, "Hello World");
+
+        uint256 tokenId = rep.getTokenId(voter);
+        rep.increaseScoreFromSystem(tokenId, 1010);
+        vm.stopPrank();
+
+         (, , , , , uint256 totalScore, , , ) = rep.repData(tokenId);
+         console.log("Total Score :", totalScore);
+
+        GoverContract gov = GoverContract(payable(address(deployed.governor)));
+
+        bytes memory callData = abi.encodeWithSignature(
+            "addCouncil(address)",
+            client
+        );
+
+        address[] memory targets = new address[](1);
+        targets[0] = address(deployed.councilRegistry);
+
+        uint256[] memory values = new uint256[](1);
+        values[0] = 0;
+
+        bytes[] memory calldatas = new bytes[](1);
+        calldatas[0] = callData;
+
+        string memory description = "Proposal #1: call doSomething";
+
+        //Proposal Creation
+
+        uint256 proposalId = gov.propose(
+            targets,
+            values,
+            calldatas,
+            description
+        );
+
+        assertTrue(proposalId != 0);
+        assertEq(uint256(gov.state(proposalId)), 0);
+        deal(address(deployed.govToken), voter, 40000 * 1e18);
+
+        GovernanceToken token = GovernanceToken(address(deployed.govToken));
+
+        // delegate votes
+        vm.prank(voter);
+        token.delegate(voter);
+
+        //Voting
+        vm.roll(block.number + gov.votingDelay() + 1);
+
+        // Voter1 votes for
+        vm.prank(voter);
+        gov.castVote(proposalId, 1);
+
+        vm.stopPrank();
+
+        assertEq(gov.hasVoted(proposalId, voter), true);
+
+        vm.roll(block.number + gov.votingPeriod() + 1);
+
+        // assertEq(uint256(gov.state(proposalId)), 4);
+        (uint256 againstVotes, uint256 forVotes, uint256 abstainVotes) = gov
+            .proposalVotes(proposalId);
+
+        console.log("Against votes:", againstVotes);
+        console.log("For votes:", forVotes/1e18);
+        console.log("Abstain votes:", abstainVotes);
+
+        uint256 totalVotes = againstVotes + forVotes + abstainVotes;
+        console.log("Total votes:", totalVotes);
+
+        //Queue and Execute
+        bytes32 descriptionHash = keccak256(
+            bytes("Proposal #1: call doSomething")
+        );
+
+        gov.queue(targets, values, calldatas, descriptionHash);
+        TimeLock timeLock = TimeLock(payable(address(deployed.timelock)));
+
+        // timelock waiting period
+        vm.warp(block.timestamp + timeLock.getMinDelay() + 1);
+
+        gov.execute(targets, values, calldatas, descriptionHash);
+        assertEq(forVotes/1e18, 40250);
     }
 }
