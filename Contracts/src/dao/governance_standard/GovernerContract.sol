@@ -78,17 +78,7 @@ contract GoverContract is
         uint256 blockNumber
     ) public view override returns (uint256) {
         uint256 tokenVotes = super.getVotes(voter, blockNumber);
-
-       
-        uint256 tokenId = reputation.getTokenId(voter);
-        uint256 repVotes = 0;
-
-        if (tokenId != 0) {
-            (, , , , , uint256 totalScore, , , ) = reputation.repData(tokenId);
-            repVotes = totalScore;
-        }
-
-        return tokenVotes + (repVotes / 4);
+        return tokenVotes ;
     }
 
 

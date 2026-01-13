@@ -7,6 +7,6 @@ import {
 
 contract ERC20Usdc is ERC20 {
     constructor() ERC20("US Dollar", "USD") {
-        _mint(msg.sender, 100000);
+        _mint(msg.sender, 10000000*1e18);
     }
 }

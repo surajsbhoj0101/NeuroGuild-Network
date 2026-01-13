@@ -56,19 +56,65 @@ contract Tests is Test {
         job.createJob("ipfs:https://", budget, bidDeadline, expireDeadline);
         vm.stopPrank();
 
+        vm.startPrank(client);
+        job.createJob("ipfs:https://", budget, bidDeadline, expireDeadline);
+        vm.stopPrank();
+
         bytes32[] memory ids = job.getAllJobIds();
         require(ids.length > 0, "No jobs found");
         bytes32 jobId = ids[0];
+
+        //cancel Job
+        vm.startPrank(client);
+        job.cancelJob(ids[1]);
+        vm.stopPrank();
 
         //Register Freelancer
         vm.startPrank(freelancer);
         reg.registerUser(UserRegistry.Role.Freelancer);
         vm.stopPrank();
 
+        vm.startPrank(vm.addr(3));
+        reg.registerUser(UserRegistry.Role.Freelancer);
+        vm.stopPrank();
+
+        //Change job
+        vm.startPrank(client);
+        job.updateJobDetails(
+            jobId,
+            "3243243",
+            budget,
+            bidDeadline,
+            expireDeadline
+        );
+        vm.stopPrank();
         //submit bid
         vm.warp(START + 100);
         vm.startPrank(freelancer);
         job.submitBid(jobId, 10 * 1e18, "Sample Ipfs");
+        vm.stopPrank();
+
+        //submit bid
+        vm.warp(START + 100);
+        vm.startPrank(vm.addr(3));
+        job.submitBid(jobId, 10 * 1e18, "Sample Ipfs");
+        vm.stopPrank();
+
+        //Change job after bid submit expect revert
+        vm.startPrank(client);
+        vm.expectRevert();
+        job.updateJobDetails(
+            jobId,
+            "3243243",
+            budget,
+            bidDeadline,
+            expireDeadline
+        );
+        vm.stopPrank();
+
+        //Reject bid
+        vm.startPrank(client);
+        job.rejectBid(jobId, 1);
         vm.stopPrank();
 
         //acceptBid
@@ -77,6 +123,16 @@ contract Tests is Test {
         usdc.approve(address(job), 20 * 1e18);
         job.acceptBid(jobId, 0);
         vm.stopPrank();
+
+        //Reject bid
+        vm.startPrank(client);
+        vm.expectRevert();
+        job.rejectBid(jobId, 1);
+        vm.stopPrank();
+
+        //check status
+        JobContract.JobStatus status = job.getJobStatus(jobId);
+        assertEq(uint(status), uint(JobContract.JobStatus.InProgress));
 
         //Submit Work
         vm.startPrank(freelancer);
@@ -98,6 +154,10 @@ contract Tests is Test {
         job.acceptWork(jobId);
         vm.stopPrank();
 
+        vm.startPrank(freelancer);
+        job.rateClient(jobId, 9);
+        vm.stopPrank();
+
         //Check Balance
         Treasury treasury = Treasury(address(deployed.treasury));
         console.log(usdc.balanceOf(deployed.treasury));
@@ -105,6 +165,17 @@ contract Tests is Test {
 
         //Give ratings
         vm.startPrank(client);
+        job.rateFreelancer(jobId, 8);
+        vm.stopPrank();
+
+        //Give rating twice
+        vm.startPrank(client);
+        vm.expectRevert();
+        job.rateFreelancer(jobId, 8);
+        vm.stopPrank();
+
+        vm.startPrank(freelancer);
+        vm.expectRevert();
         job.rateFreelancer(jobId, 8);
         vm.stopPrank();
 
@@ -125,6 +196,17 @@ contract Tests is Test {
         console.log("Completed Job", completedJobs);
         console.log("reliability Score", reliabilityScore);
         console.log("totalScore: ", totalScore);
+
+        vm.startPrank(address(deployed.timelock));
+        job.setReviewPeriod(108);
+        job.setReputationAddress(freelancer);
+        job.setTimelock(address(deployed.timelock));
+        job.setRepPenalty(120);
+        job.setRepReward(180);
+        vm.stopPrank();
+
+        vm.expectRevert();
+        job.setRepPenalty(20);
     }
 
     function testBlockUnblockUser() public {
@@ -153,6 +235,10 @@ contract Tests is Test {
         vm.expectRevert();
         job.createJob("ipfs:https://", budget, bidDeadline, expireDeadline);
         vm.stopPrank();
+
+        vm.startPrank(address(deployed.timelock));
+        reg.unblockUser(client);
+        vm.stopPrank();
     }
 
     function testSkillSBT() public {
@@ -176,15 +262,31 @@ contract Tests is Test {
         vm.startPrank(client);
         SkillSBT sbt = SkillSBT(address(deployed.skillSBT));
         bytes32 id = keccak256(abi.encode("node.js"));
-        sbt.mintSkill(
-            freelancer,
-            id,
-            82,
-            82,
-            SkillSBT.SkillLevel.Beginner,
-            "This is uri"
-        );
+        sbt.mintSkill(freelancer, id, 82, 42, "This is uri");
         vm.stopPrank();
+
+        vm.startPrank(client);
+        sbt.upgradeSkill(1, 85, 87);
+        vm.stopPrank();
+
+        vm.expectRevert();
+        sbt.transferFrom(freelancer, client, 0);
+
+        vm.expectRevert();
+        sbt.approve(freelancer, 0);
+
+        vm.expectRevert();
+        sbt.setApprovalForAll(freelancer, true);
+
+        vm.startPrank(address(deployed.timelock));
+        sbt.updateCouncilRegistry(freelancer);
+        council.addCouncil(freelancer);
+        address[] memory add = council.getCouncilMembers();
+        console.log(add[0]);
+        council.removeCouncil(freelancer);
+        vm.stopPrank();
+
+
     }
 
     function testGovernance() public {
@@ -355,6 +457,29 @@ contract Tests is Test {
 
         console.log("client Balance: ", usdc.balanceOf(client));
         assertEq(usdc.balanceOf(client), 100 * 1e18);
+
+        uint256 id = rep.getTokenId(freelancer);
+
+        vm.startPrank(address(deployed.timelock));
+        rep.revokeReputation(1, "hh");
+        vm.stopPrank();
+
+        vm.startPrank(address(deployed.timelock));
+        rep.setJobContract(vm.addr(1));
+        vm.stopPrank();
+
+        vm.startPrank(address(deployed.timelock));
+        rep.setTimelock(client);
+        vm.stopPrank();
+
+        vm.expectRevert();
+        rep.transferFrom(freelancer, client, 3);
+
+        vm.expectRevert();
+        rep.approve(client, 1);
+
+        vm.expectRevert();
+        rep.setApprovalForAll(client, true);
     }
 
     function testClaimAfterReviewPeriod() public {
@@ -461,6 +586,12 @@ contract Tests is Test {
         reg.registerUser(UserRegistry.Role.Freelancer);
         vm.stopPrank();
 
+        reg.isUserExist(freelancer);
+
+        assertEq(reg.isFreelancer(freelancer), true);
+        assertEq(false, reg.isClient(freelancer));
+        assertEq(true, reg.isUserExist(freelancer));
+        assertEq(false, reg.isBlocked(freelancer));
         //submit bid
         vm.warp(START + 100);
         vm.startPrank(freelancer);
@@ -501,6 +632,11 @@ contract Tests is Test {
 
         ERC20Usdc usdc = ERC20Usdc(deployed.usdc);
         assertEq(usdc.balanceOf(member), 50 * 1e18);
+
+        vm.startPrank(address(deployed.timelock));
+        treasury.emergencyWithdraw(vm.addr(1), 50*1e18);
+        treasury.setCouncilRegistry(vm.addr(1));
+        treasury.setTimelock(member); //Just for checking is it working
     }
 
     function testCancelJob() public {
@@ -544,100 +680,24 @@ contract Tests is Test {
         job.submitBid(jobId, 10 * 1e18, "My Proposal");
     }
 
-    function testProposalVotingWithReputation() public {
-        address voter = vm.addr(1);
-        address client = vm.addr(2);
-
-        //By Pass governance
+    function testSetTimeLock() public {
         vm.startPrank(address(deployed.timelock));
-        ReputationSBT rep = ReputationSBT(address(deployed.reputationSBT));
-        rep.setJobContract(address(deployed.jobContract));
+        UserRegistry reg = UserRegistry(deployed.registry);
+        address add = vm.addr(1);
+        reg.setTimelock(add);
         vm.stopPrank();
 
-        // Mint reputation as system
-        vm.startPrank(address(deployed.jobContract));
-        rep.mintReputation(voter, "Hello World");
+        vm.expectRevert();
+        reg.setTimelock(add);
+    }
 
-        uint256 tokenId = rep.getTokenId(voter);
-        rep.increaseScoreFromSystem(tokenId, 1010);
-        vm.stopPrank();
-
-         (, , , , , uint256 totalScore, , , ) = rep.repData(tokenId);
-         console.log("Total Score :", totalScore);
-
-        GoverContract gov = GoverContract(payable(address(deployed.governor)));
-
-        bytes memory callData = abi.encodeWithSignature(
-            "addCouncil(address)",
-            client
-        );
-
-        address[] memory targets = new address[](1);
-        targets[0] = address(deployed.councilRegistry);
-
-        uint256[] memory values = new uint256[](1);
-        values[0] = 0;
-
-        bytes[] memory calldatas = new bytes[](1);
-        calldatas[0] = callData;
-
-        string memory description = "Proposal #1: call doSomething";
-
-        //Proposal Creation
-
-        uint256 proposalId = gov.propose(
-            targets,
-            values,
-            calldatas,
-            description
-        );
-
-        assertTrue(proposalId != 0);
-        assertEq(uint256(gov.state(proposalId)), 0);
-        deal(address(deployed.govToken), voter, 40000 * 1e18);
-
-        GovernanceToken token = GovernanceToken(address(deployed.govToken));
-
-        // delegate votes
-        vm.prank(voter);
-        token.delegate(voter);
-
-        //Voting
-        vm.roll(block.number + gov.votingDelay() + 1);
-
-        // Voter1 votes for
-        vm.prank(voter);
-        gov.castVote(proposalId, 1);
+    function testSetFeeInEscrow() public {
+        vm.startPrank(address(deployed.timelock));
+        JobContract job = JobContract(deployed.jobContract);
+        job.setFee(400, 800);
+       
+        job.setTimelock(vm.addr(1));
 
         vm.stopPrank();
-
-        assertEq(gov.hasVoted(proposalId, voter), true);
-
-        vm.roll(block.number + gov.votingPeriod() + 1);
-
-        // assertEq(uint256(gov.state(proposalId)), 4);
-        (uint256 againstVotes, uint256 forVotes, uint256 abstainVotes) = gov
-            .proposalVotes(proposalId);
-
-        console.log("Against votes:", againstVotes);
-        console.log("For votes:", forVotes/1e18);
-        console.log("Abstain votes:", abstainVotes);
-
-        uint256 totalVotes = againstVotes + forVotes + abstainVotes;
-        console.log("Total votes:", totalVotes);
-
-        //Queue and Execute
-        bytes32 descriptionHash = keccak256(
-            bytes("Proposal #1: call doSomething")
-        );
-
-        gov.queue(targets, values, calldatas, descriptionHash);
-        TimeLock timeLock = TimeLock(payable(address(deployed.timelock)));
-
-        // timelock waiting period
-        vm.warp(block.timestamp + timeLock.getMinDelay() + 1);
-
-        gov.execute(targets, values, calldatas, descriptionHash);
-        assertEq(forVotes/1e18, 40250);
     }
 }

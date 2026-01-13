@@ -60,12 +60,6 @@ contract UserRegistry {
         return users[_wallet].exists;
     }
 
-    function getUser(address _wallet) external view returns (User memory) {
-        User memory u = users[_wallet];
-        require(u.exists, "User not found");
-        return u;
-    }
-
     function isClient(address _wallet) external view returns (bool) {
         if (users[_wallet].blocked) revert ClientIsBlocked();
         return users[_wallet].role == Role.Client;

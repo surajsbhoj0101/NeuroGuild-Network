@@ -68,7 +68,7 @@ contract ReputationSBT is ERC721URIStorage {
         jobContract = _jobContract;
     }
 
-    function settimelock(address _timelock) external onlyTimelock {
+    function setTimelock(address _timelock) external onlyTimelock {
         require(_timelock != address(0), "Invalid timelock address");
         timelock = _timelock;
     }
