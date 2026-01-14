@@ -100,14 +100,14 @@ export const createUser = async (req, res) => {
         userId: user._id,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "230m" }
+      { expiresIn: process.env.JWT_EXPIRES_IN }
     );
 
     res.cookie("access_token", newToken, {
       httpOnly: true,
       secure: false,
       sameSite: "lax",
-      maxAge: 30 * 60 * 1000,
+      maxAge: 12*60 * 60 * 1000,
     });
 
     return res.status(200).json({ isFound: true, user });

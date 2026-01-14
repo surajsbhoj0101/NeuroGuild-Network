@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import SideBar from "../../components/SideBar";
 import { useAccount } from "wagmi";
-import axios from "axios";
+import api from "../../utils/api.js"
 import "../../index.css";
 import FreelancerStats from "../../components/FreelancerStats";
 import ActiveProjectCard from "../../components/ActiveProjectCard";
@@ -49,7 +49,7 @@ function Dashboard() {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(
+      const response = await api.get(
         "http://localhost:5000/api/jobs/fetch-freelancer-jobs",
         {withCredentials: true}
       );

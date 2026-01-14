@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from "axios";
+import api from "../../utils/api.js"
 import { useAccount } from 'wagmi';
 import { Timer } from 'lucide-react';
-import skillTokenizable from '../../utils/tokenizableSkills';
+import skillTokenizable from '../../../../Backend/services/tokenizableSkills';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
@@ -56,7 +56,7 @@ function VerifySkillPage() {
       }, 3000);
     }
     try {
-      const response = await axios.post("http://localhost:5000/api/freelancer/fetch-questions", {
+      const response = await api.post("http://localhost:5000/api/freelancer/fetch-questions", {
         address,
         skill,
       });
@@ -140,7 +140,7 @@ function VerifySkillPage() {
 
   const submitQuiz = async (finalAnswers) => {
     try {
-      const res = await axios.post("http://localhost:5000/api/freelancer/submit-quiz", {
+      const res = await api.post("http://localhost:5000/api/freelancer/submit-quiz", {
         address,
         skill,
         answers: finalAnswers,

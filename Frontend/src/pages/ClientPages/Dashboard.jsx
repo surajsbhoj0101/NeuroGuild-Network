@@ -3,7 +3,7 @@ import SideBar from "../../components/SideBar";
 import { useAccount } from "wagmi";
 import ClientOpenJobs from "../../components/ClientOpenJobs";
 import ClientStats from "../../components/ClientStats";
-import axios from "axios";
+import api from "../../utils/api.js"
 import { useNavigate } from "react-router-dom";
 import { SwatchBook } from "lucide-react";
 
@@ -72,7 +72,7 @@ function Dashboard() {
     try {
       setLoading(true);
 
-      const response = await axios.get(
+      const response = await api.get(
         "http://localhost:5000/api/jobs/fetch-client-jobs",
         { withCredentials: true }
       );

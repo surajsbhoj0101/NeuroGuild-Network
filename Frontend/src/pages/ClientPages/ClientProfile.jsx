@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAccount } from "wagmi";
 import SideBar from "../../components/SideBar";
-import axios from "axios";
+import api from "../../utils/api.js"
 import {
   Award,
   Plus,
@@ -71,7 +71,7 @@ function ClientProfile() {
     try {
       setIsLoading(true);
 
-      const { data } = await axios.get(
+      const { data } = await api.get(
         "http://localhost:5000/api/client/get-client",
         {
           withCredentials: true,
@@ -127,7 +127,7 @@ function ClientProfile() {
     try {
       setIsLoading(true);
 
-      await axios.put(
+      await api.put(
         "http://localhost:5000/api/client/update-profile",
         { payload },
         { withCredentials: true }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAccount, useWalletClient } from "wagmi";
-import axios from "axios";
+import api from "../../utils/api.js"
 import { useParams } from "react-router-dom";
 import MatchScore from "../../components/MatchScore";
 import CustomConnectButton from "../../components/CustomConnectButton";
@@ -70,7 +70,7 @@ function jobPage() {
 
   const fetchJob = async (params) => {
     try {
-      const job = await axios.get(
+      const job = await api.get(
         `http://localhost:5000/api/jobs/fetch-job/${jobId}`,
         { withCredentials: true }
       );
@@ -101,7 +101,7 @@ function jobPage() {
     }
 
     try {
-      const score = await axios.post(
+      const score = await api.post(
         "http://localhost:5000/api/jobs/fetch-ai-score-and-job-interaction",
         { address, jobId }
       );
@@ -132,7 +132,7 @@ function jobPage() {
     }
 
     try {
-      const res = await axios.put(
+      const res = await api.put(
         "http://localhost:5000/api/jobs/save-job",
         {
           jobId,
@@ -190,7 +190,7 @@ function jobPage() {
       let ipfs;
 
       try {
-        const getProposalIpfs = await axios.post(
+        const getProposalIpfs = await api.post(
           "http://localhost:5000/api/jobs/get-bid-proposal-ipfs",
           { payload }
         );

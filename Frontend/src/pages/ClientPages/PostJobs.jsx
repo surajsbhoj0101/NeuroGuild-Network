@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAccount, useWalletClient } from "wagmi";
 import SideBar from "../../components/SideBar";
-import axios from "axios";
+import api from "../../utils/api.js"
 import "../../index.css";
 import { BrowserProvider } from "ethers";
 import { postJob } from "../../utils/post_job";
@@ -168,7 +168,7 @@ function PostJobs() {
 
     try {
       setEnhancing(true);
-      const res = await axios.post(
+      const res = await api.post(
         "http://localhost:5000/api/jobs/ai-enhancement",
         { payload }
       );
@@ -287,7 +287,7 @@ function PostJobs() {
       let jobipfs;
 
       try {
-        const res = await axios.post(
+        const res = await api.post(
           "http://localhost:5000/api/jobs/get-job-ipfs",
           { payload }
         );

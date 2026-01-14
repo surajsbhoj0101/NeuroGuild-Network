@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAccount } from 'wagmi';
 import SideBar from '../../components/SideBar';
-import axios from "axios";
-import skillTokenizable from '../../utils/tokenizableSkills';
+import api from "../../utils/api.js"
+import skillTokenizable from '../../../../Backend/services/tokenizableSkills';
 import { Lock, Award, Plus, X, Check, User, Mail, MapPin, Github, Linkedin, Twitter, Globe } from 'lucide-react';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
@@ -91,7 +91,7 @@ export default function MyProfile() {
    
 
     try {
-      const response = await axios.get(
+      const response = await api.get(
         "http://localhost:5000/api/freelancer/get-freelancer",
         {
           withCredentials: true
@@ -187,7 +187,7 @@ export default function MyProfile() {
         skills: skills
       };
       console.log(payload)
-      await axios.put(`http://localhost:5000/api/freelancer/update-profile`, { payload}, {withCredentials: true});
+      await api.put(`http://localhost:5000/api/freelancer/update-profile`, { payload}, {withCredentials: true});
       setRedNotice(false)
       setNotice("Profile updated successfully");
 
@@ -215,7 +215,7 @@ export default function MyProfile() {
       setIsLoading(true);
 
       try {
-        const response = await axios.post("http://localhost:5000/api/freelancer/fetch-sbt/", { address });
+        const response = await api.post("http://localhost:5000/api/freelancer/fetch-sbt/", { address });
         const data = response.data;
 
         if (data.success && data.sbt) {
