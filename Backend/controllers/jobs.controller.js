@@ -15,19 +15,27 @@ import { json } from "express";
 dotenv.config();
 
 const clientJobFetchQuery = `
-  query MyQuery($client: Bytes!) {
-  bids(where: {job_: {client: $client}}) {
-    status
+query ClientJobs($client: Bytes!) {
+  jobs(where: { client: $client }) {
     id
-    ipfsProposal
+    status
+    ipfsHash
     createdAt
-    bidder
-    job {
-      ipfsHash
-      status
+
+    bids {
       id
+      bidder
+      amount
+      createdAt
+      status
+      ipfsProposal
+
+      job {
+        id
+        status
+        ipfsHash
+      }
     }
-    amount
   }
 }
 `;
@@ -611,14 +619,14 @@ export const fetchFreelancerJobs = async (req, res) => {
 
 export const fetchClientsJobs = async (req, res) => {
   const clientAddress = req.walletAddress?.toLowerCase();
-  console.log("Hey")
+
   try {
     const resp = await querySubgraph(clientJobFetchQuery, {
       client: clientAddress,
     });
 
-    const bids = resp?.bids || [];
-    console.log(bids)
+    const jobs = resp?.jobs || [];
+
     const categorized = {
       open: [],
       inProgress: [],
@@ -628,9 +636,7 @@ export const fetchClientsJobs = async (req, res) => {
       submitted: [],
     };
 
-    const buildJobPayload = async (bid) => {
-      const job = bid.job;
-
+    const buildJobPayload = async (bid, job) => {
       const [freelancerDetails, bidData, jobDetails] = await Promise.all([
         Freelancer.findOne({ walletAddress: bid.bidder }),
         getJsonFromIpfs(bid.ipfsProposal),
@@ -639,14 +645,15 @@ export const fetchClientsJobs = async (req, res) => {
 
       return {
         jobId: job.id,
-        status: job.status,
-        createdAt: bid.createdAt,
-        bidId: bid.id.at(-1),
-        bidAmount: bid?.amount / 1e18,
-        proposal: bidData?.payload?.proposal || "",
+        status: job.status,                
+        createdAt: bid.createdAt,           
+        bidId: bid.id.split("-").pop(),     
+        bidAmount: Number(bid.amount) / 1e18,
+        proposal: bidData?.proposal || "",
         milestones: bidData?.milestones || [],
-        bidder: bid?.bidder,
-        JobDetails: {
+        bidder: bid.bidder,
+
+        JobDetails: {                       // ✅ SAME casing
           ...jobDetails,
           budget: jobDetails?.budget,
           deadline: jobDetails?.deadline,
@@ -656,26 +663,30 @@ export const fetchClientsJobs = async (req, res) => {
       };
     };
 
-    for (const bid of bids) {
-      const jobStatus =  bid?.job?.status;
+    for (const job of jobs) {
+      for (const bid of job.bids) {
+        const jobPayload = await buildJobPayload(bid, job);
 
-      if (!jobStatus) continue;
-
-      const jobPayload = await buildJobPayload(bid);
-      if (jobStatus === "OPEN") {
-        categorized.open.push(jobPayload);
-      } else if (jobStatus === "IN_PROGRESS") {
-        categorized.inProgress.push(jobPayload);
-      } else if (jobStatus === "COMPLETED") {
-        categorized.completed.push(jobPayload);
-      } else if (jobStatus === "CANCELLED") {
-        categorized.completed.push(jobPayload);
-      } else if (jobStatus === "DISPUTED") {
-        categorized.completed.push(jobPayload);
+        if (job.status === "OPEN") {
+          categorized.open.push(jobPayload);
+        } else if (job.status === "IN_PROGRESS") {
+          categorized.inProgress.push(jobPayload);
+        } else if (job.status === "SUBMITTED") {
+          categorized.submitted.push(jobPayload);
+        } else if (job.status === "COMPLETED") {
+          categorized.completed.push(jobPayload);
+        } else if (job.status === "CANCELLED") {
+          categorized.cancelled.push(jobPayload);
+        } else if (job.status === "DISPUTED") {
+          categorized.disputed.push(jobPayload);
+        }
       }
     }
-    console.log(categorized)
-    res.status(200).json({ success: true, categorized: categorized });
+
+    return res.status(200).json({
+      success: true,
+      categorized,
+    });
   } catch (error) {
     console.error("Fetch job posted by client error", error);
     return res.status(500).json({
@@ -685,3 +696,4 @@ export const fetchClientsJobs = async (req, res) => {
     });
   }
 };
+

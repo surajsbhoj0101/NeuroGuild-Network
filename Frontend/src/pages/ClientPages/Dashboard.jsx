@@ -5,9 +5,36 @@ import ClientOpenJobs from "../../components/ClientOpenJobs";
 import ClientStats from "../../components/ClientStats";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { SwatchBook } from "lucide-react";
+
+import ClientInProgressJobs from "../../components/ClientInProgressJobs";
+
+function EmptyOpenJobs({ navigate }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 text-center">
+      <div className="mb-4 flex justify-center">
+        <SwatchBook className="w-16 h-16 text-[#1ecac7] drop-shadow-[0_0_12px_rgba(20,161,159,0.35)]" />
+      </div>
+      <h2 className="text-xl font-semibold text-white mb-2">
+        No Open Jobs Yet
+      </h2>
+      <p className="text-gray-400 max-w-md mb-6">
+        You haven’t posted any jobs yet. Post your first job and start receiving
+        bids from talented freelancers.
+      </p>
+      <button
+        onClick={() => navigate("/post-job")}
+        className="px-6 py-3 rounded-lg bg-[#14a19f] text-white font-semibold hover:bg-[#1ecac7] transition-all"
+      >
+        + Post a Job
+      </button>
+      <p className="text-xs text-gray-500 mt-4">Takes less than 2 minutes</p>
+    </div>
+  );
+}
 
 function Dashboard() {
-  const { isConnected, address } = useAccount();
+  const { isConnected } = useAccount();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("open");
@@ -15,12 +42,13 @@ function Dashboard() {
   const [redNotice, setRedNotice] = useState(false);
   const [loading, setLoading] = useState(true);
   const [openJobs, setOpenJobs] = useState([]);
+  const [inProgressJobs, setInProgressJobs] = useState([]);
 
   const [stats, setStats] = useState({
-    totalEarnings: 0,
+    openJobs: 0,
     activeProjects: 0,
     completedProjects: 0,
-    pendingBids: 0,
+    disputedProjects: 0,
   });
 
   useEffect(() => {
@@ -43,6 +71,7 @@ function Dashboard() {
   async function fetchDashboardData() {
     try {
       setLoading(true);
+
       const response = await axios.get(
         "http://localhost:5000/api/jobs/fetch-client-jobs",
         { withCredentials: true }
@@ -91,11 +120,62 @@ function Dashboard() {
         }
       }
 
+      const inProgressJobsArr = [];
+
+      if (Array.isArray(data.categorized?.inProgress)) {
+        for (const job of data.categorized.inProgress) {
+          const bid = {
+            bidId: job.bidId,
+            bidAmount: job.bidAmount,
+            proposal: job.proposal,
+            createdAt: job.createdAt,
+            status: job.status,
+            freelancerName:
+              job.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+              "Unknown",
+            freelancerAddress: `${job.bidder.slice(0, 6)}...${job.bidder.slice(
+              -6
+            )}`,
+            freelancerPfp:
+              job.JobDetails?.freelancerDetails?.BasicInformation?.avatarUrl ||
+              `https://api.dicebear.com/7.x/bottts/svg?seed=${job.bidder}`,
+          };
+
+          inProgressJobsArr.push({
+            jobId: job.jobId,
+            jobTitle: job.JobDetails?.title || "Untitled Job",
+            jobDescription: job.JobDetails?.description || "",
+            budget: job.bidAmount,
+            deadline: job.JobDetails?.deadline,
+            skills: job.JobDetails?.skills || [],
+            jobType: job.JobDetails?.jobType || "Fixed",
+            submittedAt: job.createdAt,
+            bid: bid,
+          });
+        }
+      }
+
       setOpenJobs(opJobs);
+      setInProgressJobs(inProgressJobsArr);
+
+      setStats({
+        openJobs: opJobs.length,
+        activeProjects: inProgressJobsArr.length,
+        completedProjects: data.categorized?.completed?.length || 0,
+        disputedProjects: data.categorized?.disputed?.length || 0,
+      });
     } catch (error) {
       console.error("Dashboard fetch failed:", error);
+
+      if (error?.response?.status === 401) {
+        setRedNotice(true);
+        setNotice("Session expired. Please connect your wallet again.");
+        navigate("/");
+        return;
+      }
+
       setRedNotice(true);
-      setNotice(error.message);
+      setNotice(error.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -106,28 +186,26 @@ function Dashboard() {
       {notice && (
         <div className="fixed top-4 right-4 z-50 animate-pulse">
           <div
-            className={`flex items-center gap-3 bg-[#14a19f] text-white px-4 py-2 rounded shadow-lg border border-[#1ecac7]/30 ${
+            className={`flex items-center gap-3 px-4 py-2 rounded shadow-lg border ${
               redNotice
-                ? "bg-red-600 border-red-700"
-                : "bg-[#14a19f] border-[#1ecac7]/30"
-            } `}
+                ? "bg-red-600 border-red-700 text-white"
+                : "bg-[#14a19f] border-[#1ecac7]/30 text-white"
+            }`}
           >
             <div className="text-sm">{notice}</div>
             <button
               onClick={() => setNotice(null)}
-              className="ml-2 text-xs text-white/90 px-2 py-1 rounded hover:opacity-90 transition-opacity"
+              className="ml-2 text-xs px-2 py-1 rounded hover:opacity-90 transition-opacity"
             >
               Dismiss
             </button>
           </div>
         </div>
       )}
-      <div className="dark:bg-[#0f111d] py-8 flex bg-[#161c32] w-full min-h-screen">
-        {/* Decorative Background Blobs */}
-        <div className="pointer-events-none fixed right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-20 blur-3xl mix-blend-screen"></div>
-        <div className="pointer-events-none fixed left-[5%] bottom-[1%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-20 blur-3xl mix-blend-screen"></div>
 
+      <div className="dark:bg-[#0f111d] py-8 flex bg-[#161c32] w-full min-h-screen">
         <SideBar />
+
         <div className="flex-1 px-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
@@ -135,13 +213,10 @@ function Dashboard() {
           </div>
 
           {!loading && <ClientStats stats={stats} />}
+
           <div className="flex gap-2 mb-6 border-b border-[#14a19f]/20">
             {[
-              {
-                id: "open",
-                label: "Open Projects",
-                count: stats.openJobs,
-              },
+              { id: "open", label: "Open Projects", count: stats.openJobs },
               {
                 id: "active",
                 label: "Active Projects",
@@ -168,17 +243,13 @@ function Dashboard() {
                 }`}
               >
                 {tab.label}
-
-                {/* Count Badge */}
-                {(tab.count > 0 || tab.id === "my-jobs") && (
-                  <span className="ml-2 bg-[#14a19f]/30 text-[#14a19f] px-2 py-1 rounded text-xs font-semibold">
-                    {tab.count}
-                  </span>
-                )}
+                <span className="ml-2 bg-[#14a19f]/30 text-[#14a19f] px-2 py-1 rounded text-xs font-semibold">
+                  {tab.count}
+                </span>
               </button>
             ))}
           </div>
-          {/* Content */}
+
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-gray-400">Loading dashboard...</div>
@@ -186,14 +257,28 @@ function Dashboard() {
           ) : (
             <>
               {activeTab === "open" &&
-                openJobs.map((job) => (
-                  <ClientOpenJobs
+                (openJobs.length === 0 ? (
+                  <EmptyOpenJobs navigate={navigate} />
+                ) : (
+                  openJobs.map((job) => (
+                    <ClientOpenJobs
+                      key={job.jobId}
+                      job={job}
+                      setNotice={setNotice}
+                      setRedNotice={setRedNotice}
+                    />
+                  ))
+                ))}
+
+              {activeTab === "active" &&
+                inProgressJobs.map((job) => (
+                  <ClientInProgressJobs
                     key={job.jobId}
                     job={job}
                     setNotice={setNotice}
                     setRedNotice={setRedNotice}
                   />
-                ))}{" "}
+                ))}
             </>
           )}
         </div>

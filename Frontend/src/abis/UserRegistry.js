@@ -1,289 +1,248 @@
 export const user = [
   {
-    "type": "constructor",
-    "inputs": [
+    type: "constructor",
+    inputs: [
       {
-        "name": "_timelock",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: "_timelock",
+        type: "address",
+        internalType: "address",
+      },
     ],
-    "stateMutability": "nonpayable"
+    stateMutability: "nonpayable",
   },
   {
-    "type": "function",
-    "name": "blockUser",
-    "inputs": [
+    type: "function",
+    name: "blockUser",
+    inputs: [
       {
-        "name": "_wallet",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: "_wallet",
+        type: "address",
+        internalType: "address",
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: "nonpayable",
   },
   {
-    "type": "function",
-    "name": "getUser",
-    "inputs": [
+    type: "function",
+    name: "isBlocked",
+    inputs: [
       {
-        "name": "_wallet",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: "_wallet",
+        type: "address",
+        internalType: "address",
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "tuple",
-        "internalType": "struct UserRegistry.User",
-        "components": [
-          {
-            "name": "wallet",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "role",
-            "type": "uint8",
-            "internalType": "enum UserRegistry.Role"
-          },
-          {
-            "name": "exists",
-            "type": "bool",
-            "internalType": "bool"
-          },
-          {
-            "name": "blocked",
-            "type": "bool",
-            "internalType": "bool"
-          }
-        ]
-      }
+        name: "",
+        type: "bool",
+        internalType: "bool",
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: "view",
   },
   {
-    "type": "function",
-    "name": "isBlocked",
-    "inputs": [
+    type: "function",
+    name: "isClient",
+    inputs: [
       {
-        "name": "_wallet",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: "_wallet",
+        type: "address",
+        internalType: "address",
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
+        name: "",
+        type: "bool",
+        internalType: "bool",
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: "view",
   },
   {
-    "type": "function",
-    "name": "isClient",
-    "inputs": [
+    type: "function",
+    name: "isFreelancer",
+    inputs: [
       {
-        "name": "_wallet",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: "_wallet",
+        type: "address",
+        internalType: "address",
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
+        name: "",
+        type: "bool",
+        internalType: "bool",
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: "view",
   },
   {
-    "type": "function",
-    "name": "isFreelancer",
-    "inputs": [
+    type: "function",
+    name: "isUserExist",
+    inputs: [
       {
-        "name": "_wallet",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: "_wallet",
+        type: "address",
+        internalType: "address",
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
+        name: "",
+        type: "bool",
+        internalType: "bool",
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: "view",
   },
   {
-    "type": "function",
-    "name": "isUserExist",
-    "inputs": [
+    type: "function",
+    name: "registerUser",
+    inputs: [
       {
-        "name": "_wallet",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: "_role",
+        type: "uint8",
+        internalType: "enum UserRegistry.Role",
+      },
     ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
+    outputs: [],
+    stateMutability: "nonpayable",
   },
   {
-    "type": "function",
-    "name": "registerUser",
-    "inputs": [
+    type: "function",
+    name: "setTimelock",
+    inputs: [
       {
-        "name": "_role",
-        "type": "uint8",
-        "internalType": "enum UserRegistry.Role"
-      }
+        name: "_resolver",
+        type: "address",
+        internalType: "address",
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: "nonpayable",
   },
   {
-    "type": "function",
-    "name": "setTimelock",
-    "inputs": [
+    type: "function",
+    name: "timelock",
+    inputs: [],
+    outputs: [
       {
-        "name": "_resolver",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: "",
+        type: "address",
+        internalType: "address",
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    stateMutability: "view",
   },
   {
-    "type": "function",
-    "name": "timelock",
-    "inputs": [],
-    "outputs": [
+    type: "function",
+    name: "unblockUser",
+    inputs: [
       {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: "_wallet",
+        type: "address",
+        internalType: "address",
+      },
     ],
-    "stateMutability": "view"
+    outputs: [],
+    stateMutability: "nonpayable",
   },
   {
-    "type": "function",
-    "name": "unblockUser",
-    "inputs": [
+    type: "function",
+    name: "users",
+    inputs: [
       {
-        "name": "_wallet",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: "",
+        type: "address",
+        internalType: "address",
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "users",
-    "inputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "wallet",
-        "type": "address",
-        "internalType": "address"
+        name: "wallet",
+        type: "address",
+        internalType: "address",
       },
       {
-        "name": "role",
-        "type": "uint8",
-        "internalType": "enum UserRegistry.Role"
+        name: "role",
+        type: "uint8",
+        internalType: "enum UserRegistry.Role",
       },
       {
-        "name": "exists",
-        "type": "bool",
-        "internalType": "bool"
+        name: "exists",
+        type: "bool",
+        internalType: "bool",
       },
       {
-        "name": "blocked",
-        "type": "bool",
-        "internalType": "bool"
-      }
+        name: "blocked",
+        type: "bool",
+        internalType: "bool",
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: "view",
   },
   {
-    "type": "event",
-    "name": "UserBlocked",
-    "inputs": [
+    type: "event",
+    name: "UserBlocked",
+    inputs: [
       {
-        "name": "wallet",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
+        name: "wallet",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "UserRegistered",
-    "inputs": [
+    type: "event",
+    name: "UserRegistered",
+    inputs: [
       {
-        "name": "wallet",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: "wallet",
+        type: "address",
+        indexed: true,
+        internalType: "address",
       },
       {
-        "name": "role",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "enum UserRegistry.Role"
-      }
+        name: "role",
+        type: "uint8",
+        indexed: false,
+        internalType: "enum UserRegistry.Role",
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "event",
-    "name": "UserUnblocked",
-    "inputs": [
+    type: "event",
+    name: "UserUnblocked",
+    inputs: [
       {
-        "name": "wallet",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
+        name: "wallet",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
     ],
-    "anonymous": false
+    anonymous: false,
   },
   {
-    "type": "error",
-    "name": "ClientIsBlocked",
-    "inputs": []
+    type: "error",
+    name: "ClientIsBlocked",
+    inputs: [],
   },
   {
-    "type": "error",
-    "name": "FreelancerIsBlocked",
-    "inputs": []
+    type: "error",
+    name: "FreelancerIsBlocked",
+    inputs: [],
   },
   {
-    "type": "error",
-    "name": "InvalidRole",
-    "inputs": []
-  }
-]
+    type: "error",
+    name: "InvalidRole",
+    inputs: [],
+  },
+];
