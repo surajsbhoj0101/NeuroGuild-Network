@@ -10,7 +10,7 @@ import JobInteraction from "../models/job_models/jobInteraction.model.js";
 import Bid from "../models/job_models/bid.model.js";
 import Job from "../models/job_models/job.model.js";
 import { getJsonFromIpfs } from "../services/ipfs_to_json.js";
-
+import skillTokenizable from "../services/tokenizableSkills.js";
 
 
 dotenv.config();
@@ -26,13 +26,13 @@ export const getFreelancer = async (req, res) => {
 
         if (!freelancer) {
             console.log("Freelancer not found");
-            return res.status(404).json({ success: false, message: "Freelancer not found" });
+            return res.status(404).json({ success: false, message: "Freelancer not found", skillTokenizable: skillTokenizable });
         }
 
-        res.status(200).json({ success: true, freelancer: freelancer });
+        res.status(200).json({ success: true, freelancer: freelancer, skillTokenizable: skillTokenizable });
     } catch (error) {
         console.error("Error fetching freelancer:", error);
-        res.status(500).json({ success: false, message: "Server error" });
+        res.status(500).json({ success: false, message: "Server error", skillTokenizable: skillTokenizable });
     }
 };
 

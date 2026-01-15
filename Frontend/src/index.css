@@ -73,3 +73,19 @@ input[type="date"] {
 .max-w-lg:hover .border-snake::before {
   animation-play-state: paused;
 }
+
+/* Custom scrollbar for scrollable elements */
+.scrollable::-webkit-scrollbar {
+  width: 8px;
+}
+.scrollable::-webkit-scrollbar-track {
+  background: #0f111d;
+  border-radius: 4px;
+}
+.scrollable::-webkit-scrollbar-thumb {
+  background: #14a19f;
+  border-radius: 4px;
+}
+.scrollable::-webkit-scrollbar-thumb:hover {
+  background: #1ecac7;
+}

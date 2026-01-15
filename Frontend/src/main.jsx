@@ -18,10 +18,12 @@ import BrowseJobs from './pages/FreelancerPages/BrowseJobs.jsx';
 import MyProfile from './pages/FreelancerPages/MyProfile.jsx';
 import Setting from './pages/FreelancerPages/Setting.jsx';
 import VerifySkillPage from './pages/FreelancerPages/VerifySkillPage.jsx';
+import MintRules from './pages/FreelancerPages/MintRules.jsx';
 import ClientProfile from './pages/ClientPages/ClientProfile.jsx';
 import PostJobs from './pages/ClientPages/PostJobs.jsx';
 import JobPage from './pages/jobs/jobPage.jsx';
 import ClientDashboard from './pages/ClientPages/Dashboard.jsx';
+import Governance from './pages/Governance.jsx';
 import SideBar from './components/SideBar.jsx';
 import { Snowflake } from 'lucide-react';
 
@@ -84,8 +86,14 @@ const router = createBrowserRouter([
         <Setting />
       </>
     )
-  }, {
-    path: "/verify-skill/:skill",
+  }, {    path: "/mint-rules",
+    element: (
+      <>
+        <Navbar />
+        <MintRules />
+      </>
+    )
+  }, {    path: "/verify-skill/:skill",
     element: (
       <>
         <Navbar />
@@ -130,11 +138,19 @@ const router = createBrowserRouter([
         <ClientDashboard />
       </>
     )
+  }, {
+    path: "/governance",
+    element: (
+      <>
+        <Navbar />
+        <Governance />
+      </>
+    )
   }
 ]);
 
 createRoot(document.getElementById("root")).render(
-  <StrictMode>
+  // <StrictMode>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AppProviders>
@@ -142,5 +158,5 @@ createRoot(document.getElementById("root")).render(
         </AppProviders>
       </ThemeProvider>
     </QueryClientProvider>
-  </StrictMode>
+  // </StrictMode>
 );

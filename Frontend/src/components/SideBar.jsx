@@ -4,6 +4,7 @@ import { MdSpaceDashboard } from "react-icons/md";
 import { BsBriefcase } from "react-icons/bs";
 import { FaRegUser } from "react-icons/fa";
 import { IoSettingsOutline } from "react-icons/io5";
+import { Vote } from "lucide-react";
 import { useAccount } from "wagmi";
 import axios from "axios";
 
@@ -49,6 +50,7 @@ function SideBar() {
     },
     { name: "Post Jobs", icon: <BsBriefcase />, link: "/post-job" },
     { name: "My Profile", icon: <FaRegUser />, link: "/client/my-profile" },
+    { name: "Governance", icon: <Vote />, link: "/governance" },
     { name: "Settings", icon: <IoSettingsOutline />, link: "/client/settings" },
   ];
 
@@ -60,6 +62,7 @@ function SideBar() {
     },
     { name: "Browse Jobs", icon: <BsBriefcase />, link: "/browse-jobs" },
     { name: "My Profile", icon: <FaRegUser />, link: "/freelancer/my-profile" },
+    { name: "Governance", icon: <Vote />, link: "/governance" },
     {
       name: "Settings",
       icon: <IoSettingsOutline />,

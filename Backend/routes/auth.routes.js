@@ -5,6 +5,8 @@ import { verifySiwe } from "../controllers/auth.controller.js";
 import { getNonce } from "../controllers/auth.controller.js";
 import { logout } from "../controllers/auth.controller.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
+import { checkSkillData } from "../controllers/auth.controller.js";
+import { checkSkillName } from "../controllers/auth.controller.js";
 
 const authRoutes = express.Router();
 
@@ -13,5 +15,7 @@ authRoutes.get("/check-jwt", checkJwt);
 authRoutes.get("/get-nonce", getNonce);
 authRoutes.post("/verify-siwe", verifySiwe);
 authRoutes.post("/logout", logout);
+authRoutes.post('/check-skill-name',checkSkillName);
+authRoutes.get('/check-skill-data',checkSkillData)
 
 export default authRoutes;

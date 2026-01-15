@@ -5,9 +5,12 @@ import { querySubgraph } from "../services/subgraphClient.js";
 import { Wallet } from "ethers";
 import { generateNonce, SiweMessage } from "siwe";
 import dotenv from "dotenv";
+import skillTokenizable from "../services/tokenizableSkills.js";
 import jwt from "jsonwebtoken";
 
 dotenv.config();
+
+
 
 const getUserQuery = `
   query GetUser($wallet: Bytes!) {
@@ -71,7 +74,7 @@ export const createUser = async (req, res) => {
     if (!role) {
       return res.status(400).json({ message: "Role is required" });
     }
-    
+
     const walletAddress = req.walletAddress?.toLowerCase();
 
     const roleLowerCase = role.toLowerCase();
@@ -107,7 +110,7 @@ export const createUser = async (req, res) => {
       httpOnly: true,
       secure: false,
       sameSite: "lax",
-      maxAge: 12*60 * 60 * 1000,
+      maxAge: 12 * 60 * 60 * 1000,
     });
 
     return res.status(200).json({ isFound: true, user });
@@ -243,4 +246,37 @@ export const logout = (req, res) => {
   res.status(200).json({ success: true });
 };
 
+export const checkSkillName = async (req, res) => {
+  const { skillName } = req.body;
 
+  // Reject if NOT allowed
+  if (!skillTokenizable.includes(skillName)) {
+    return res.status(403).json({ success: false, error: "Invalid skill" });
+  }
+
+  res.cookie("skill_access", skillName, {
+    httpOnly: true,
+    sameSite: "lax",
+    maxAge: 5 * 60 * 1000
+  });
+
+  console.log("Name set success")
+
+  res.json({ success: true });
+};
+
+
+export const checkSkillData = async (req, res) => {
+  console.log("Name checking")
+  const skillName = req.cookies.skill_access;
+  
+  if (!skillName || !skillTokenizable.includes(skillName)) {
+    console.log("unauthorize")
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  res.json({
+    skill: skillName,
+    content: "Protected skill data"
+  });
+};

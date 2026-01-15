@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAccount } from "wagmi";
 import SideBar from "../../components/SideBar";
 import api from "../../utils/api.js"
-import { ArrowBigRight, ArrowBigLeft } from "lucide-react";
+import { ArrowBigRight, ArrowBigLeft, Filter, Tag, Briefcase, SortAsc, Check, X, Search, SlidersHorizontal } from "lucide-react";
 import JobCardSkeleton from "../../components/JobCardSkeleton";
 
 import "../../index.css";

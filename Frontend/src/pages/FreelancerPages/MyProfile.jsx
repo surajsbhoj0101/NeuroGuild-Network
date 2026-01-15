@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAccount } from 'wagmi';
 import SideBar from '../../components/SideBar';
 import api from "../../utils/api.js"
-import skillTokenizable from '../../../../Backend/services/tokenizableSkills';
-import { Lock, Award, Plus, X, Check, User, Mail, MapPin, Github, Linkedin, Twitter, Globe } from 'lucide-react';
+
+import { Lock, Award, Check, User, Mail, MapPin, Github, Linkedin, Twitter, Globe, Brain, Code, Palette, Database, Globe as GlobeIcon, Zap } from 'lucide-react';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
@@ -17,6 +17,7 @@ export default function MyProfile() {
   const [sbt, setSbt] = useState(null)
   const [isLoading, setIsLoading] = useState(false);
   const [minted, setMinted] = useState([])
+  const [skillTokenizable, setSkillTokenizable] = useState([])
 
 
   const [profile, setProfile] = useState({
@@ -25,22 +26,21 @@ export default function MyProfile() {
     experience: '', availability: 'available', avatarUrl: ''
   });
 
-  const [skills, setSkills] = useState([]);
-  const [newSkill, setNewSkill] = useState('');
-  const [showSkillInput, setShowSkillInput] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const getSkillIcon = (skillName) => {
+    const lowerSkill = skillName.toLowerCase();
+    if (lowerSkill.includes('javascript') || lowerSkill.includes('js') || lowerSkill.includes('react') || lowerSkill.includes('node')) return Code;
+    if (lowerSkill.includes('design') || lowerSkill.includes('ui') || lowerSkill.includes('ux')) return Palette;
+    if (lowerSkill.includes('database') || lowerSkill.includes('sql') || lowerSkill.includes('mongo')) return Database;
+    if (lowerSkill.includes('web') || lowerSkill.includes('html') || lowerSkill.includes('css')) return GlobeIcon;
+    if (lowerSkill.includes('ai') || lowerSkill.includes('ml') || lowerSkill.includes('machine')) return Brain;
+    if (lowerSkill.includes('blockchain') || lowerSkill.includes('crypto') || lowerSkill.includes('smart contract')) return Zap;
+    return Brain; // default
+  };
 
 
-
-  const mapUserToSkills = (user) => (
-    user.skills?.map(skill => ({
-      name: skill.name,
-      sbtAddress: skill.sbtAddress,
-      minted: skill.minted || false,
-      active: skill.active ?? true, //The ?? operator returns the right-hand value only if the left-hand value is null or undefined.
-      tokenId: skill.tokenId || null
-    })) || []
-  );
 
   const mapUserToProfile = (user) => ({
     displayName: user.BasicInformation?.name || '',
@@ -88,7 +88,7 @@ export default function MyProfile() {
   const loadProfileData = async () => {
     if (!address) return;
 
-   
+
 
     try {
       const response = await api.get(
@@ -102,9 +102,12 @@ export default function MyProfile() {
         const user = response.data.freelancer;
         setProfile(mapUserToProfile(user));
 
-        const userSkills = mapUserToSkills(user);
-        setSkills(userSkills);
+        setSkillTokenizable(response.data.skillTokenizable)
       } else {
+        // Even if freelancer not found, set skillTokenizable if available
+        if (response.data.skillTokenizable) {
+          setSkillTokenizable(response.data.skillTokenizable);
+        }
         setEditMode(true);
       }
     } catch (e) {
@@ -120,40 +123,12 @@ export default function MyProfile() {
     const fields = [
       profile.avatarUrl, profile.displayName, profile.bio, profile.title,
       profile.location, profile.email, profile.hourlyRate, profile.experience,
-      skills.length > 0,
       profile.github || profile.linkedin || profile.twitter || profile.website
     ];
     const completed = fields.filter(Boolean).length;
     return Math.round((completed / fields.length) * 100);
   };
 
-
-  const addSkill = () => {
-    const skillName = newSkill.trim();
-
-    if (skillName && !skills.some(s => s.name === skillName)) {
-
-      const newSkillObject = {
-        name: skillName,
-        minted: false,
-        active: true,
-        sbtAddress: null, // Add this
-        tokenId: null      // Add this
-      };
-
-      setSkills([...skills, newSkillObject]);
-      setNewSkill('');
-      setShowSkillInput(false);
-      setRedNotice(false);
-      setNotice(`'${skillName}' was added. Remember to save your profile.`);
-      setTimeout(() => setNotice(null), 6000);
-    }
-  };
-
-
-  const removeSkill = (skillNameToRemove) => {
-    setSkills(skills.filter(s => s.name !== skillNameToRemove));
-  };
 
   const handleInputChange = (field, value) => {
     setProfile(prev => ({ ...prev, [field]: value }));
@@ -181,29 +156,41 @@ export default function MyProfile() {
         SocialLinks: {
           github: profile.github, linkedIn: profile.linkedin,
           twitter: profile.twitter, website: profile.website,
-        },
-
-
-        skills: skills
+        }
       };
-      console.log(payload)
-      await api.put(`http://localhost:5000/api/freelancer/update-profile`, { payload}, {withCredentials: true});
-      setRedNotice(false)
+      console.log('Sending payload:', payload);
+      const response = await api.put(`http://localhost:5000/api/freelancer/update-profile`, { payload }, { withCredentials: true });
+      console.log('Update response:', response);
+      setRedNotice(false);
       setNotice("Profile updated successfully");
-
-      setEditMode(false); // Only exit edit mode on success.
+      setEditMode(false);
     } catch (error) {
       console.error('Error updating profile:', error);
       setRedNotice(true);
-      setNotice("Failed to upload profile")
-
-      // Do NOT exit edit mode if the save fails.
+      setNotice(error.response?.data?.message || "Failed to update profile");
+      // Keep edit mode on error
     }
   };
 
-  const mintSBTForSkill = (skill) => {
-    navigate(`/verify-skill/${skill}`)
+  const mintSBTForSkill = async (skill) => {
+    try {
+      const res = await api.post(
+        "http://localhost:5000/api/auth/check-skill-name",
+        { skillName: skill },
+        { withCredentials: true }
+      );
+
+      if (!res.data?.success) {
+        navigate("/");
+        return;
+      }
+
+      navigate("/mint-rules");
+    } catch (error) {
+      navigate("/");
+    }
   };
+
 
 
 
@@ -539,125 +526,92 @@ export default function MyProfile() {
               <div className='backdrop-blur-sm min-h-40 relative overflow-auto  rounded-lg p-6 border border-[#14a19f]/20 '>
                 <div className='flex  justify-between items-center mb-4'>
                   <h2 style={orbitronStyle} className='text-white text-xl font-bold tracking-wide'>Skills</h2>
-                  {editMode && (
-                    <button
-                      onClick={() => setShowSkillInput(prev => !prev)}
-                      className={`flex items-center gap-2 px-3 py-2 text-white rounded transition-colors text-sm ${showSkillInput ? 'bg-red-500 hover:bg-red-600' : 'bg-[#14a19f] hover:bg-[#1ecac7]'
-                        }`}
-                      style={robotoStyle}
-                    >
-                      {showSkillInput ? null : <Plus size={16} />} {showSkillInput ? 'Cancel' : 'Add Skill'}
-                    </button>
-                  )}
                 </div>
-                {showSkillInput && editMode && (
-                  <div className=' relative mb-4'>
-                    <div className='flex gap-2'>
-                      <div className='flex-1'>
-                        <input
-                          type='text'
-                          value={newSkill}
-                          onChange={(e) => setNewSkill(e.target.value)}
-                          placeholder='Select a skill'
-                          className='w-full backdrop-blur-sm text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
-                          style={robotoStyle}
-                          autoFocus
-                        />
-                        {newSkill && (
-                          <ul className='absolute top-full mt-1 left-0 right-0 bg-[#141620] border border-[#14a19f]/30 rounded-lg max-h-40 overflow-y-auto z-50 shadow-lg'>
-                            {skillTokenizable
 
-                              .filter(skill => !skills.some(s => s.name === skill) && skill.toLowerCase().includes(newSkill.toLowerCase()))
-                              .map((skill, idx) => (
-                                <li
-                                  key={idx}
-                                  className='px-4 py-2 cursor-pointer hover:bg-[#14a19f]/20 text-white'
-                                  onClick={() => { setNewSkill(skill); }}
+                <div className='mb-4'>
+                  <input
+                    type='text'
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder='Search skills...'
+                    className='w-full backdrop-blur-sm text-white px-4 py-2 rounded border border-[#14a19f]/30 focus:border-[#14a19f] outline-none'
+                    style={robotoStyle}
+                  />
+                </div>
+
+                <div className='space-y-3 max-h-96 overflow-y-auto scrollable'>
+                  {(() => {
+                    const filteredSkills = skillTokenizable.filter(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())).sort();
+                    return filteredSkills.length > 0 ? filteredSkills.map((skill, idx) => {
+                      const isMinted = sbts.some(sbt => sbt.name === skill);
+                      const SkillIcon = getSkillIcon(skill);
+                      return (
+                        <div
+                          key={idx}
+                          className="group relative flex items-center bg-gradient-to-r from-slate-800/90 to-slate-900/90 dark:from-[#1a1f2b]/90 dark:to-[#141620]/90 backdrop-blur-md rounded-xl p-4 border border-slate-700/50 hover:border-[#14a19f]/60 hover:shadow-[0_0_15px_#14a19f30] transition-all duration-500 shadow-md hover:shadow-lg overflow-hidden"
+                        >
+                          {/* Background decoration */}
+                          <div className="absolute inset-0 bg-gradient-to-r from-[#14a19f]/5 via-transparent to-[#1ecac7]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+                          <div className="relative z-10 flex items-center justify-between w-full">
+                            {/* Left side - Icon and Title */}
+                            <div className="flex items-center gap-4 flex-1">
+                              <div className="p-2 bg-[#14a19f]/20 rounded-lg group-hover:bg-[#14a19f]/30 transition-colors duration-300">
+                                <SkillIcon className="w-6 h-6 text-[#14a19f] group-hover:text-[#1ecac7] transition-colors duration-300" />
+                              </div>
+                              <div className="flex-1">
+                                <p
+                                  className="text-gray-100 font-bold text-lg leading-tight group-hover:text-white transition-colors duration-300"
+                                  style={robotoStyle}
                                 >
                                   {skill}
-                                </li>
-                              ))}
-                          </ul>
-                        )}
-                      </div>
-                      <button
-                        onClick={addSkill}
-                        className='px-4 py-2 bg-[#14a19f] hover:bg-[#1ecac7] text-white rounded transition-colors'
-                      ><Check size={20} /></button>
-                    </div>
-                  </div>
-                )}
+                                </p>
+                              </div>
+                            </div>
 
+                            {/* Right side - Status and Button */}
+                            <div className="flex items-center gap-4">
+                              {/* Status Badge */}
+                              {isMinted ? (
+                                <div className="flex items-center gap-2 px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm font-medium border border-green-500/30">
+                                  <Check size={14} />
+                                  Verified
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2 px-3 py-1 bg-amber-500/20 text-amber-400 rounded-full text-sm font-medium border border-amber-500/30">
+                                  <Award size={14} />
+                                  Available
+                                </div>
+                              )}
 
-                <div className='flex flex-wrap gap-3'>
-                  {skills.length > 0 ? skills.map((skillObj, idx) => (
-                    <div
-                      key={idx}
-                      className="group relative flex flex-col bg-slate-800 dark:bg-[#1a1f2b]/80 backdrop-blur-md rounded-xl p-4 w-52 border border-transparent hover:border-[#14a19f] hover:shadow-[0_0_20px_#14a19f33] transition-all duration-300 shadow-md"
-                    >
-
-                      <div className="flex justify-between items-center mb-2">
-                        <p
-                          className="text-gray-100 font-extrabold text-lg leading-snug truncate"
-                          style={robotoStyle}
-                          title={skillObj.name}
-                        >
-                          {skillObj.name}
-                        </p>
-                        {editMode && (
-                          <button
-                            onClick={() => removeSkill(skillObj.name)}
-                            className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                            aria-label={`Remove skill: ${skillObj.name}`}
-                          >
-                            <X size={18} />
-                          </button>
-                        )}
-                      </div>
-
-
-                      {skillTokenizable.includes(skillObj.name) ? <p className="text-[10px] text-[#14a19f] font-mono mb-3 uppercase tracking-wide">
-                        Tokenizable Skill
-                      </p> : <p className="text-[10px] text-gray-500 font-mono mb-3 uppercase tracking-wide">
-                        Non-Tokenizable
-                      </p>}
-
-                      {skillTokenizable.includes(skillObj.name) ? (
-
-                        skillObj.minted ? (
-                          // Is MINTED
-                          <button
-                            disabled={true}
-                            className="flex items-center justify-center gap-2 w-full mt-auto text-sm font-bold bg-green-500/20 text-green-400 py-2.5 rounded-lg"
-                            style={robotoStyle}
-                          >
-                            Already Minted <Check size={16} />
-                          </button>
-                        ) : (
-
-                          <button
-                            onClick={() => mintSBTForSkill(skillObj.name)}
-                            className="flex items-center justify-center gap-2 w-full mt-auto text-sm font-bold bg-linear-to-r from-[#14a19f] to-[#1ecac7] text-[#0f111d] py-2.5 rounded-lg hover:scale-105 hover:shadow-[0_0_15px_#1ecac7] transition-all duration-300 shadow-md"
-                            style={robotoStyle}
-                          >
-                            Mint SBT <Award size={16} />
-                          </button>
-                        )
-                      ) : (
-
-                        <button
-                          disabled={true}
-                          className="flex items-center justify-center gap-2 w-full mt-auto text-sm font-bold bg-gray-700/50 text-gray-500 py-2.5 rounded-lg"
-                          style={robotoStyle}
-                        >
-                          Not Tokenizable <Award size={16} />
-                        </button>
-                      )}
-                    </div>
-
-                  )) : (
-                    <p className='text-gray-500 text-sm' style={robotoStyle}>No skills added yet</p>
-                  )}
+                              {/* Button */}
+                              {isMinted ? (
+                                <button
+                                  disabled={true}
+                                  className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold bg-green-500/20 text-green-400 rounded-lg border border-green-500/30 cursor-not-allowed"
+                                  style={robotoStyle}
+                                >
+                                  <Check size={16} />
+                                  Minted
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => mintSBTForSkill(skill)}
+                                  className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-[#14a19f] to-[#1ecac7] text-white rounded-lg hover:shadow-lg hover:shadow-[#14a19f]/25 hover:scale-105 transition-all duration-300 border border-[#14a19f]/50"
+                                  style={robotoStyle}
+                                >
+                                  <Award size={16} />
+                                  Mint SBT
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }) : (
+                      <p className='text-gray-500 text-sm text-center py-8' style={robotoStyle}>No matching skills found</p>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
