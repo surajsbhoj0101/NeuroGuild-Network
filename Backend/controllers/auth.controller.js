@@ -7,6 +7,8 @@ import { generateNonce, SiweMessage } from "siwe";
 import dotenv from "dotenv";
 import skillTokenizable from "../services/tokenizableSkills.js";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import axios from "axios"
 
 dotenv.config();
 
@@ -269,7 +271,7 @@ export const checkSkillName = async (req, res) => {
 export const checkSkillData = async (req, res) => {
   console.log("Name checking")
   const skillName = req.cookies.skill_access;
-  
+
   if (!skillName || !skillTokenizable.includes(skillName)) {
     console.log("unauthorize")
     return res.status(401).json({ error: "Unauthorized" });
@@ -280,3 +282,106 @@ export const checkSkillData = async (req, res) => {
     content: "Protected skill data"
   });
 };
+
+export const gitHubAuthStart = async (req, res) => {
+  const state = crypto.randomBytes(16).toString("hex");
+  res.cookie('oauth_state', state, {
+    httpOnly: true,
+    sameSite: "lax"
+  })
+
+  const githubUrl =
+    `https://github.com/login/oauth/authorize` +
+    `?client_id=${process.env.GITHUB_CLIENT_ID}` +
+    `&state=${state}` +
+    `&scope=read:user user:email`;
+
+  res.redirect(githubUrl);
+}
+
+export const githubAuthCallback = async (req, res) => {
+  try {
+    const { code, state } = req.query;
+
+    if (!code || !state) {
+      return res.status(400).send("Missing code/state");
+    }
+
+    if (state !== req.cookies.oauth_state) {
+      return res.status(403).send("Invalid OAuth state");
+    }
+
+    const tokenRes = await axios.post(
+      "https://github.com/login/oauth/access_token",
+      {
+        client_id: process.env.GITHUB_CLIENT_ID,
+        client_secret: process.env.GITHUB_CLIENT_SECRET,
+        code,
+      },
+      {
+        headers: {
+          Accept: "application/json",
+        },
+      }
+    );
+
+    const accessToken = tokenRes.data.access_token;
+    if (!accessToken) {
+      return res.status(401).send("GitHub token exchange failed");
+    }
+    console.log("Fetching emailRes")
+
+    const userRes = await axios.get(
+      "https://api.github.com/user",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+    const emailRes = await axios.get(
+      "https://api.github.com/user/emails",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    const githubUser = userRes.data;
+    const primaryEmail = emailRes.data.find(e => e.primary)?.email;
+
+
+    const token = jwt.sign(
+      {
+        githubUser: githubUser,
+        email: primaryEmail
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "3d" }
+    );
+
+    res.cookie("github_auth", token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false,
+    });
+
+    console.log(process.env.FRONTEND_URL)
+    res.redirect(`${process.env.FRONTEND_URL}/mint-rules`);
+
+  } catch (error) {
+    console.error("GitHub OAuth Error:", error);
+    res.status(500).send("OAuth failed");
+  }
+};
+
+export const getGithubUserData = async (req, res) => {
+  try {
+    const token = req.cookies?.github_auth;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    return res.status(200).json({success:true, data: decoded})
+  } catch (error) {
+    console.error("GitHub auth data not found", error);
+  }
+}

@@ -14,6 +14,10 @@ export default function MintRules() {
   const { isConnected, address } = useAccount();
   const navigate = useNavigate();
   const [connectedPlatform, setConnectedPlatform] = useState(null);
+  const [connectedInfo, setConnectedInfo] = useState({
+    username: "",
+    avatarUrl: ""
+  })
 
   const rules = [
     "You must have verifiable experience in the selected skill.",
@@ -44,7 +48,7 @@ export default function MintRules() {
     },
     decision: {
       title: "Final Decision",
-      description: "Only the council decides if you receive an SBT and determines your skill level (Master/Expert/Advanced).",
+      description: "Only the council decides if you receive an SBT and determines your skill level (Beginner/Intermediate/Advanced).",
       icon: Award,
       color: "text-green-400",
       bgColor: "bg-green-500/10",
@@ -53,15 +57,16 @@ export default function MintRules() {
   };
 
   const levels = [
-    { name: "Master", threshold: "180+", color: "text-purple-400", icon: Star },
-    { name: "Expert", threshold: "150-179", color: "text-blue-400", icon: Award },
-    { name: "Advanced", threshold: "120-149", color: "text-green-400", icon: CheckCircle }
+    { name: "Advanced", threshold: "160+", color: "text-purple-400", icon: Star },
+    { name: "Intermediate", threshold: "80-160", color: "text-blue-400", icon: Award },
+    { name: "Beginner", threshold: "<80", color: "text-green-400", icon: CheckCircle }
   ];
 
-  async function handleGithubOAuth() {
-    const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}`;
-    window.location.assign(authUrl);
+  function handleGithubOAuth() {
+    window.location.href = "http://localhost:5000/api/auth/github";
   }
+
+
 
   async function checkSkillData() {
     try {
@@ -81,22 +86,38 @@ export default function MintRules() {
     }
   }
 
+  async function getUserGitAuthData() {
+    try {
+      const res = await api.get('http://localhost:5000/api/auth/github-auth-user');
+      const data = res.data.data;
+      console.log(data.githubUser)
+      setConnectedInfo({
+        username: data?.githubUser.name,
+        avatarUrl: data?.githubUser.avatar_url
+      })
+      setConnectedPlatform('github')
+    } catch (error) {
+
+    }
+  }
 
   useEffect(() => {
-  checkSkillData();
-}, []);
+    checkSkillData();
+    getUserGitAuthData()
+  }, []);
 
 
 
   const handleConnect = (platform) => {
     if (platform === 'github') {
       handleGithubOAuth();
+      setConnectedPlatform(platform);
     } else {
 
     }
     // Here you would implement the actual OAuth connection
     // For now, just set the connected platform and proceed
-    setConnectedPlatform(platform);
+
     // In a real implementation, this would redirect to OAuth and handle the callback
 
   };
@@ -240,47 +261,61 @@ export default function MintRules() {
                 Choose a platform to connect and verify your background for this skill. This step is mandatory.
               </p>
 
-              <div className='space-y-4'>
+              <div className="space-y-4">
+
+                {/* ---------- GitHub ---------- */}
                 <button
-                  onClick={() => handleConnect('github')}
+                  onClick={() => connectedPlatform !== 'github' && handleConnect('github')}
                   disabled={connectedPlatform !== null}
-                  className={`w-full flex items-center justify-center gap-3 px-4 py-4 rounded-lg transition-all duration-300 ${connectedPlatform === 'github'
-                    ? 'bg-green-500/20 text-green-400 border border-green-500/50'
-                    : 'bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 hover:border-[#14a19f] hover:shadow-lg'
+                  className={`w-full rounded-xl transition-all duration-300 ${connectedPlatform === 'github'
+                    ? 'cursor-default'
+                    : 'bg-gray-800 hover:bg-gray-700 border border-gray-600 hover:border-[#14a19f] hover:shadow-lg'
                     }`}
                   style={robotoStyle}
                 >
-                  <Github size={20} />
                   {connectedPlatform === 'github' ? (
-                    <>
-                      <CheckCircle size={16} />
-                      Connected to GitHub
-                    </>
+                    <div className="flex items-center gap-4 px-3 py-1.5 bg-transparent border-gray-600 rounded-xl border shadow-sm">
+                      <img
+                        src={connectedInfo?.avatarUrl}
+                        alt="GitHub avatar"
+                        className="h-14 w-14 rounded-full border border-amber-50"
+                      />
+
+                      <div className="flex flex-col text-left">
+                        <span className="text-sm text-white">
+                          Connected to GitHub
+                        </span>
+                        <span className="text-lg font-semibold text-white">
+                          {connectedInfo?.username}
+                        </span>
+                      </div>
+
+                      <div className="ml-auto">
+                        <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
+                          Connected
+                        </span>
+                      </div>
+                    </div>
                   ) : (
-                    'Connect GitHub'
+                    <div className="flex items-center justify-center gap-3 p-4 text-gray-300">
+                      <span className="text-base font-medium">Connect GitHub</span>
+                    </div>
                   )}
                 </button>
 
                 <button
-                  onClick={() => handleConnect('linkedin')}
-                  disabled={connectedPlatform !== null}
-                  className={`w-full flex items-center justify-center gap-3 px-4 py-4 rounded-lg transition-all duration-300 ${connectedPlatform === 'linkedin'
-                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50'
-                    : 'bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 hover:border-[#14a19f] hover:shadow-lg'
-                    }`}
+                  disabled
+                  className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-xl bg-gray-800 border border-gray-700 text-gray-500 cursor-not-allowed"
                   style={robotoStyle}
                 >
                   <Linkedin size={20} />
-                  {connectedPlatform === 'linkedin' ? (
-                    <>
-                      <CheckCircle size={16} />
-                      Connected to LinkedIn
-                    </>
-                  ) : (
-                    'Connect LinkedIn'
-                  )}
+                  <span className="text-base font-medium">
+                    Connect LinkedIn (Coming Soon)
+                  </span>
                 </button>
+
               </div>
+
 
               {connectedPlatform && (
                 <div className='mt-6 pt-6 border-t border-gray-700'>
