@@ -34,7 +34,7 @@ const freelancerSchema = new mongoose.Schema(
         },
         ProfessionalDetails: {
             hourlyRate: { type: String },
-            experience: { type: String }, // fixed typo
+            experience: { type: String }, 
             availability: {
                 type: String,
                 enum: ["available", "busy", "unavailable"],

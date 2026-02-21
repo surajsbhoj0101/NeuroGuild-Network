@@ -11,9 +11,9 @@ dataSources:
     name: UserRegistry
     network: base-sepolia
     source:
-      address: "0xAf02A773636C562A22486F167Ad175076965EA0f"
+      address: "0x08c24ab12B38BdB97976f634865aCC0e3E8C34a8"
       abi: UserRegistry
-      startBlock: 35228101
+      startBlock: 36279559
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -39,9 +39,9 @@ dataSources:
     name: JobContract
     network: base-sepolia
     source:
-      address: "0x5a23bc4648953ACAf90d5B44792E5BAEf89f11DA"
+      address: "0xCC9C13c3b199D14fb73C9BB6d89D922Cd182839C"
       abi: JobContract
-      startBlock: 35228101
+      startBlock: 36279559
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9

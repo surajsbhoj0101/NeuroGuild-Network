@@ -105,7 +105,7 @@ export const createUser = async (req, res) => {
         userId: user._id,
       },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+      { expiresIn: 12 * 60 * 60 }
     );
 
     res.cookie("access_token", newToken, {
@@ -248,6 +248,7 @@ export const logout = (req, res) => {
   res.status(200).json({ success: true });
 };
 
+//get skill in cookie
 export const checkSkillName = async (req, res) => {
   const { skillName } = req.body;
 
@@ -267,7 +268,7 @@ export const checkSkillName = async (req, res) => {
   res.json({ success: true });
 };
 
-
+//get which skill chosen at this time 
 export const checkSkillData = async (req, res) => {
   console.log("Name checking")
   const skillName = req.cookies.skill_access;
@@ -339,6 +340,7 @@ export const githubAuthCallback = async (req, res) => {
         },
       }
     );
+
     const emailRes = await axios.get(
       "https://api.github.com/user/emails",
       {
@@ -350,7 +352,6 @@ export const githubAuthCallback = async (req, res) => {
 
     const githubUser = userRes.data;
     const primaryEmail = emailRes.data.find(e => e.primary)?.email;
-
 
     const token = jwt.sign(
       {

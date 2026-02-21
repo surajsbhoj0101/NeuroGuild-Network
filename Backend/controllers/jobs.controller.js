@@ -557,6 +557,7 @@ export const fetchFreelancerJobs = async (req, res) => {
     const categorized = {
       open: [],
       inProgress: [],
+      expired: [],
       completed: [],
     };
 
@@ -594,11 +595,18 @@ export const fetchFreelancerJobs = async (req, res) => {
       if (!jobStatus) continue;
 
       const jobPayload = await buildJobPayload(bid);
+      const deadline = new Date(jobPayload.JobDetails.deadline);
+      const now = new Date();
 
       if (jobStatus === "OPEN") {
         categorized.open.push(jobPayload);
       } else if (jobStatus === "IN_PROGRESS") {
-        categorized.inProgress.push(jobPayload);
+        // Check if deadline has passed
+        if (deadline < now) {
+          categorized.expired.push(jobPayload);
+        } else {
+          categorized.inProgress.push(jobPayload);
+        }
       } else if (jobStatus === "COMPLETED") {
         categorized.completed.push(jobPayload);
       }

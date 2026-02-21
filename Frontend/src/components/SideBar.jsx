@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { MdSpaceDashboard } from "react-icons/md";
 import { BsBriefcase } from "react-icons/bs";
 import { FaRegUser } from "react-icons/fa";
@@ -11,6 +11,7 @@ import axios from "axios";
 function SideBar() {
   const [activeIndex, setActiveIndex] = useState(0);
   const location = useLocation();
+  const navigate = useNavigate();
   const { isConnected, address } = useAccount();
   const [role, setRole] = useState(null);
 

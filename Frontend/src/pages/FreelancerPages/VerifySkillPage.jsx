@@ -4,6 +4,7 @@ import api from "../../utils/api.js"
 import { useAccount } from 'wagmi';
 import { Timer } from 'lucide-react';
 import skillTokenizable from '../../../../Backend/services/tokenizableSkills';
+import NoticeToast from "../../components/NoticeToast";
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
@@ -48,18 +49,9 @@ function VerifySkillPage() {
   }, [isConnected, navigate, address]);
 
   async function getQuizQuestions() {
-    if (!skillTokenizable.includes(skill)) {
-      setRedNotice(true);
-      setNotice("This Skill is not tokenizable")
-      setTimeout(() => {
-        navigate('/');
-      }, 3000);
-    }
+  
     try {
-      const response = await api.post("http://localhost:5000/api/freelancer/fetch-questions", {
-        address,
-        skill,
-      });
+      const response = await api.get("http://localhost:5000/api/freelancer/fetch-questions");
 
       if (response.data.success) {
         setQuestions(response.data.questions);
@@ -179,25 +171,11 @@ function VerifySkillPage() {
 
   return (
     <>
-      {/* Notice */}
-      {notice && (
-        <div className="fixed top-4 right-4 z-50 animate-pulse">
-          <div
-            className={`flex items-center gap-3 text-white px-4 py-2 rounded shadow-lg border ${redNotice
-              ? "bg-red-600 border-red-700"
-              : "bg-[#14a19f] border-[#1ecac7]/30"
-              }`}
-          >
-            <div className="text-sm">{notice}</div>
-            <button
-              onClick={() => setNotice(null)}
-              className="ml-2 text-xs text-white/90 px-2 py-1 rounded hover:opacity-90 transition-opacity"
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
-      )}
+      <NoticeToast
+        message={notice}
+        isError={redNotice}
+        onClose={() => setNotice(null)}
+      />
 
       {/* Pass / Fail Overlay */}
       {isSubmitted && isPassed !== null && (

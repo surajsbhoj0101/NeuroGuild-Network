@@ -3,7 +3,7 @@
 # -----------------------------------------
 
 type User @entity(immutable: false) {
-  id: ID!                 # wallet address (hex)
+  id: ID! # wallet address (hex)
   wallet: Bytes!
   role: Int!
   createdAt: BigInt!
@@ -59,7 +59,7 @@ enum BidStatus {
 # -----------------------------------------
 
 type Job @entity(immutable: false) {
-  id: ID!                  # jobId (bytes32 hex)
+  id: ID! # jobId (bytes32 hex)
   client: Bytes!
   freelancer: Bytes
 
@@ -83,10 +83,12 @@ type Job @entity(immutable: false) {
   fundLockedAmount: BigInt
   fundReleasedAmount: BigInt
   fundRefundedAmount: BigInt
+  bidCount: Int!
+  bids: [Bid!]! @derivedFrom(field: "job")
 }
 
 type Bid @entity(immutable: false) {
-  id: ID!                  # jobId-bidIndex
+  id: ID! # jobId-bidIndex
   job: Job!
   bidder: Bytes!
   status: BidStatus!

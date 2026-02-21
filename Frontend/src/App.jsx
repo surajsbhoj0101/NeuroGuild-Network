@@ -11,6 +11,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 import CustomConnectButton from "./components/CustomConnectButton.jsx";
 import Login from "./components/Login";
+import NoticeToast from "./components/NoticeToast.jsx";
 import logo from "./assets/images/logo.png";
 import "./index.css";
 import { LogOut } from "lucide-react";
@@ -54,19 +55,11 @@ export default function App() {
       <div className="pointer-events-none absolute -left-32 -top-32 w-[520px] h-[520px] rounded-full bg-gradient-to-br from-[#122033] via-[#0f2540] to-[#08101a] opacity-40 blur-3xl"></div>
       <div className="pointer-events-none absolute right-[-120px] top-48 w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl"></div>
 
-      {notice && (
-        <div className="fixed top-4 right-4 z-50">
-          <div
-            className={`px-4 py-2 rounded shadow-lg border ${
-              redNotice
-                ? "bg-red-600 border-red-700"
-                : "bg-[#14a19f] border-[#1ecac7]/30"
-            }`}
-          >
-            {notice}
-          </div>
-        </div>
-      )}
+      <NoticeToast
+        message={notice}
+        isError={redNotice}
+        onClose={() => setNotice(null)}
+      />
 
       <section className="max-w-6xl mx-auto px-6 pt-10 pb-16 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center relative z-10">
         <div className="space-y-6">

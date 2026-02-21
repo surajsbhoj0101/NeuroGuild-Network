@@ -11,7 +11,7 @@ const freelancerRoutes = express.Router();
 
 freelancerRoutes.get("/get-freelancer", requireAuth, getFreelancer);
 freelancerRoutes.put("/update-profile", requireAuth, updateFreelancer);
-freelancerRoutes.post("/fetch-questions", fetchQuestions);
+freelancerRoutes.get("/fetch-questions", requireAuth,fetchQuestions);
 freelancerRoutes.post("/is-already-mint", isAlreadyMint);
 freelancerRoutes.post("/fetch-sbt", fetchSbt);
 export default freelancerRoutes;

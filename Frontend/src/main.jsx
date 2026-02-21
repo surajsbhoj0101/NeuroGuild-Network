@@ -24,6 +24,7 @@ import PostJobs from './pages/ClientPages/PostJobs.jsx';
 import JobPage from './pages/jobs/jobPage.jsx';
 import ClientDashboard from './pages/ClientPages/Dashboard.jsx';
 import Governance from './pages/Governance.jsx';
+import Messages from './pages/Messages.jsx';
 import SideBar from './components/SideBar.jsx';
 import { Snowflake } from 'lucide-react';
 
@@ -144,6 +145,14 @@ const router = createBrowserRouter([
       <>
         <Navbar />
         <Governance />
+      </>
+    )
+  }, {
+    path: "/messages",
+    element: (
+      <>
+        <Snowfall snowflakeCount={60} />
+        <Messages />
       </>
     )
   }

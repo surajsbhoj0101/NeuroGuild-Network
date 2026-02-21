@@ -1,18 +1,16 @@
 import React, { useMemo, useState } from "react";
-import { Clock, MessageSquare, FileText } from "lucide-react";
+import { Clock, MessageSquare, FileText, Archive } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ContractDetailsModal from "./ContractDetailsModal";
 
-function ActiveProjectCard({ project }) {
+function ExpiredProjectCard({ project }) {
   const navigate = useNavigate();
   const [showContractModal, setShowContractModal] = useState(false);
 
-  const progressPercentage = project?.progress || 0;
-
-  const daysRemaining = Math.max(
+  const daysExpired = Math.max(
     0,
     Math.ceil(
-      (new Date(project?.deadline) - new Date()) /
+      (new Date() - new Date(project?.deadline)) /
         (1000 * 60 * 60 * 24)
     )
   );
@@ -38,7 +36,7 @@ function ActiveProjectCard({ project }) {
       freelancerAddress: project?.freelancerAddress,
       contractValue: project?.contractValue,
       deadline: project?.deadline,
-      status: project?.status || "In Progress",
+      status: project?.status || "Expired",
       skills: project?.skills || [],
       milestones: project?.milestones || [],
     }),
@@ -53,7 +51,7 @@ function ActiveProjectCard({ project }) {
         contract={contractDetails}
       />
 
-      <div className="backdrop-blur-md border border-[#14a19f]/20 bg-[#0d1224]/50 rounded-xl p-5 hover:border-[#14a19f]/50 transition-all space-y-4">
+      <div className="backdrop-blur-md border border-red-500/20 bg-red-950/10 rounded-xl p-5 hover:border-red-500/40 transition-all space-y-4 opacity-80">
       
       {/* Header */}
       <div className="flex justify-between items-start gap-3">
@@ -71,41 +69,44 @@ function ActiveProjectCard({ project }) {
 
           <p className="text-xs text-gray-400">
             Contract Value:{" "}
-            <span className="text-[#14a19f] font-semibold">
+            <span className="text-red-400 font-semibold">
               ${project?.contractValue || 0}
             </span>
           </p>
         </div>
 
-        <span className="bg-green-500/20 text-green-400 border border-green-500/30 px-3 py-1 rounded-full text-xs font-medium">
-          ✓ In Progress
+        <span className="bg-red-500/20 text-red-300 border border-red-500/50 px-3 py-1 rounded-full text-xs font-medium">
+          ✗ Expired
         </span>
       </div>
 
       {/* Timeline */}
       <div className="grid grid-cols-2 gap-3 text-sm">
-        <div className="bg-[#14a19f]/10 rounded p-2">
+        <div className="bg-red-500/10 rounded p-2 border border-red-500/20">
           <p className="text-gray-400 text-xs mb-1 flex items-center gap-1">
             <Clock size={12} />
-            Days Remaining
+            Expired
           </p>
-          <p
-            className={`font-semibold ${
-              daysRemaining < 3 ? "text-red-400" : "text-white"
-            }`}
-          >
-            {daysRemaining} days
+          <p className="font-semibold text-red-400">
+            {daysExpired} day{daysExpired !== 1 ? "s" : ""} ago
           </p>
         </div>
 
-        <div className="bg-[#14a19f]/10 rounded p-2">
+        <div className="bg-red-500/10 rounded p-2 border border-red-500/20">
           <p className="text-gray-400 text-xs mb-1">Status</p>
-          <p className="text-white font-semibold">In Progress</p>
+          <p className="text-red-300 font-semibold">Past Deadline</p>
         </div>
       </div>
 
+      {/* Deadline Info */}
+      <div className="bg-red-500/5 border border-red-500/30 rounded p-3">
+        <p className="text-xs text-red-300">
+          Deadline was on: <span className="font-semibold">{new Date(project?.deadline).toLocaleDateString()}</span>
+        </p>
+      </div>
+
       {/* Description */}
-      <p className="text-sm  text-gray-300  bg-[#161c32]/50 rounded p-3">
+      <p className="text-sm text-gray-400 bg-[#161c32]/30 rounded p-3 italic">
         {project?.jobDescription || "No description"}
       </p>
 
@@ -120,11 +121,13 @@ function ActiveProjectCard({ project }) {
                 className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
                   m.completed
                     ? "bg-green-500/20 border-green-500"
-                    : "border-gray-500"
+                    : "bg-red-500/20 border-red-500"
                 }`}
               >
-                {m.completed && (
+                {m.completed ? (
                   <span className="text-green-400 text-sm">✓</span>
+                ) : (
+                  <span className="text-red-400 text-sm">✗</span>
                 )}
               </div>
 
@@ -146,7 +149,7 @@ function ActiveProjectCard({ project }) {
         <div className="flex gap-2 pt-2">
           <button
             onClick={handleViewContract}
-            className="flex-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 text-sm font-medium py-2 rounded flex items-center justify-center gap-2"
+            className="flex-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 text-sm font-medium py-2 rounded flex items-center justify-center gap-2 transition-colors"
           >
             <FileText size={16} />
             Contract
@@ -154,24 +157,29 @@ function ActiveProjectCard({ project }) {
 
           <button
             onClick={handleMessage}
-            className="flex-1 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border border-purple-500/30 text-sm font-medium py-2 rounded flex items-center justify-center gap-2"
+            className="flex-1 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border border-purple-500/30 text-sm font-medium py-2 rounded flex items-center justify-center gap-2 transition-colors"
           >
             <MessageSquare size={16} />
             Message
           </button>
+
+          <button
+            className="flex-1 bg-gray-500/20 hover:bg-gray-500/30 text-gray-400 border border-gray-500/30 text-sm font-medium py-2 rounded flex items-center justify-center gap-2 transition-colors"
+          >
+            <Archive size={16} />
+            Archive
+          </button>
         </div>
 
-        {/* Urgent Warning */}
-        {daysRemaining < 3 && daysRemaining > 0 && (
-          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded p-2">
-            <span className="text-xs text-yellow-400">
-              ⚠️ Deadline approaching
-            </span>
-          </div>
-        )}
+        {/* Expired Notice */}
+        <div className="bg-red-500/10 border border-red-500/30 rounded p-3">
+          <span className="text-xs text-red-300">
+            🔴 This project deadline has expired. Please review and take necessary actions.
+          </span>
+        </div>
       </div>
     </>
   );
 }
 
-export default ActiveProjectCard;
+export default ExpiredProjectCard;

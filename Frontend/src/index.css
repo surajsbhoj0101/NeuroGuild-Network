@@ -1,6 +1,27 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Shared focus style for better keyboard UX */
+:focus-visible {
+  outline: 2px solid #1ecac7;
+  outline-offset: 2px;
+}
+
 /*
   The keyframe now animates `background-position`
   from its starting point to a point where the gradient has fully moved across.
@@ -74,18 +95,97 @@ input[type="date"] {
   animation-play-state: paused;
 }
 
-/* Custom scrollbar for scrollable elements */
+/* Global custom scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #16b1ad #0d1324;
+}
+
+*::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+*::-webkit-scrollbar-track {
+  background: linear-gradient(180deg, #0b1120 0%, #0f162b 100%);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  border: 2px solid #0f162b;
+  background: linear-gradient(180deg, #14a19f 0%, #107f9e 100%);
+  transition: background 160ms ease, border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #25d1ce 0%, #1f9fd1 100%);
+  border-color: #122038;
+  box-shadow: 0 0 0 1px rgba(36, 211, 206, 0.35);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #0f8f8c 0%, #0f7ca4 100%);
+}
+
+/* Optional utility for compact scroll zones */
 .scrollable::-webkit-scrollbar {
   width: 8px;
 }
+
 .scrollable::-webkit-scrollbar-track {
   background: #0f111d;
   border-radius: 4px;
 }
+
 .scrollable::-webkit-scrollbar-thumb {
   background: #14a19f;
   border-radius: 4px;
+  border: none;
 }
+
 .scrollable::-webkit-scrollbar-thumb:hover {
   background: #1ecac7;
+}
+
+/* Toast motion */
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toast-progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+.notice-toast-enter {
+  animation: toast-enter 180ms ease-out;
+}
+
+.notice-progress {
+  animation: toast-progress linear forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .notice-toast-enter,
+  .notice-progress,
+  .animate-spin-slow {
+    animation: none !important;
+  }
 }

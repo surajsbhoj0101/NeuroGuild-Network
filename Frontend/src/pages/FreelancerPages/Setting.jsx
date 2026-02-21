@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import SideBar from '../../components/SideBar'
+import NoticeToast from "../../components/NoticeToast";
 import { useAccount } from "wagmi";
 import "../../index.css"
 
@@ -30,20 +31,10 @@ function Setting() {
 
     return (
         <>
-            {/* floating notice */}
-            {notice && (
-                <div className="fixed top-4 right-4 z-50">
-                    <div className="flex items-center gap-3 bg-[#14a19f] text-white px-4 py-2 rounded shadow-lg">
-                        <div className="text-sm">{notice}</div>
-                        <button
-                            onClick={() => setNotice(null)}
-                            className="ml-2 text-xs text-white/90 px-2 py-1 rounded hover:opacity-90"
-                        >
-                            Dismiss
-                        </button>
-                    </div>
-                </div>
-            )}
+            <NoticeToast
+                message={notice}
+                onClose={() => setNotice(null)}
+            />
 
             {/* make container relative and hide horizontal overflow to prevent extra width */}
             <div className='dark:bg-[#0f111d] pt-6 flex bg-[#161c32] w-full'>

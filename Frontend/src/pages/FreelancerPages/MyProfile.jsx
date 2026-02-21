@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAccount } from 'wagmi';
 import SideBar from '../../components/SideBar';
 import api from "../../utils/api.js"
+import NoticeToast from "../../components/NoticeToast";
 
 import { Lock, Award, Check, User, Mail, MapPin, Github, Linkedin, Twitter, Globe, Brain, Code, Palette, Database, Globe as GlobeIcon, Zap } from 'lucide-react';
 
@@ -231,19 +232,11 @@ export default function MyProfile() {
   return (
     <>
 
-      {notice && (
-        <div className="fixed top-4 right-4 z-50 animate-pulse">
-          <div className={`flex items-center gap-3 bg-[#14a19f] text-white px-4 py-2 rounded shadow-lg border border-[#1ecac7]/30 ${redNotice ? 'bg-red-600 border-red-700' : 'bg-[#14a19f] border-[#1ecac7]/30'} `}>
-            <div className="text-sm">{notice}</div>
-            <button
-              onClick={() => setNotice(null)}
-              className="ml-2 text-xs text-white/90 px-2 py-1 rounded hover:opacity-90 transition-opacity"
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
-      )}
+      <NoticeToast
+        message={notice}
+        isError={redNotice}
+        onClose={() => setNotice(null)}
+      />
 
 
 
@@ -539,7 +532,7 @@ export default function MyProfile() {
                   />
                 </div>
 
-                <div className='space-y-3 max-h-96 overflow-y-auto scrollable'>
+                <div className='space-y-3 max-h-96 p-2 overflow-y-auto scrollable'>
                   {(() => {
                     const filteredSkills = skillTokenizable.filter(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())).sort();
                     return filteredSkills.length > 0 ? filteredSkills.map((skill, idx) => {
