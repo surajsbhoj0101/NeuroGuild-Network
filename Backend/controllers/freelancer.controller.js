@@ -20,9 +20,12 @@ export const test = async (req, res) => {
 
 
 export const getFreelancer = async (req, res) => {
-    const walletAddress = req.walletAddress?.toLowerCase();
+    const userId = req.userId || req.user?.userId;
+    if (!userId) {
+        return res.status(401).json({ success: false, message: "Unauthorized", skillTokenizable });
+    }
     try {
-        const freelancer = await Freelancer.findOne({ walletAddress });
+        const freelancer = await Freelancer.findOne({ user: userId });
 
         if (!freelancer) {
             console.log("Freelancer not found");
@@ -45,13 +48,16 @@ export const updateFreelancer = async (req, res) => {
 
 
     try {
-        const walletAddress = req.walletAddress?.toLowerCase();
+        const userId = req.userId || req.user?.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
 
         //solved a big bug here
         const { isVerified, ...otherUpdates } = payload;
 
         const updatedUser = await Freelancer.findOneAndUpdate(
-            { walletAddress: walletAddress },
+            { user: userId },
             { $set: otherUpdates },
             { new: true }
         );
@@ -69,9 +75,22 @@ export const updateFreelancer = async (req, res) => {
 };
 
 export const fetchQuestions = async (req, res) => {
-    const { address, skill } = req.body;
+    const userId = req.userId || req.user?.userId;
+    if (!userId) {
+        return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
 
     try {
+        const freelancer = await Freelancer.findOne({ user: userId }).select("walletAddress");
+        if (!freelancer?.walletAddress) {
+            return res.status(404).json({ success: false, message: "Freelancer profile not found." });
+        }
+        const address = freelancer.walletAddress.toLowerCase();
+        const skill = req.cookies?.skill_access;
+        if (!skill) {
+            return res.status(400).json({ success: false, message: "Skill is not selected." });
+        }
+
         const cooldown = 24 * 60 * 60 * 1000;
 
         const alreadyPassed = await Freelancer.findOne({
@@ -224,8 +243,13 @@ const handleUserSkillPass = async (walletAddress, skillName) => {
 // };
 
 export const isAlreadyMint = async (req, res) => {
-    const { address } = req.body;
+    const userId = req.userId || req.user?.userId;
     try {
+        const freelancer = await Freelancer.findOne({ user: userId }).select("walletAddress");
+        const address = freelancer?.walletAddress?.toLowerCase();
+        if (!address) {
+            return res.status(404).json({ success: false, message: "Freelancer wallet not found." });
+        }
         const isMinted = await checkUserAlreadyMinted(address);
         console.log(isMinted)
         return res.status(200).json({ isMintedSuccess: isMinted.isminted })
@@ -236,9 +260,18 @@ export const isAlreadyMint = async (req, res) => {
 }
 
 export const fetchSbt = async (req, res) => {
-    const { address } = req.body;
+    const userId = req.userId || req.user?.userId;
 
     try {
+        const freelancer = await Freelancer.findOne({ user: userId }).select("walletAddress");
+        const address = freelancer?.walletAddress?.toLowerCase();
+        if (!address) {
+            return res.status(404).json({
+                success: false,
+                message: "Freelancer wallet not found."
+            });
+        }
+
         const isMinted = await checkUserAlreadyMinted(address);
 
 
@@ -290,5 +323,3 @@ export const fetchSbt = async (req, res) => {
         });
     }
 };
-
-

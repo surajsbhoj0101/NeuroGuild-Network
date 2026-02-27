@@ -1,22 +1,24 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { MdSpaceDashboard } from "react-icons/md";
-import { BsBriefcase } from "react-icons/bs";
+import { BsBriefcase, BsListTask } from "react-icons/bs";
 import { FaRegUser } from "react-icons/fa";
 import { IoSettingsOutline } from "react-icons/io5";
+import { FiMessageSquare } from "react-icons/fi";
 import { Vote } from "lucide-react";
 import { useAccount } from "wagmi";
 import axios from "axios";
+import { useAuth } from "../contexts/AuthContext";
 
 function SideBar() {
   const [activeIndex, setActiveIndex] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
-  const { isConnected, address } = useAccount();
-  const [role, setRole] = useState(null);
+  const { isConnected } = useAccount();
+  const { role, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    if (!isConnected || !address || role) return;
+    if (!isConnected || role) return;
 
     const getUser = async () => {
       try {
@@ -29,7 +31,7 @@ function SideBar() {
               navigate("/");
               return;
             }
-            setRole(res.data.role);
+            // role is managed by AuthContext
           })
           .catch(() => navigate("/"));
       } catch (error) {
@@ -38,7 +40,13 @@ function SideBar() {
     };
 
     getUser();
-  }, [isConnected, address, role]);
+  }, [isConnected, role]);
+
+  useEffect(() => {
+    if (isConnected && !isAuthenticated) {
+      navigate("/");
+    }
+  }, [isConnected, isAuthenticated, navigate]);
 
   const orbitronStyle = { fontFamily: "Orbitron, sans-serif" };
   const robotoStyle = { fontFamily: "Roboto, sans-serif" };
@@ -49,7 +57,9 @@ function SideBar() {
       icon: <MdSpaceDashboard />,
       link: "/client/dashboard",
     },
+    { name: "Manage Jobs", icon: <BsListTask />, link: "/client/manage-jobs" },
     { name: "Post Jobs", icon: <BsBriefcase />, link: "/post-job" },
+    { name: "Messages", icon: <FiMessageSquare />, link: "/messages" },
     { name: "My Profile", icon: <FaRegUser />, link: "/client/my-profile" },
     { name: "Governance", icon: <Vote />, link: "/governance" },
     { name: "Settings", icon: <IoSettingsOutline />, link: "/client/settings" },
@@ -61,7 +71,13 @@ function SideBar() {
       icon: <MdSpaceDashboard />,
       link: "/freelancer/dashboard",
     },
+    {
+      name: "Manage Jobs",
+      icon: <BsListTask />,
+      link: "/freelancer/manage-jobs",
+    },
     { name: "Browse Jobs", icon: <BsBriefcase />, link: "/browse-jobs" },
+    { name: "Messages", icon: <FiMessageSquare />, link: "/messages" },
     { name: "My Profile", icon: <FaRegUser />, link: "/freelancer/my-profile" },
     { name: "Governance", icon: <Vote />, link: "/governance" },
     {

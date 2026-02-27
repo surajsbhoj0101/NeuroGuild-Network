@@ -203,7 +203,7 @@ export default function MyProfile() {
       setIsLoading(true);
 
       try {
-        const response = await api.post("http://localhost:5000/api/freelancer/fetch-sbt/", { address });
+        const response = await api.post("http://localhost:5000/api/freelancer/fetch-sbt/", {});
         const data = response.data;
 
         if (data.success && data.sbt) {

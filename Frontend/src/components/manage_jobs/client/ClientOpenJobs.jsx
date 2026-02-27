@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useWalletClient } from "wagmi";
 import { ethers } from "ethers";
-import { acceptBid } from "../utils/accept_bid.js";
+import { acceptBid } from "../../../utils/accept_bid.js";
 import { BrowserProvider } from "ethers";
 
 

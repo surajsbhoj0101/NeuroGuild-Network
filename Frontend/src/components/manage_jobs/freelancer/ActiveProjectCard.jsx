@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from "react";
-import { Clock, MessageSquare, FileText } from "lucide-react";
+import { Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import ContractDetailsModal from "./ContractDetailsModal";
+import ContractDetailsModal from "../../ContractDetailsModal";
+import ProjectActionButtons from "../../ProjectActionButtons";
 
 function ActiveProjectCard({ project }) {
   const navigate = useNavigate();
@@ -19,7 +20,11 @@ function ActiveProjectCard({ project }) {
 
   const handleMessage = () => {
     navigate("/messages", {
-      state: { recipient: project.clientName || project.clientAddress },
+      state: {
+        recipient: project.clientName || project.clientAddress,
+        participantWallet: project.clientAddress,
+        participantName: project.clientName || project.clientAddress,
+      },
     });
   };
 
@@ -143,23 +148,12 @@ function ActiveProjectCard({ project }) {
       )}
 
       {/* Actions */}
-        <div className="flex gap-2 pt-2">
-          <button
-            onClick={handleViewContract}
-            className="flex-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 text-sm font-medium py-2 rounded flex items-center justify-center gap-2"
-          >
-            <FileText size={16} />
-            Contract
-          </button>
-
-          <button
-            onClick={handleMessage}
-            className="flex-1 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border border-purple-500/30 text-sm font-medium py-2 rounded flex items-center justify-center gap-2"
-          >
-            <MessageSquare size={16} />
-            Message
-          </button>
-        </div>
+      <ProjectActionButtons
+        onShowContract={handleViewContract}
+        onMessage={handleMessage}
+        contractLabel="Show Contract"
+        messageLabel="Message"
+      />
 
         {/* Urgent Warning */}
         {daysRemaining < 3 && daysRemaining > 0 && (

@@ -1,7 +1,19 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function ClientInProgressJobs({ job, setNotice, setRedNotice }) {
   const [showDetails, setShowDetails] = useState(false);
+  const navigate = useNavigate();
+
+  const handleMessageFreelancer = () => {
+    navigate("/messages", {
+      state: {
+        recipient: job?.bid?.freelancerName || job?.bid?.freelancerAddress,
+        participantWallet: job?.bid?.freelancerAddress,
+        participantName: job?.bid?.freelancerName || job?.bid?.freelancerAddress,
+      },
+    });
+  };
 
   return (
     <>
@@ -47,7 +59,10 @@ function ClientInProgressJobs({ job, setNotice, setRedNotice }) {
                   View Profile
                 </button>
 
-                <button className="px-4 py-2 text-sm rounded-md border border-[#14a19f]/40 text-[#14a19f] hover:bg-[#14a19f]/10">
+                <button
+                  onClick={handleMessageFreelancer}
+                  className="px-4 py-2 text-sm rounded-md border border-[#14a19f]/40 text-[#14a19f] hover:bg-[#14a19f]/10"
+                >
                   Message Freelancer
                 </button>
 
@@ -105,12 +120,20 @@ function ClientInProgressJobs({ job, setNotice, setRedNotice }) {
             </div>
           </div>
 
-          <button
-            onClick={() => setShowDetails(true)}
-            className="px-5 py-2 text-sm rounded-md border border-[#14a19f]/40 text-[#14a19f] hover:bg-[#14a19f]/10"
-          >
-            View Details
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowDetails(true)}
+              className="px-5 py-2 text-sm rounded-md border border-[#14a19f]/40 text-[#14a19f] hover:bg-[#14a19f]/10"
+            >
+              Show Contract
+            </button>
+            <button
+              onClick={handleMessageFreelancer}
+              className="px-5 py-2 text-sm rounded-md border border-purple-500/40 text-purple-300 hover:bg-purple-500/10"
+            >
+              Message
+            </button>
+          </div>
         </div>
       </div>
     </>

@@ -16,10 +16,18 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Shared focus style for better keyboard UX */
-:focus-visible {
+/* Shared focus style for better keyboard UX (non-form controls) */
+:where(button, a, [role="button"], summary):focus-visible {
   outline: 2px solid #1ecac7;
   outline-offset: 2px;
+}
+
+/* Keep form controls to a single, simple focus ring */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(30, 202, 199, 0.45) !important;
 }
 
 /*

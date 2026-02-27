@@ -4,7 +4,7 @@ import { checkJwt } from "../controllers/auth.controller.js";
 import { verifySiwe } from "../controllers/auth.controller.js";
 import { getNonce } from "../controllers/auth.controller.js";
 import { logout } from "../controllers/auth.controller.js";
-import { requireAuth } from "../middleware/auth.middleware.js";
+import { requireAuth } from "../middleware/authHttp.middleware.js";
 import { checkSkillData } from "../controllers/auth.controller.js";
 import { checkSkillName } from "../controllers/auth.controller.js";
 import { gitHubAuthStart } from "../controllers/auth.controller.js";

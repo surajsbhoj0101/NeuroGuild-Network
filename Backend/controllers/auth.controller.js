@@ -25,6 +25,7 @@ const getUserQuery = `
 `;
 
 const nonceStore = new Map();
+const pendingAuthStore = new Map();
 
 const getUser = async (address) => {
   const walletAddress = address.toLowerCase();
@@ -41,9 +42,9 @@ const getUser = async (address) => {
     const onchainUser = await querySubgraph(getUserQuery, {
       wallet: walletAddress,
     });
-    if (!onchainUser) {
+    if (!onchainUser || !onchainUser?.users?.length) {
       console.log("Noting found");
-      return res.status(200).json({ isFound: false });
+      return { isFound: false, user: null };
     }
     console.log("Onchain user got");
     console.log(onchainUser);
@@ -77,7 +78,17 @@ export const createUser = async (req, res) => {
       return res.status(400).json({ message: "Role is required" });
     }
 
-    const walletAddress = req.walletAddress?.toLowerCase();
+    const pendingKey = req.user?.pendingSessionKey;
+    const pending = pendingKey ? pendingAuthStore.get(pendingKey) : null;
+    if (!pending || pending.expiresAt < Date.now()) {
+      if (pendingKey) pendingAuthStore.delete(pendingKey);
+      return res.status(401).json({ message: "Pending signup session expired" });
+    }
+
+    const walletAddress = pending.walletAddress?.toLowerCase();
+    if (!walletAddress) {
+      return res.status(400).json({ message: "Wallet not found for signup session" });
+    }
 
     const roleLowerCase = role.toLowerCase();
     console.log(walletAddress, roleLowerCase)
@@ -100,7 +111,6 @@ export const createUser = async (req, res) => {
 
     const newToken = jwt.sign(
       {
-        address: walletAddress,
         role: roleLowerCase,
         userId: user._id,
       },
@@ -114,6 +124,7 @@ export const createUser = async (req, res) => {
       sameSite: "lax",
       maxAge: 12 * 60 * 60 * 1000,
     });
+    pendingAuthStore.delete(pendingKey);
 
     return res.status(200).json({ isFound: true, user });
   } catch (error) {
@@ -150,18 +161,7 @@ export const checkJwt = async (req, res) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    /**
-     * Expected payload example:
-     * {
-     *   userId: "...",
-     *   address: "0x...",
-     *   role: "client" | "freelancer",
-     *   iat: 123,
-     *   exp: 123
-     * }
-     */
-
-    if (!decoded?.address) {
+    if (!decoded?.userId && !decoded?.pendingSessionKey) {
       return res.status(401).json({
         isFound: false,
         message: "Invalid token payload",
@@ -169,13 +169,35 @@ export const checkJwt = async (req, res) => {
     }
 
     req.user = decoded;
-    req.walletAddress = decoded.address;
+
+    if (decoded?.pendingSessionKey) {
+      const pending = pendingAuthStore.get(decoded.pendingSessionKey);
+      if (!pending || pending.expiresAt < Date.now()) {
+        pendingAuthStore.delete(decoded.pendingSessionKey);
+        return res.status(401).json({
+          isFound: false,
+          message: "Pending signup session expired",
+        });
+      }
+      return res.status(200).json({
+        isFound: true,
+        role: null,
+        userId: null,
+      });
+    }
+
+    const user = await User.findById(decoded.userId).select("_id role");
+    if (!user) {
+      return res.status(401).json({
+        isFound: false,
+        message: "User not found",
+      });
+    }
 
     return res.status(200).json({
       isFound: true,
-      address: decoded.address,
-      role: decoded.role || null,
-      userId: decoded.userId || null,
+      role: user.role || decoded.role || null,
+      userId: user._id || decoded.userId || null,
     });
   } catch (err) {
     return res.status(401).json({
@@ -210,11 +232,24 @@ export const verifySiwe = async (req, res) => {
     const result = await getUser(address);
     const user = result?.user || null;
 
-    const payload = {
-      address,
-      role: user?.role || null,
-      userId: user?._id || null,
-    };
+    let payload;
+    if (user?._id) {
+      payload = {
+        role: user.role || null,
+        userId: user._id,
+      };
+    } else {
+      const pendingSessionKey = crypto.randomBytes(16).toString("hex");
+      pendingAuthStore.set(pendingSessionKey, {
+        walletAddress: address,
+        expiresAt: Date.now() + 15 * 60 * 1000,
+      });
+      payload = {
+        role: null,
+        userId: null,
+        pendingSessionKey,
+      };
+    }
 
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: "30m",

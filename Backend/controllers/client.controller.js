@@ -3,11 +3,13 @@ import Freelancer from "../models/freelancer_models/freelancers.model.js"
 import Client from "../models/client_models/clients.model.js"
 
 export const getClient = async (req, res) => {
-   
-    const walletAddress = req.walletAddress?.toLowerCase();
+    const userId = req.userId || req.user?.userId;
+    if (!userId) {
+        return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
 
     try {
-        const client = await Client.findOne({ walletAddress });
+        const client = await Client.findOne({ user: userId });
         console.log("Came to fetch")
         if (!client) {
             console.log("Client not found");
@@ -25,12 +27,15 @@ export const updateClient = async (req, res) => {
     const { payload } = req.body;
 
     try {
-        const walletAddress = req.walletAddress?.toLowerCase();
+        const userId = req.userId || req.user?.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
 
         const { stats, ...otherUpdates } = payload;
 
         const updatedUser = await Client.findOneAndUpdate(
-            { walletAddress },
+            { user: userId },
             { $set: otherUpdates },
             { new: true, runValidators: true }
         );

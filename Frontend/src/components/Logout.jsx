@@ -1,13 +1,15 @@
-import { useAccount, useChainId, useSignMessage } from "wagmi";
+import { useAccount } from "wagmi";
 import { useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 function Logout() {
   const { address, isConnected } = useAccount();
+  const { clearAuthState } = useAuth();
 
   const logoutHelper = async() =>{
     try {
+      clearAuthState();
       await axios.post(
         "http://localhost:5000/api/auth/logout",
         {},

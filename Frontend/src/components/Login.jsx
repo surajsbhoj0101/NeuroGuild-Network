@@ -5,12 +5,14 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { createUserOnchain } from "../utils/create_user";
 import { BrowserProvider } from "ethers";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function Login({ setLoadingUser, setNotice, setRedNotice }) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { data: walletClient } = useWalletClient();
   const { signMessageAsync } = useSignMessage();
+  const { setAuthState } = useAuth();
   const navigate = useNavigate();
 
   const [isSelectingRole, setIsSelectingRole] = useState(false);
@@ -47,6 +49,8 @@ export default function Login({ setLoadingUser, setNotice, setRedNotice }) {
         setIsSelectingRole(true);
         return;
       }
+
+      setAuthState({ role: jwtRes.data.role, userId: jwtRes.data.userId });
 
       redirectByRole(jwtRes.data.role);
     } catch (err) {

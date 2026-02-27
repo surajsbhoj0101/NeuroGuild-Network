@@ -104,7 +104,7 @@ function jobPage() {
     try {
       const score = await api.post(
         "http://localhost:5000/api/jobs/fetch-ai-score-and-job-interaction",
-        { address, jobId }
+        { jobId }
       );
 
       setScore(score.data?.aiScore?.match_score);

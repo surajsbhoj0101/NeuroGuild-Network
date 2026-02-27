@@ -8,11 +8,25 @@ import freelancerRoutes from "./routes/freelancer.routes.js";
 import clientRoutes from "./routes/client.routes.js";
 import jobRoutes from "./routes/job.routes.js";
 import cookieParser from "cookie-parser";
-
+import conversationRoutes from "./routes/conversation.routes.js";
+import { Server } from "socket.io";
+import { createServer } from "http";
+import socketHandler from "./sockets/handler.socket.js";
 // dotenv.config();
+
 const app = express();
 app.use(cookieParser());
 
+const server = createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"],
+    credentials: true,
+  }
+});
+
+socketHandler(io);
 
 app.use(
   cors({
@@ -37,6 +51,9 @@ app.use("/api/freelancer", freelancerRoutes);
 // Job/Listing Endpoints
 app.use("/api/jobs", jobRoutes);
 
+// Conversation and Messaging Endpoints
+app.use("/api/conversations", conversationRoutes);
+
 // start server
 const PORT = 5000;
-app.listen(PORT, () => console.log(` Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(` Server running on port ${PORT}`));

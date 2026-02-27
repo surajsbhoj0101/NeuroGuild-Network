@@ -5,6 +5,8 @@ import App from './App.jsx';
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import Navbar from './components/Navbar.jsx';
 import { ThemeProvider } from './contexts/ThemeContext.jsx';
+import { AuthProvider } from './contexts/AuthContext.jsx';
+import { SocketProvider } from './contexts/SocketContext.jsx';
 import Snowfall from "react-snowfall";
 
 import AppProviders from "./components/AppProviders.jsx";
@@ -14,6 +16,7 @@ import '@fontsource/orbitron/700.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/700.css';
 import FreelancerDashboard from './pages/FreelancerPages/Dashboard.jsx';
+import FreelancerManageJobs from './pages/FreelancerPages/ManageJobs.jsx';
 import BrowseJobs from './pages/FreelancerPages/BrowseJobs.jsx';
 import MyProfile from './pages/FreelancerPages/MyProfile.jsx';
 import Setting from './pages/FreelancerPages/Setting.jsx';
@@ -23,6 +26,7 @@ import ClientProfile from './pages/ClientPages/ClientProfile.jsx';
 import PostJobs from './pages/ClientPages/PostJobs.jsx';
 import JobPage from './pages/jobs/jobPage.jsx';
 import ClientDashboard from './pages/ClientPages/Dashboard.jsx';
+import ClientManageJobs from './pages/ClientPages/ManageJobs.jsx';
 import Governance from './pages/Governance.jsx';
 import Messages from './pages/Messages.jsx';
 import SideBar from './components/SideBar.jsx';
@@ -57,6 +61,16 @@ const router = createBrowserRouter([
         <Snowfall snowflakeCount={60} />
         <Navbar />
         <FreelancerDashboard />
+      </>
+    )
+  },
+  {
+    path: "/freelancer/manage-jobs",
+    element: (
+      <>
+        <Snowfall snowflakeCount={60} />
+        <Navbar />
+        <FreelancerManageJobs />
       </>
     )
   }, {
@@ -139,6 +153,15 @@ const router = createBrowserRouter([
         <ClientDashboard />
       </>
     )
+  },
+  {
+    path: "/client/manage-jobs",
+    element: (
+      <>
+        <Navbar />
+        <ClientManageJobs />
+      </>
+    )
   }, {
     path: "/governance",
     element: (
@@ -163,7 +186,11 @@ createRoot(document.getElementById("root")).render(
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AppProviders>
-          <RouterProvider router={router} />
+          <AuthProvider>
+            <SocketProvider>
+              <RouterProvider router={router} />
+            </SocketProvider>
+          </AuthProvider>
         </AppProviders>
       </ThemeProvider>
     </QueryClientProvider>

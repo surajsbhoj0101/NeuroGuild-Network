@@ -4,12 +4,14 @@ import { v4 as uuidv4 } from "uuid";
 const JobInteractionSchema = new mongoose.Schema({
   id: { type: String, default: uuidv4 },
 
+  userId: { type: String, index: true, default: null },
   walletAddress: { type: String, required: true },   
   jobId: { type: String, required: true },    
 
   isSaved: { type: Boolean, default: false },
-  
+  isApplied: { type: Boolean, default: false },
   savedAt: { type: Date, default: null },
+  appliedAt: { type: Date, default: null },
 });
 
 export default mongoose.model('JobInteraction', JobInteractionSchema);

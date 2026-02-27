@@ -14,6 +14,11 @@ const BidSchema = new mongoose.Schema(
       lowercase: true,
       index: true
     },
+    bidderUserId: {
+      type: String,
+      default: null,
+      index: true,
+    },
 
     bidAmount: {
       type: Number,
@@ -57,4 +62,3 @@ BidSchema.set("toObject", { virtuals: true });
 BidSchema.set("toJSON", { virtuals: true });
 
 export default mongoose.model("Bid", BidSchema);
-

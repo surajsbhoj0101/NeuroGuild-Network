@@ -10,7 +10,7 @@ import { fetchClientsJobs } from "../controllers/jobs.controller.js";
 import { fetchJobBids } from "../controllers/jobs.controller.js";
 import { fetchProposalIpfs } from "../controllers/jobs.controller.js";
 import { fetchFreelancerJobs } from "../controllers/jobs.controller.js";
-import { requireAuth } from "../middleware/auth.middleware.js";
+import { requireAuth } from "../middleware/authHttp.middleware.js";
 
 const jobRoutes = express.Router();
 
@@ -19,11 +19,12 @@ jobRoutes.get("/fetch-jobs", fetchJobs);
 jobRoutes.get("/fetch-job/:jobId", requireAuth, fetchJob);
 jobRoutes.post(
   "/fetch-ai-score-and-job-interaction",
+  requireAuth,
   fetchAiScoreAndJobInteraction
 );
-jobRoutes.post("/get-job-ipfs", getJobIpfs);
+jobRoutes.post("/get-job-ipfs", requireAuth, getJobIpfs);
 jobRoutes.put("/save-job", requireAuth, saveJob);
-jobRoutes.put("/submit-bid", saveBid);
+jobRoutes.put("/submit-bid", requireAuth, saveBid);
 jobRoutes.get("/get-job-bids/:jobId", fetchJobBids);
 jobRoutes.post("/get-bid-proposal-ipfs", fetchProposalIpfs);
 jobRoutes.get("/fetch-freelancer-jobs",requireAuth, fetchFreelancerJobs);

@@ -101,6 +101,29 @@ const fetchMyJobs = `
 }
 `;
 
+const getAuthIdentity = async (req) => {
+  const userId = req.user?.userId || req.userId || null;
+  if (!userId) {
+    return { userId: null, walletAddress: null };
+  }
+
+  const user = await User.findById(userId).select("_id wallets");
+  return {
+    userId: user?._id || null,
+    walletAddress: user?.wallets?.toLowerCase?.() || null,
+  };
+};
+
+const buildInteractionSelector = ({ userId, walletAddress, jobId }) => {
+  const or = [];
+  if (userId) or.push({ userId, jobId });
+  if (walletAddress) or.push({ walletAddress, jobId });
+
+  if (or.length === 0) return null;
+  if (or.length === 1) return or[0];
+  return { $or: or };
+};
+
 export const aiEnhanceJobDetails = async (req, res) => {
   const { payload } = req.body;
   console.log(payload);
@@ -184,17 +207,12 @@ ${JSON.stringify(payload)}
 export const getJobIpfs = async (req, res) => {
   const { payload } = req.body;
   try {
-    if (!payload?.clientAddress) {
-      console.log("client address required");
-      return res
-        .status(400)
-        .json({ success: false, message: "clientAddress is required" });
+    const { userId, walletAddress } = await getAuthIdentity(req);
+    if (!userId || !walletAddress) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const walletAddress = payload.clientAddress.toLowerCase();
-    console.log(walletAddress);
-
-    const user = await User.findOne({ wallets: walletAddress });
+    const user = await User.findOne({ _id: userId, wallets: walletAddress });
     if (!user) {
       console.log("Unable to find the user");
       return res
@@ -202,8 +220,13 @@ export const getJobIpfs = async (req, res) => {
         .json({ success: false, message: "Unable to find the user" });
     }
 
+    const sanitizedPayload = {
+      ...(payload || {}),
+      clientAddress: walletAddress,
+    };
+
     //create ipfs
-    const json = JSON.stringify(payload);
+    const json = JSON.stringify(sanitizedPayload);
     const uriCid = await uploadToIpfs(json);
     const jobIpfs = `ipfs://${uriCid}`;
     console.log("got job ipfs", jobIpfs);
@@ -211,7 +234,7 @@ export const getJobIpfs = async (req, res) => {
       success: true,
       ipfs: jobIpfs,
     });
-  } catch {
+  } catch (error) {
     console.log("Error in creating job", error);
     return res
       .status(500)
@@ -258,9 +281,9 @@ export const fetchJobs = async (req, res) => {
 
 export const fetchJob = async (req, res) => {
   const { jobId } = req.params;
-  const walletAddress = req.walletAddress?.toLowerCase();
 
   try {
+    const { walletAddress } = await getAuthIdentity(req);
     if (!jobId) {
       return res.status(400).json({
         isFound: false,
@@ -328,20 +351,28 @@ export const fetchJob = async (req, res) => {
 
 export const fetchAiScoreAndJobInteraction = async (req, res) => {
   try {
-    const { address, jobId } = req.body;
-    const walletAddress = address?.toLowerCase();
+    const { jobId } = req.body;
+    const { userId, walletAddress } = await getAuthIdentity(req);
 
     if (!walletAddress || !jobId) {
       return res.status(400).json({
         success: false,
-        message: "Both address and jobId are required.",
+        message: "Authenticated wallet and jobId are required.",
       });
     }
 
+    const interactionSelector = buildInteractionSelector({
+      userId,
+      walletAddress,
+      jobId,
+    });
+
     const [candidateProfile, jobIpfs, interaction] = await Promise.all([
-      Freelancer.findOne({ walletAddress }),
+      userId
+        ? Freelancer.findOne({ $or: [{ user: userId }, { walletAddress }] })
+        : Freelancer.findOne({ walletAddress }),
       querySubgraph(fetchJobQuery, { jobId }),
-      JobInteraction.findOne({ walletAddress, jobId }),
+      interactionSelector ? JobInteraction.findOne(interactionSelector) : null,
     ]);
 
     const job = jobIpfs?.jobs?.[0];
@@ -434,13 +465,28 @@ export const fetchAiScoreAndJobInteraction = async (req, res) => {
 
 export const saveJob = async (req, res) => {
   const { jobId } = req.body;
-  const walletAddress = req.walletAddress?.toLowerCase();
+  const { userId, walletAddress } = await getAuthIdentity(req);
+
+  const interactionSelector = buildInteractionSelector({
+    userId,
+    walletAddress,
+    jobId,
+  });
+
+  if (!interactionSelector) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized",
+    });
+  }
 
   try {
     const updated = await JobInteraction.findOneAndUpdate(
-      { walletAddress, jobId },
+      interactionSelector,
       {
         $set: {
+          userId,
+          walletAddress,
           isSaved: true,
           savedAt: new Date(),
         },
@@ -463,39 +509,49 @@ export const saveJob = async (req, res) => {
 };
 
 export const saveBid = async (req, res) => {
-  const { jobId, amount, proposal, address } = req.body;
+  const { jobId, amount, proposal } = req.body;
+  const { userId, walletAddress } = await getAuthIdentity(req);
 
-  if (!jobId || !amount || !proposal || !address) {
+  if (!jobId || !amount || !proposal || !walletAddress) {
     return res.status(400).json({ success: false, message: "Missing fields" });
   }
 
-  const walletAddress = address.toLowerCase();
+  const interactionSelector = buildInteractionSelector({
+    userId,
+    walletAddress,
+    jobId,
+  });
 
   try {
     const bid = await Bid.create({
       jobId: jobId,
       bidderAddress: walletAddress,
+      bidderUserId: userId,
       bidAmount: amount,
       proposal: proposal,
     });
 
-    const updated = await JobInteraction.findOneAndUpdate(
-      { walletAddress, jobId },
-      {
-        $set: {
-          isApplied: true,
-          appliedAt: new Date(),
+    let updated = null;
+    if (interactionSelector) {
+      updated = await JobInteraction.findOneAndUpdate(
+        interactionSelector,
+        {
+          $set: {
+            userId,
+            walletAddress,
+            isApplied: true,
+            appliedAt: new Date(),
+          },
         },
-      },
-      { upsert: true, new: true }
-    );
+        { upsert: true, new: true }
+      );
+    }
 
     return res.status(201).json({
       success: true,
       message: "Bid submitted successfully",
       bid,
       interaction: updated,
-      updatedJob: updatedJob,
     });
   } catch (error) {
     console.error("saveBid error:", error);
@@ -549,7 +605,10 @@ export const fetchProposalIpfs = async (req, res) => {
 
 export const fetchFreelancerJobs = async (req, res) => {
   try {
-    const walletAddress = req.walletAddress?.toLowerCase();
+    const { walletAddress } = await getAuthIdentity(req);
+    if (!walletAddress) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
 
     const resp = await querySubgraph(fetchMyJobs, { bidder: walletAddress });
     const bids = resp?.bids || [];
@@ -598,9 +657,7 @@ export const fetchFreelancerJobs = async (req, res) => {
       const deadline = new Date(jobPayload.JobDetails.deadline);
       const now = new Date();
 
-      if (jobStatus === "OPEN") {
-        categorized.open.push(jobPayload);
-      } else if (jobStatus === "IN_PROGRESS") {
+      if (jobStatus === "IN_PROGRESS") {
         // Check if deadline has passed
         if (deadline < now) {
           categorized.expired.push(jobPayload);
@@ -626,9 +683,12 @@ export const fetchFreelancerJobs = async (req, res) => {
 };
 
 export const fetchClientsJobs = async (req, res) => {
-  const clientAddress = req.walletAddress?.toLowerCase();
-
   try {
+    const { walletAddress: clientAddress } = await getAuthIdentity(req);
+    if (!clientAddress) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
     const resp = await querySubgraph(clientJobFetchQuery, {
       client: clientAddress,
     });
@@ -704,4 +764,3 @@ export const fetchClientsJobs = async (req, res) => {
     });
   }
 };
-

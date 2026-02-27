@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from "react";
-import { Clock, MessageSquare, FileText, Archive } from "lucide-react";
+import { Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import ContractDetailsModal from "./ContractDetailsModal";
+import ContractDetailsModal from "../../ContractDetailsModal";
+import ProjectActionButtons from "../../ProjectActionButtons";
 
 function ExpiredProjectCard({ project }) {
   const navigate = useNavigate();
@@ -21,9 +22,11 @@ function ExpiredProjectCard({ project }) {
     });
   };
 
-  const handleViewContract = () => {
+      const handleViewContract = () => {
     setShowContractModal(true);
   };
+
+  const handleArchive = () => {};
 
   const contractDetails = useMemo(
     () => ({
@@ -146,30 +149,15 @@ function ExpiredProjectCard({ project }) {
       )}
 
       {/* Actions */}
-        <div className="flex gap-2 pt-2">
-          <button
-            onClick={handleViewContract}
-            className="flex-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 text-sm font-medium py-2 rounded flex items-center justify-center gap-2 transition-colors"
-          >
-            <FileText size={16} />
-            Contract
-          </button>
-
-          <button
-            onClick={handleMessage}
-            className="flex-1 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border border-purple-500/30 text-sm font-medium py-2 rounded flex items-center justify-center gap-2 transition-colors"
-          >
-            <MessageSquare size={16} />
-            Message
-          </button>
-
-          <button
-            className="flex-1 bg-gray-500/20 hover:bg-gray-500/30 text-gray-400 border border-gray-500/30 text-sm font-medium py-2 rounded flex items-center justify-center gap-2 transition-colors"
-          >
-            <Archive size={16} />
-            Archive
-          </button>
-        </div>
+      <ProjectActionButtons
+        onShowContract={handleViewContract}
+        onMessage={handleMessage}
+        onArchive={handleArchive}
+        showArchive={true}
+        contractLabel="Contract"
+        messageLabel="Message"
+        archiveLabel="Archive"
+      />
 
         {/* Expired Notice */}
         <div className="bg-red-500/10 border border-red-500/30 rounded p-3">

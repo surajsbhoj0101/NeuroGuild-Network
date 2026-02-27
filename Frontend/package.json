@@ -29,6 +29,8 @@
     "react-router-dom": "^7.9.2",
     "react-snowfall": "^2.3.0",
     "siwe": "^3.0.0",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
     "tailwindcss": "^4.1.13",
     "viem": "^2.38.3",
     "wagmi": "^2.10.0"
