@@ -4,6 +4,7 @@ import { useAccount } from 'wagmi';
 import SideBar from '../../components/SideBar';
 import api from "../../utils/api.js"
 import NoticeToast from "../../components/NoticeToast";
+import { useAuth } from "../../contexts/AuthContext.jsx";
 
 import { Lock, Award, Check, User, Mail, MapPin, Github, Linkedin, Twitter, Globe, Brain, Code, Palette, Database, Globe as GlobeIcon, Zap } from 'lucide-react';
 
@@ -11,7 +12,8 @@ const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
 
 export default function MyProfile() {
-  const { isConnected, address } = useAccount();
+  const { address } = useAccount();
+  const { isAuthentication } = useAuth();
   const navigate = useNavigate();
   const [notice, setNotice] = useState(null);
   const [redNotice, setRedNotice] = useState(false);
@@ -61,7 +63,7 @@ export default function MyProfile() {
 
   useEffect(() => {
     let t;
-    if (!isConnected) {
+    if (!isAuthentication) {
       setRedNotice(true);
       setNotice("Wallet not connected — redirecting to home...");
       t = setTimeout(() => navigate('/'), 1600);
@@ -84,7 +86,7 @@ export default function MyProfile() {
       This ensures only the latest intended behavior happens.
     */
     return () => clearTimeout(t);
-  }, [isConnected, navigate, address]);
+  }, [isAuthentication, navigate, address]);
 
   const loadProfileData = async () => {
     if (!address) return;

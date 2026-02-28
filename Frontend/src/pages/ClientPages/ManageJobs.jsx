@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAccount } from "wagmi";
 import { AlertCircle } from "lucide-react";
 import SideBar from "../../components/SideBar";
 import ClientStats from "../../components/ClientStats";
 import api from "../../utils/api.js";
 import NoticeToast from "../../components/NoticeToast";
 import StatusProjectCard from "../../components/StatusProjectCard";
+import { useAuth } from "../../contexts/AuthContext.jsx";
 
 function EmptyState({ title, description, ctaLabel, onCta }) {
   return (
@@ -27,7 +27,7 @@ function EmptyState({ title, description, ctaLabel, onCta }) {
 }
 
 function ManageJobs() {
-  const { isConnected } = useAccount();
+  const { isAuthentication } = useAuth();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("Open");
@@ -54,9 +54,9 @@ function ManageJobs() {
 
   useEffect(() => {
     let timer;
-    if (!isConnected) {
+    if (!isAuthentication) {
       timer = setTimeout(() => {
-        if (!isConnected) {
+        if (!isAuthentication) {
           setRedNotice(true);
           setNotice("Wallet not connected — redirecting to home...");
           navigate("/");
@@ -67,7 +67,7 @@ function ManageJobs() {
       fetchDashboardData();
     }
     return () => clearTimeout(timer);
-  }, [isConnected, navigate]);
+  }, [isAuthentication, navigate]);
 
   async function fetchDashboardData() {
     try {
@@ -279,6 +279,34 @@ function ManageJobs() {
       setLoading(false);
     }
   }
+  
+  const handleShowContract = (project) => {
+    if (!project?.jobId) return;
+    navigate(`/job/${project.jobId}`);
+  };
+
+  const handleMessage = (project) => {
+    const participantName =
+      project?.freelancerName ||
+      project?.bid?.freelancerName ||
+      project?.bids?.[0]?.freelancerName ||
+      project?.freelancerAddress ||
+      project?.bid?.freelancerAddress ||
+      project?.bids?.[0]?.freelancerAddress;
+
+    const participantWallet =
+      project?.freelancerAddress ||
+      project?.bid?.freelancerAddress ||
+      project?.bids?.[0]?.freelancerAddress;
+
+    navigate("/messages", {
+      state: {
+        recipient: participantName,
+        participantWallet,
+        participantName,
+      },
+    });
+  };
 
   return (
     <>
@@ -383,6 +411,17 @@ function ManageJobs() {
                         freelancerAddress: job?.bids?.[0]?.freelancerAddress || "N/A",
                       }}
                       status="Open"
+                      showActions={true}
+                      onShowContract={() => handleShowContract(job)}
+                      onMessage={() =>
+                        handleMessage({
+                          ...job,
+                          freelancerName:
+                            job?.bids?.[0]?.freelancerName || "N/A",
+                          freelancerAddress:
+                            job?.bids?.[0]?.freelancerAddress || "N/A",
+                        })
+                      }
                     />
                   ))
                 ))}
@@ -403,6 +442,16 @@ function ManageJobs() {
                         freelancerAddress: job?.bid?.freelancerAddress || "N/A",
                       }}
                       status="InProgress"
+                      showActions={true}
+                      onShowContract={() => handleShowContract(job)}
+                      onMessage={() =>
+                        handleMessage({
+                          ...job,
+                          freelancerName: job?.bid?.freelancerName || "N/A",
+                          freelancerAddress:
+                            job?.bid?.freelancerAddress || "N/A",
+                        })
+                      }
                     />
                   ))
                 ))}
@@ -419,6 +468,9 @@ function ManageJobs() {
                       key={job.jobId}
                       project={job}
                       status="Submitted"
+                      showActions={true}
+                      onShowContract={() => handleShowContract(job)}
+                      onMessage={() => handleMessage(job)}
                     />
                   ))
                 ))}
@@ -435,6 +487,9 @@ function ManageJobs() {
                       key={job.jobId}
                       project={job}
                       status="Completed"
+                      showActions={true}
+                      onShowContract={() => handleShowContract(job)}
+                      onMessage={() => handleMessage(job)}
                     />
                   ))
                 ))}
@@ -451,6 +506,9 @@ function ManageJobs() {
                       key={job.jobId}
                       project={job}
                       status="Disputed"
+                      showActions={true}
+                      onShowContract={() => handleShowContract(job)}
+                      onMessage={() => handleMessage(job)}
                     />
                   ))
                 ))}
@@ -467,6 +525,9 @@ function ManageJobs() {
                       key={job.jobId}
                       project={job}
                       status="Cancelled"
+                      showActions={true}
+                      onShowContract={() => handleShowContract(job)}
+                      onMessage={() => handleMessage(job)}
                     />
                   ))
                 ))}
@@ -483,6 +544,9 @@ function ManageJobs() {
                       key={job.jobId}
                       project={job}
                       status="Expired"
+                      showActions={true}
+                      onShowContract={() => handleShowContract(job)}
+                      onMessage={() => handleMessage(job)}
                     />
                   ))
                 ))}

@@ -171,6 +171,14 @@ const router = createBrowserRouter([
       </>
     )
   }, {
+    path: "/messages/:recipientId",
+    element: (
+      <>
+        <Snowfall snowflakeCount={60} />
+        <Messages />
+      </>
+    )
+  },{
     path: "/messages",
     element: (
       <>

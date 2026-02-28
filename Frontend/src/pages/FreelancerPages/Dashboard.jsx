@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAccount } from "wagmi";
 import SideBar from "../../components/SideBar";
 import api from "../../utils/api.js";
 import "../../index.css";
 import FreelancerStats from "../../components/FreelancerStats";
 import NoticeToast from "../../components/NoticeToast";
+import { useAuth } from "../../contexts/AuthContext.jsx";
 
 function Dashboard() {
-  const { isConnected } = useAccount();
+  const { isAuthentication } = useAuth();
   const navigate = useNavigate();
 
   const [notice, setNotice] = useState(null);
@@ -23,9 +23,9 @@ function Dashboard() {
 
   useEffect(() => {
     let timer;
-    if (!isConnected) {
+    if (!isAuthentication) {
       timer = setTimeout(() => {
-        if (!isConnected) {
+        if (!isAuthentication) {
           setRedNotice(true);
           setNotice("Wallet not connected — redirecting to home...");
           navigate("/");
@@ -36,7 +36,7 @@ function Dashboard() {
       fetchDashboardData();
     }
     return () => clearTimeout(timer);
-  }, [isConnected, navigate]);
+  }, [isAuthentication, navigate]);
 
   const fetchDashboardData = async () => {
     setLoading(true);

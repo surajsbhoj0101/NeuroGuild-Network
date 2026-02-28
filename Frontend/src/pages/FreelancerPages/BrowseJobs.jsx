@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAccount } from "wagmi";
 import SideBar from "../../components/SideBar";
 import api from "../../utils/api.js"
+import { useAuth } from "../../contexts/AuthContext.jsx";
 import { ArrowBigRight, ArrowBigLeft, Filter, Tag, Briefcase, SortAsc, Check, X, Search, SlidersHorizontal } from "lucide-react";
 import JobCardSkeleton from "../../components/JobCardSkeleton";
 import NoticeToast from "../../components/NoticeToast";
@@ -13,7 +14,8 @@ function BrowseJobs() {
   const orbitronStyle = { fontFamily: "Orbitron, sans-serif" };
   const robotoStyle = { fontFamily: "Roboto, sans-serif" };
 
-  const { isConnected, address } = useAccount();
+  const { address } = useAccount();
+  const { isAuthentication } = useAuth();
   const navigate = useNavigate();
 
   const [notice, setNotice] = useState(null);
@@ -31,7 +33,7 @@ function BrowseJobs() {
   const [filteredJobs, setFilteredJobs] = useState([]);
 
   async function fetchJobs(params) {
-    if (!isConnected || !address) return;
+    if (!isAuthentication || !address) return;
     try {
       setIsFetchingJobs(true);
       const jobs = await api.get("http://localhost:5000/api/jobs/fetch-jobs");
@@ -49,7 +51,7 @@ function BrowseJobs() {
   useEffect(() => {
     fetchJobs();
     setSkills();
-  }, [address, isConnected]);
+  }, [address, isAuthentication]);
 
   useEffect(() => {
     const skillSet = new Set();
@@ -67,10 +69,10 @@ function BrowseJobs() {
 
   useEffect(() => {
     let timer;
-    if (!isConnected) {
+    if (!isAuthentication) {
      
       timer = setTimeout(() => {
-        if (!isConnected) {
+        if (!isAuthentication) {
           setRedNotice(true);
           setNotice("Wallet not connected — redirecting to home...");
           navigate("/");
@@ -80,7 +82,7 @@ function BrowseJobs() {
       setNotice(null);
     }
     return () => clearTimeout(timer);
-  }, [isConnected, navigate]);
+  }, [isAuthentication, navigate]);
 
   function toggleSkill(skill) {
     setSelectedSkills((prevSkills) => {

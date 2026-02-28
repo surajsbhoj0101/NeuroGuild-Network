@@ -6,18 +6,18 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const { isConnected } = useAccount();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthentication, setIsAuthentication] = useState(false);
   const [role, setRole] = useState(null);
   const [userId, setUserId] = useState(null);
 
   const setAuthState = ({ role: nextRole, userId: nextUserId }) => {
-    setIsAuthenticated(true);
+    setIsAuthentication(true);
     setRole(nextRole || null);
     setUserId(nextUserId || null);
   };
 
   const clearAuthState = () => {
-    setIsAuthenticated(false);
+    setIsAuthentication(false);
     setRole(null);
     setUserId(null);
   };
@@ -54,15 +54,26 @@ export function AuthProvider({ children }) {
     };
   }, [isConnected]);
 
+  /**
+   * If isAuthentication changes from false to true:
+
+      useMemo notices the change in the dependency array.
+      It runs the function inside it again.
+      It creates a brand new object (Object B) with the updated values.
+      React now tells every component: "Hey, the Auth object is now Object B. Please update."
+   */
+
   const value = useMemo(
     () => ({
-      isAuthenticated,
+      isAuthentication,
+      // Compatibility alias for existing consumers.
+      isAuthenticated: isAuthentication,
       role,
       userId,
       setAuthState,
       clearAuthState,
     }),
-    [isAuthenticated, role, userId]
+    [isAuthentication, role, userId]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

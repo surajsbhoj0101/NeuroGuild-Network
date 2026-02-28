@@ -5,13 +5,15 @@ import { useAccount } from 'wagmi';
 import { Timer } from 'lucide-react';
 import skillTokenizable from '../../../../Backend/services/tokenizableSkills';
 import NoticeToast from "../../components/NoticeToast";
+import { useAuth } from "../../contexts/AuthContext.jsx";
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
 
 function VerifySkillPage() {
   const navigate = useNavigate();
-  const { isConnected, address } = useAccount();
+  const { address } = useAccount();
+  const { isAuthentication } = useAuth();
   const { skill } = useParams();
   console.log(skill)
   const [notice, setNotice] = useState(null);
@@ -37,7 +39,7 @@ function VerifySkillPage() {
   // Fetch Questions
   useEffect(() => {
     let t;
-    if (!isConnected) {
+    if (!isAuthentication) {
       setRedNotice(true);
       setNotice("Wallet not connected — redirecting to home...");
       t = setTimeout(() => navigate('/'), 1600);
@@ -46,7 +48,7 @@ function VerifySkillPage() {
       getQuizQuestions();
     }
     return () => clearTimeout(t);
-  }, [isConnected, navigate, address]);
+  }, [isAuthentication, navigate, address]);
 
   async function getQuizQuestions() {
   

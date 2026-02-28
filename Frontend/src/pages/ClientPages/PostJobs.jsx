@@ -7,10 +7,12 @@ import NoticeToast from "../../components/NoticeToast";
 import "../../index.css";
 import { BrowserProvider } from "ethers";
 import { postJob } from "../../utils/post_job";
+import { useAuth } from "../../contexts/AuthContext.jsx";
 // import { funkiMainnet } from 'viem/chains';
 
 function PostJobs() {
-  const { isConnected, address } = useAccount();
+  const { address } = useAccount();
+  const { isAuthentication } = useAuth();
   const navigate = useNavigate();
   const timeoutRef = useRef(null);
 
@@ -47,7 +49,7 @@ function PostJobs() {
   const DESCRIPTION_MAX = 800;
 
   useEffect(() => {
-    if (!isConnected) {
+    if (!isAuthentication) {
       setRedNotice(true);
       setNotice("Wallet not connected — redirecting to home...");
       timeoutRef.current = setTimeout(() => navigate("/"), 1600);
@@ -55,7 +57,7 @@ function PostJobs() {
       setNotice(null);
     }
     return () => clearTimeout(timeoutRef.current);
-  }, [isConnected, navigate, address]);
+  }, [isAuthentication, navigate, address]);
 
   const handleInputChange = (field, value) => {
     if (field === "jobDescription") {

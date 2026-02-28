@@ -8,6 +8,7 @@ import "../../index.css";
 import FreelancerStats from "../../components/FreelancerStats";
 import NoticeToast from "../../components/NoticeToast";
 import StatusProjectCard from "../../components/StatusProjectCard";
+import { useAuth } from "../../contexts/AuthContext.jsx";
 
 function EmptyState({ title, description, ctaLabel, onCta }) {
   return (
@@ -28,7 +29,8 @@ function EmptyState({ title, description, ctaLabel, onCta }) {
 }
 
 function ManageJobs() {
-  const { isConnected, address } = useAccount();
+  const { address } = useAccount();
+  const { isAuthentication } = useAuth();
   const navigate = useNavigate();
 
   const [notice, setNotice] = useState(null);
@@ -44,23 +46,23 @@ function ManageJobs() {
   const [completedProjects, setCompletedProjects] = useState([]);
 
   const [stats, setStats] = useState({
-        totalEarnings: 0,
-        activeProjects: 0,
-        pendingBids: 0,
-        inProgressProjects: 0,
-        submittedProjects: 0,
-        disputedProjects: 0,
-        cancelledProjects: 0,
-        expiredProjects: 0,
-        completedProjects: 0,
-        openProjects: 0,
+    totalEarnings: 0,
+    activeProjects: 0,
+    pendingBids: 0,
+    inProgressProjects: 0,
+    submittedProjects: 0,
+    disputedProjects: 0,
+    cancelledProjects: 0,
+    expiredProjects: 0,
+    completedProjects: 0,
+    openProjects: 0,
   });
 
   useEffect(() => {
     let timer;
-    if (!isConnected) {
+    if (!isAuthentication) {
       timer = setTimeout(() => {
-        if (!isConnected) {
+        if (!isAuthentication) {
           setRedNotice(true);
           setNotice("Wallet not connected — redirecting to home...");
           navigate("/");
@@ -71,7 +73,7 @@ function ManageJobs() {
       fetchDashboardData();
     }
     return () => clearTimeout(timer);
-  }, [isConnected, navigate]);
+  }, [isAuthentication, navigate]);
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -85,134 +87,140 @@ function ManageJobs() {
 
       const inProgressProjects = Array.isArray(data.categorized?.inProgress)
         ? data.categorized.inProgress.map((project) => ({
-            jobId: project.jobId,
-            jobTitle: project.JobDetails?.title || "Untitled Job",
-            jobDescription: project.JobDetails?.description || "",
-            clientName:
-              project.JobDetails?.clientDetails?.companyDetails?.companyName ||
-              project.JobDetails?.clientAddress,
-            clientAddress: project.JobDetails?.clientAddress,
-            freelancerName:
-              project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-              "You",
-            freelancerAddress: address,
-            contractValue: project.bidAmount,
-            deadline:
-              project.JobDetails?.completion || project.JobDetails?.deadline,
-            status: "Active",
-            skills: project.JobDetails?.skills || [],
-            milestones: project?.milestones || [],
-          }))
+          jobId: project.jobId,
+          jobTitle: project.JobDetails?.title || "Untitled Job",
+          jobDescription: project.JobDetails?.description || "",
+          clientName:
+            project.JobDetails?.clientDetails?.companyDetails?.companyName ||
+            project.JobDetails?.clientAddress,
+          clientAddress: project.JobDetails?.clientAddress,
+          clientId: project.JobDetails?.clientId,
+          freelancerName:
+            project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+            "You",
+          freelancerAddress: address,
+          contractValue: project.bidAmount,
+          deadline:
+            project.JobDetails?.completion || project.JobDetails?.deadline,
+          status: "Active",
+          skills: project.JobDetails?.skills || [],
+          milestones: project?.milestones || [],
+        }))
         : [];
 
       const completedProj = Array.isArray(data.categorized?.completed)
         ? data.categorized.completed.map((project) => ({
-            jobId: project.jobId,
-            jobTitle: project.JobDetails?.title || "Untitled Job",
-            jobDescription: project.JobDetails?.description || "",
-            clientName:
-              project.JobDetails?.clientDetails?.companyDetails?.companyName ||
-              project.JobDetails?.clientAddress,
-            clientAddress: project.JobDetails?.clientAddress,
-            freelancerName:
-              project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-              "You",
-            freelancerAddress: address,
-            budget: project.bidAmount,
-            deadline:
-              project.JobDetails?.completion || project.JobDetails?.deadline,
-            amountEarned: project.bidAmount,
-            completedDate: project.completedDate || project.updatedAt,
-            clientRating: project.clientRating,
-            clientComment: project.clientComment,
-            daysWorked: project.daysWorked || 0,
-            deliverables: project.deliverables || 0,
-          }))
+          jobId: project.jobId,
+          jobTitle: project.JobDetails?.title || "Untitled Job",
+          jobDescription: project.JobDetails?.description || "",
+          clientName:
+            project.JobDetails?.clientDetails?.companyDetails?.companyName ||
+            project.JobDetails?.clientAddress,
+          clientAddress: project.JobDetails?.clientAddress,
+          clientId: project.JobDetails?.clientId,
+          freelancerName:
+            project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+            "You",
+          freelancerAddress: address,
+          budget: project.bidAmount,
+          deadline:
+            project.JobDetails?.completion || project.JobDetails?.deadline,
+          amountEarned: project.bidAmount,
+          completedDate: project.completedDate || project.updatedAt,
+          clientRating: project.clientRating,
+          clientComment: project.clientComment,
+          daysWorked: project.daysWorked || 0,
+          deliverables: project.deliverables || 0,
+        }))
         : [];
 
       const expiredProj = Array.isArray(data.categorized?.expired)
         ? data.categorized.expired.map((project) => ({
-            jobId: project.jobId,
-            jobTitle: project.JobDetails?.title || "Untitled Job",
-            jobDescription: project.JobDetails?.description || "",
-            clientName:
-              project.JobDetails?.clientDetails?.companyDetails?.companyName ||
-              project.JobDetails?.clientAddress,
-            clientAddress: project.JobDetails?.clientAddress,
-            freelancerName:
-              project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-              "You",
-            freelancerAddress: address,
-            contractValue: project.bidAmount,
-            deadline:
-              project.JobDetails?.completion || project.JobDetails?.deadline,
-            status: "Expired",
-            skills: project.JobDetails?.skills || [],
-            milestones: project?.milestones || [],
-          }))
+          jobId: project.jobId,
+          jobTitle: project.JobDetails?.title || "Untitled Job",
+          jobDescription: project.JobDetails?.description || "",
+          clientName:
+            project.JobDetails?.clientDetails?.companyDetails?.companyName ||
+            project.JobDetails?.clientAddress,
+          clientAddress: project.JobDetails?.clientAddress,
+          clientId: project.JobDetails?.clientId,
+          freelancerName:
+            project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+            "You",
+          freelancerAddress: address,
+          contractValue: project.bidAmount,
+          deadline:
+            project.JobDetails?.completion || project.JobDetails?.deadline,
+          status: "Expired",
+          skills: project.JobDetails?.skills || [],
+          milestones: project?.milestones || [],
+        }))
         : [];
 
       const submittedProj = Array.isArray(data.categorized?.submitted)
         ? data.categorized.submitted.map((project) => ({
-            jobId: project.jobId,
-            jobTitle: project.JobDetails?.title || "Untitled Job",
-            jobDescription: project.JobDetails?.description || "",
-            clientName:
-              project.JobDetails?.clientDetails?.companyDetails?.companyName ||
-              project.JobDetails?.clientAddress,
-            clientAddress: project.JobDetails?.clientAddress,
-            freelancerName:
-              project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-              "You",
-            freelancerAddress: address,
-            contractValue: project.bidAmount,
-            deadline:
-              project.JobDetails?.completion || project.JobDetails?.deadline,
-            status: "Submitted",
-            skills: project.JobDetails?.skills || [],
-          }))
+          jobId: project.jobId,
+          jobTitle: project.JobDetails?.title || "Untitled Job",
+          jobDescription: project.JobDetails?.description || "",
+          clientName:
+            project.JobDetails?.clientDetails?.companyDetails?.companyName ||
+            project.JobDetails?.clientAddress,
+          clientAddress: project.JobDetails?.clientAddress,
+          clientId: project.JobDetails?.clientId,
+          freelancerName:
+            project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+            "You",
+          freelancerAddress: address,
+          contractValue: project.bidAmount,
+          deadline:
+            project.JobDetails?.completion || project.JobDetails?.deadline,
+          status: "Submitted",
+          skills: project.JobDetails?.skills || [],
+        }))
         : [];
 
       const disputedProj = Array.isArray(data.categorized?.disputed)
         ? data.categorized.disputed.map((project) => ({
-            jobId: project.jobId,
-            jobTitle: project.JobDetails?.title || "Untitled Job",
-            jobDescription: project.JobDetails?.description || "",
-            clientName:
-              project.JobDetails?.clientDetails?.companyDetails?.companyName ||
-              project.JobDetails?.clientAddress,
-            clientAddress: project.JobDetails?.clientAddress,
-            freelancerName:
-              project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-              "You",
-            freelancerAddress: address,
-            contractValue: project.bidAmount,
-            deadline:
-              project.JobDetails?.completion || project.JobDetails?.deadline,
-            status: "Disputed",
-            skills: project.JobDetails?.skills || [],
-          }))
+          jobId: project.jobId,
+          jobTitle: project.JobDetails?.title || "Untitled Job",
+          jobDescription: project.JobDetails?.description || "",
+          clientName:
+            project.JobDetails?.clientDetails?.companyDetails?.companyName ||
+            project.JobDetails?.clientAddress,
+          clientAddress: project.JobDetails?.clientAddress,
+          clientId: project.JobDetails?.clientId,
+          freelancerName:
+            project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+            "You",
+          freelancerAddress: address,
+          contractValue: project.bidAmount,
+          deadline:
+            project.JobDetails?.completion || project.JobDetails?.deadline,
+          status: "Disputed",
+          skills: project.JobDetails?.skills || [],
+        }))
         : [];
 
       const cancelledProj = Array.isArray(data.categorized?.cancelled)
         ? data.categorized.cancelled.map((project) => ({
-            jobId: project.jobId,
-            jobTitle: project.JobDetails?.title || "Untitled Job",
-            jobDescription: project.JobDetails?.description || "",
-            clientName:
-              project.JobDetails?.clientDetails?.companyDetails?.companyName ||
-              project.JobDetails?.clientAddress,
-            clientAddress: project.JobDetails?.clientAddress,
-            freelancerName:
-              project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-              "You",
-            freelancerAddress: address,
-            contractValue: project.bidAmount,
-            deadline:
-              project.JobDetails?.completion || project.JobDetails?.deadline,
-            status: "Cancelled",
-            skills: project.JobDetails?.skills || [],
-          }))
+          jobId: project.jobId,
+          jobTitle: project.JobDetails?.title || "Untitled Job",
+          jobDescription: project.JobDetails?.description || "",
+          clientName:
+            project.JobDetails?.clientDetails?.companyDetails?.companyName ||
+            project.JobDetails?.clientAddress,
+          clientAddress: project.JobDetails?.clientAddress,
+          clientId: project.JobDetails?.clientId,
+          freelancerName:
+            project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+            "You",
+          freelancerAddress: address,
+          contractValue: project.bidAmount,
+          deadline:
+            project.JobDetails?.completion || project.JobDetails?.deadline,
+          status: "Cancelled",
+          skills: project.JobDetails?.skills || [],
+        }))
         : [];
 
       setActiveProjects(inProgressProjects);
@@ -251,16 +259,15 @@ function ManageJobs() {
   };
 
   const handleMessage = (project) => {
-    navigate("/messages", {
+    console.log(project?.clientId)
+    navigate(`/messages/${project?.clientId}`, {
       state: {
-        recipient: project?.clientName || project?.clientAddress,
-        participantWallet: project?.clientAddress,
-        participantName: project?.clientName || project?.clientAddress,
+        recipient: project?.clientId
       },
     });
   };
 
-  const handleArchive = () => {};
+  const handleArchive = () => { };
 
   return (
     <>
@@ -324,11 +331,10 @@ function ManageJobs() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`shrink-0 px-4 md:px-6 py-3 font-medium text-sm border-b-2 transition-colors rounded-t-lg ${
-                  activeTab === tab.id
-                    ? "text-[#14a19f] border-[#14a19f] bg-[#14a19f]/10"
-                    : "text-gray-400 border-transparent hover:text-gray-300"
-                }`}
+                className={`shrink-0 px-4 md:px-6 py-3 font-medium text-sm border-b-2 transition-colors rounded-t-lg ${activeTab === tab.id
+                  ? "text-[#14a19f] border-[#14a19f] bg-[#14a19f]/10"
+                  : "text-gray-400 border-transparent hover:text-gray-300"
+                  }`}
               >
                 {tab.label}
                 {tab.count > 0 && (

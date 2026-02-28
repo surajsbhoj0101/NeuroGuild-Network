@@ -643,6 +643,7 @@ export const fetchFreelancerJobs = async (req, res) => {
           budget: jobDetails?.budget,
           deadline: jobDetails?.deadline,
           clientAddress: jobDetails?.client,
+          clientId: clientDetails?.user,
           clientDetails,
         },
       };
@@ -721,11 +722,12 @@ export const fetchClientsJobs = async (req, res) => {
         milestones: bidData?.milestones || [],
         bidder: bid.bidder,
 
-        JobDetails: {                       // ✅ SAME casing
+        JobDetails: {                       
           ...jobDetails,
           budget: jobDetails?.budget,
           deadline: jobDetails?.deadline,
           clientAddress: jobDetails?.client,
+          freelancerId: freelancerDetails?.user,
           freelancerDetails: freelancerDetails,
         },
       };

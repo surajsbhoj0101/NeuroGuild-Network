@@ -5,7 +5,7 @@ import { useAuth } from "./AuthContext";
 const SocketContext = createContext(null);
 
 export function SocketProvider({ children }) {
-  const { isAuthenticated, role, userId } = useAuth();
+  const { isAuthentication, role, userId } = useAuth();
   const [isSocketConnected, setIsSocketConnected] = useState(socket.connected);
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export function SocketProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthentication) {
       if (socket.connected) socket.disconnect();
       return;
     }
@@ -33,7 +33,7 @@ export function SocketProvider({ children }) {
     };
 
     if (!socket.connected) socket.connect();
-  }, [isAuthenticated, role, userId]);
+  }, [isAuthentication, role, userId]);
 
   const value = useMemo(
     () => ({

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAccount } from "wagmi";
 import SideBar from "../../components/SideBar";
 import api from "../../utils/api.js"
+import { useAuth } from "../../contexts/AuthContext.jsx";
 import NoticeToast from "../../components/NoticeToast";
 import {
   Award,
@@ -22,8 +23,9 @@ function ClientProfile() {
   const orbitronStyle = { fontFamily: "Orbitron, sans-serif" };
   const robotoStyle = { fontFamily: "Roboto, sans-serif" };
 
-  const { isConnected, address } = useAccount();
+  const { address } = useAccount();
   const navigate = useNavigate();
+  const { isAuthentication } = useAuth();
 
   const [notice, setNotice] = useState(null);
   const [redNotice, setRedNotice] = useState(false);
@@ -53,7 +55,7 @@ function ClientProfile() {
   useEffect(() => {
     let timer = null;
 
-    if (!isConnected) {
+    if (!isAuthentication) {
       setRedNotice(true);
       setNotice("Wallet not connected — redirecting to home...");
       timer = setTimeout(() => navigate("/"), 1600);
@@ -65,7 +67,7 @@ function ClientProfile() {
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [isConnected, address, navigate]);
+  }, [isAuthentication, address, navigate]);
 
   const loadProfileData = async () => {
     if (!address) return;

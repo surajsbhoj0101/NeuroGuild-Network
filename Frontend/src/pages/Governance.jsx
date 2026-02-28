@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
 import SideBar from '../components/SideBar';
 import { Vote, Users, Award, TrendingUp, Calendar, CheckCircle, AlertCircle } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext.jsx';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
 
 export default function Governance() {
-  const { isConnected, address } = useAccount();
+  const { isAuthentication } = useAuth();
 
   useEffect(() => {
-    if (!isConnected) {
+    if (!isAuthentication) {
       window.location.href = '/';
     }
-  }, [isConnected]);
+  }, [isAuthentication]);
 
-  if (!isConnected) {
+  if (!isAuthentication) {
     return (
       <div className='dark:bg-[#0f111d] pt-6 flex bg-[#161c32] w-full min-h-screen'>
         <div className="hidden md:block">

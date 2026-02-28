@@ -6,7 +6,6 @@ import { FaRegUser } from "react-icons/fa";
 import { IoSettingsOutline } from "react-icons/io5";
 import { FiMessageSquare } from "react-icons/fi";
 import { Vote } from "lucide-react";
-import { useAccount } from "wagmi";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -14,11 +13,10 @@ function SideBar() {
   const [activeIndex, setActiveIndex] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
-  const { isConnected } = useAccount();
-  const { role, isAuthenticated } = useAuth();
+  const { role, isAuthentication } = useAuth();
 
   useEffect(() => {
-    if (!isConnected || role) return;
+    if (!isAuthentication || role) return;
 
     const getUser = async () => {
       try {
@@ -40,13 +38,13 @@ function SideBar() {
     };
 
     getUser();
-  }, [isConnected, role]);
+  }, [isAuthentication, role, navigate]);
 
   useEffect(() => {
-    if (isConnected && !isAuthenticated) {
+    if (!isAuthentication) {
       navigate("/");
     }
-  }, [isConnected, isAuthenticated, navigate]);
+  }, [isAuthentication, navigate]);
 
   const orbitronStyle = { fontFamily: "Orbitron, sans-serif" };
   const robotoStyle = { fontFamily: "Roboto, sans-serif" };

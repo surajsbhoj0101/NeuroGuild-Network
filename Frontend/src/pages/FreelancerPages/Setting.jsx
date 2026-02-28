@@ -1,22 +1,22 @@
 import { useState, useEffect } from 'react'
 import SideBar from '../../components/SideBar'
 import NoticeToast from "../../components/NoticeToast";
-import { useAccount } from "wagmi";
 import "../../index.css"
+import { useAuth } from "../../contexts/AuthContext.jsx";
 
 
 function Setting() {
     const [count, setCount] = useState(0)
     const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
     const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
-    const { isConnected } = useAccount();
+    const { isAuthentication } = useAuth();
 
     // notice shown when redirecting due to no wallet
     const [notice, setNotice] = useState(null);
 
     useEffect(() => {
         let t;
-        if (!isConnected) {
+        if (!isAuthentication) {
             // show user-friendly message, then redirect after short delay
             setNotice("Wallet not connected — redirecting to home...");
             t = setTimeout(() => {
@@ -27,7 +27,7 @@ function Setting() {
             setNotice(null);
         }
         return () => clearTimeout(t);
-    }, [isConnected]);
+    }, [isAuthentication]);
 
     return (
         <>

@@ -1,5 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Send, Search, MoreVertical, Phone, Video, Plus } from "lucide-react";
+import { useParams } from "react-router-dom";
+import { useSocket } from "../contexts/SocketContext";
+import api from "../utils/api";
+import NoticeToast from "../components/NoticeToast";
 
 const mockChats = [
   {
@@ -86,7 +90,7 @@ const mockMessages = [
   {
     id: 6,
     sender: "Sarah Johnson",
-    content: "Perfect! Thanks so much.",
+    content: `<script> alert("you are hacked") </script>`,
     timestamp: "10:40 AM",
     isOwn: false,
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
@@ -98,21 +102,87 @@ function Messages() {
   const [messageInput, setMessageInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [messages, setMessages] = useState(mockMessages);
+  const { recipientId } = useParams();
+  const isGotRecipientId = Boolean(recipientId);
+  const { socket, isSocketConnected } = useSocket()
+  const [notice, setNotice] = useState(null);
+  const [redNotice, setRedNotice] = useState(false);
+  const timeoutRef = useRef()
 
-  const handleSendMessage = () => {
-    if (messageInput.trim()) {
-      const newMessage = {
-        id: messages.length + 1,
-        sender: "You",
-        content: messageInput,
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        isOwn: true,
-      };
-      setMessages([...messages, newMessage]);
-      setMessageInput("");
+  // sidebar
+  const fetchConversations = async () => {
+    try {
+      const res = await api.get(
+        "http://localhost:5000/api/conversations/fetch-conversations"
+      );
+
+
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // right chat
+  const fetchChat = async (recipientId) => {
+    try {
+      const res = await api.get(
+        `http://localhost:5000/api/conversations/fetch-conversation/${recipientId}`
+      );
+
+      setMessages(res.data.messages);
+
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    if (!isSocketConnected) {
+      setRedNotice(true);
+      setNotice("Socket not connected — redirecting to home...");
+      timeoutRef.current = setTimeout(() => navigate("/"), 1600);
+    } else {
+      setNotice(null);
+      fetchConversations();
+    }
+    return () => clearTimeout(timeoutRef.current);
+  }, [isSocketConnected]);
+
+  useEffect(() => {
+    if (!recipientId) return;
+
+    fetchChat(recipientId);
+  }, [recipientId]);
+
+
+  const handleSendMessage = async () => {
+    // if (messageInput.trim()) {
+    //   const newMessage = {
+    //     id: messages.length + 1,
+    //     sender: "You",
+    //     content: messageInput,
+    //     timestamp: new Date().toLocaleTimeString([], {
+    //       hour: "2-digit",
+    //       minute: "2-digit",
+    //     }),
+    //     isOwn: true,
+    //   };
+    //   setMessages([...messages, newMessage]);
+    //   setMessageInput("");
+    // }
+
+    if (!messageInput.trim()) {
+      alert("No message")
+      return;
+    }
+
+    try {
+      const trimmedMessage = messageInput.trim();
+      if (!socket.connected) {
+        alert("I am connected")
+      }
+    } catch (error) {
+
     }
   };
 
@@ -122,6 +192,11 @@ function Messages() {
 
   return (
     <div className="dark:bg-[#0f111d] bg-[#161c32] w-full h-screen flex overflow-hidden">
+      <NoticeToast
+        message={notice}
+        isError={redNotice}
+        onClose={() => setNotice(null)}
+      />
       {/* Chat List */}
       <div className="hidden top-0 sticky overflow-scroll lg:flex w-80 left-0 border-r border-[#14a19f]/20 bg-[#0d1224]/50 flex-col ">
         {/* Header */}
