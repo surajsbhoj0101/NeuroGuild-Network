@@ -43,6 +43,10 @@ export const registerSocketEvents = (io, socket) => {
           participants: [senderId, receiverId],
           lastMessage: content,
           lastMessageTimestamp: new Date(),
+          unreadCounts: {
+            [senderId]: 0,
+            [receiverId]: 0,
+          },
         });
       }
 
@@ -50,10 +54,24 @@ export const registerSocketEvents = (io, socket) => {
         conversationId: conversation._id,
         sender: senderId,
         content,
+        seenBy: [senderId],
+        seenAt: null,
       });
 
       conversation.lastMessage = content;
       conversation.lastMessageTimestamp = savedMessage.createdAt;
+      if (!conversation.unreadCounts || !(conversation.unreadCounts instanceof Map)) {
+        conversation.unreadCounts = new Map();
+      }
+      const participants = conversation.participants || [];
+      participants.forEach((participantId) => {
+        if (participantId === senderId) {
+          conversation.unreadCounts.set(participantId, 0);
+        } else {
+          const current = Number(conversation.unreadCounts.get(participantId) || 0);
+          conversation.unreadCounts.set(participantId, current + 1);
+        }
+      });
       await conversation.save();
 
       const payload = {
@@ -62,6 +80,8 @@ export const registerSocketEvents = (io, socket) => {
         sender: senderId,
         content,
         timestamp: savedMessage.createdAt,
+        seenBy: savedMessage.seenBy,
+        seenAt: savedMessage.seenAt,
       };
 
       /**

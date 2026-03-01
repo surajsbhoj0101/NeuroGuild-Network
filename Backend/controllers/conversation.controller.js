@@ -2,9 +2,18 @@ import mongoose from "mongoose";
 import Conversation from "../models/messages_models/conversation.model.js";
 import Message from "../models/messages_models/message.model.js";
 import User from "../models/user.model.js";
+import Freelancer from "../models/freelancer_models/freelancers.model.js";
+import Client from "../models/client_models/clients.model.js";
 
 const isValidUserId = (value) =>
   typeof value === "string" && value.trim().length > 0;
+
+const getUnreadMapObject = (unreadCounts) => {
+  if (!unreadCounts) return {};
+  if (unreadCounts instanceof Map) return Object.fromEntries(unreadCounts.entries());
+  if (typeof unreadCounts === "object") return unreadCounts;
+  return {};
+};
 
 const resolveParticipantUserId = async ({
   participantId,
@@ -26,6 +35,76 @@ const resolveParticipantUserId = async ({
   }
 
   return null;
+};
+
+const hydrateConversations = async (conversations, currentUserId) => {
+  const participantIds = conversations
+    .map((conversation) =>
+      conversation.participants.find((participant) => participant !== currentUserId),
+    )
+    .filter(Boolean);
+
+  const uniqueParticipantIds = [...new Set(participantIds)];
+
+  const users = await User.find({ _id: { $in: uniqueParticipantIds } })
+    .select("_id wallets role")
+    .lean();
+
+  const userMap = new Map(users.map((user) => [user._id, user]));
+  const freelancerProfiles = await Freelancer.find({
+    user: { $in: uniqueParticipantIds },
+  })
+    .select("user BasicInformation.avatarUrl BasicInformation.name")
+    .lean();
+  const clientProfiles = await Client.find({
+    user: { $in: uniqueParticipantIds },
+  })
+    .select("user companyDetails.logoUrl companyDetails.companyName")
+    .lean();
+  const freelancerProfileMap = new Map(
+    freelancerProfiles.map((profile) => [
+      profile.user,
+      {
+        profileUrl: profile.BasicInformation?.avatarUrl || "",
+        displayName: profile.BasicInformation?.name || "",
+      },
+    ]),
+  );
+  const clientProfileMap = new Map(
+    clientProfiles.map((profile) => [
+      profile.user,
+      {
+        profileUrl: profile.companyDetails?.logoUrl || "",
+        displayName: profile.companyDetails?.companyName || "",
+      },
+    ]),
+  );
+
+  return conversations.map((conversation) => {
+    const participantId =
+      conversation.participants.find((participant) => participant !== currentUserId) ||
+      null;
+
+    const role = userMap.get(participantId)?.role || "user";
+    const roleProfile =
+      role === "freelancer"
+        ? freelancerProfileMap.get(participantId)
+        : clientProfileMap.get(participantId);
+
+    return {
+      ...conversation,
+      unread: getUnreadMapObject(conversation.unreadCounts)[currentUserId] || 0,
+      participant: participantId
+        ? {
+            _id: participantId,
+            wallets: userMap.get(participantId)?.wallets || "",
+            role,
+            profileUrl: roleProfile?.profileUrl || "",
+            displayName: roleProfile?.displayName || "",
+          }
+        : null,
+    };
+  });
 };
 
 export const createConversation = async (req, res) => {
@@ -57,17 +136,27 @@ export const createConversation = async (req, res) => {
     let conversation = await Conversation.findOne({
       participants: { $all: [currentUserId, participantUserId] },
       $expr: { $eq: [{ $size: "$participants" }, 2] },
-    });
+    }).lean();
 
     if (!conversation) {
-      conversation = await Conversation.create({
+      const created = await Conversation.create({
         participants: [currentUserId, participantUserId],
+        unreadCounts: {
+          [currentUserId]: 0,
+          [participantUserId]: 0,
+        },
       });
+      conversation = created.toObject();
     }
+
+    const [hydratedConversation] = await hydrateConversations(
+      [conversation],
+      currentUserId,
+    );
 
     return res.status(200).json({
       success: true,
-      conversation,
+      conversation: hydratedConversation,
     });
   } catch (error) {
     return res.status(500).json({
@@ -91,11 +180,14 @@ export const getConversations = async (req, res) => {
       .sort({ lastMessageTimestamp: -1, updatedAt: -1 })
       .lean();
 
-    console.log("Conversations are: ", conversations);
+    const hydratedConversations = await hydrateConversations(
+      conversations,
+      currentUserId,
+    );
 
     return res.status(200).json({
       success: true,
-      conversations,
+      conversations: hydratedConversations,
     });
   } catch (error) {
     return res.status(500).json({
@@ -137,6 +229,24 @@ export const getConversationMessages = async (req, res) => {
     const messages = await Message.find({ conversationId })
       .sort({ createdAt: 1 })
       .lean();
+
+    // Opening a conversation marks all incoming messages as seen for this user.
+    await Message.updateMany(
+      {
+        conversationId,
+        sender: { $ne: currentUserId },
+        seenBy: { $ne: currentUserId },
+      },
+      {
+        $addToSet: { seenBy: currentUserId },
+        $set: { seenAt: new Date() },
+      },
+    );
+
+    await Conversation.updateOne(
+      { _id: conversationId },
+      { $set: { [`unreadCounts.${currentUserId}`]: 0 } },
+    );
 
     return res.status(200).json({
       success: true,
@@ -191,10 +301,24 @@ export const sendMessage = async (req, res) => {
       conversationId,
       sender: currentUserId,
       content: trimmedContent,
+      seenBy: [currentUserId],
+      seenAt: null,
     });
 
     conversation.lastMessage = trimmedContent;
     conversation.lastMessageTimestamp = message.timestamp || new Date();
+    if (!conversation.unreadCounts || !(conversation.unreadCounts instanceof Map)) {
+      conversation.unreadCounts = new Map();
+    }
+    const participants = conversation.participants || [];
+    participants.forEach((participantId) => {
+      if (participantId === currentUserId) {
+        conversation.unreadCounts.set(participantId, 0);
+      } else {
+        const current = Number(conversation.unreadCounts.get(participantId) || 0);
+        conversation.unreadCounts.set(participantId, current + 1);
+      }
+    });
     await conversation.save();
 
     return res.status(201).json({
@@ -205,6 +329,64 @@ export const sendMessage = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to send message",
+      error: error.message,
+    });
+  }
+};
+
+export const markConversationSeen = async (req, res) => {
+  try {
+    const currentUserId = req.userId;
+    const { conversationId } = req.params;
+
+    if (!isValidUserId(currentUserId)) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid conversationId",
+      });
+    }
+
+    const conversation = await Conversation.findOne({
+      _id: conversationId,
+      participants: currentUserId,
+    }).select("_id");
+
+    if (!conversation) {
+      return res.status(404).json({
+        success: false,
+        message: "Conversation not found or access denied",
+      });
+    }
+
+    await Message.updateMany(
+      {
+        conversationId,
+        sender: { $ne: currentUserId },
+        seenBy: { $ne: currentUserId },
+      },
+      {
+        $addToSet: { seenBy: currentUserId },
+        $set: { seenAt: new Date() },
+      },
+    );
+
+    await Conversation.updateOne(
+      { _id: conversationId },
+      { $set: { [`unreadCounts.${currentUserId}`]: 0 } },
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Conversation marked as seen",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to mark conversation as seen",
       error: error.message,
     });
   }

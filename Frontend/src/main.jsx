@@ -7,6 +7,7 @@ import Navbar from './components/Navbar.jsx';
 import { ThemeProvider } from './contexts/ThemeContext.jsx';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import { SocketProvider } from './contexts/SocketContext.jsx';
+import { ChatProvider } from './contexts/ChatContext.jsx';
 import Snowfall from "react-snowfall";
 
 import AppProviders from "./components/AppProviders.jsx";
@@ -196,7 +197,9 @@ createRoot(document.getElementById("root")).render(
         <AppProviders>
           <AuthProvider>
             <SocketProvider>
-              <RouterProvider router={router} />
+              <ChatProvider>
+                <RouterProvider router={router} />
+              </ChatProvider>
             </SocketProvider>
           </AuthProvider>
         </AppProviders>

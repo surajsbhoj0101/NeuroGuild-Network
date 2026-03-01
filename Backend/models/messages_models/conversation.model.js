@@ -16,6 +16,12 @@ const conversationSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    unreadCounts: {
+        // key: userId, value: unread count for that user in this conversation
+        type: Map,
+        of: Number,
+        default: {},
+    },
 }, { timestamps: true })
 
 export default mongoose.model('Conversation', conversationSchema)

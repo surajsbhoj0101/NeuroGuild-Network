@@ -19,6 +19,14 @@ const messageSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    seenBy: {
+        type: [String],
+        default: [],
+    },
+    seenAt: {
+        type: Date,
+        default: null,
+    },
 }, { timestamps: true })
 
 export default mongoose.model('Message', messageSchema)

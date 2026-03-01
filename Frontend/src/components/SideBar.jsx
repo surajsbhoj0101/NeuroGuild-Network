@@ -8,12 +8,14 @@ import { FiMessageSquare } from "react-icons/fi";
 import { Vote } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
+import { useChat } from "../contexts/ChatContext";
 
 function SideBar() {
   const [activeIndex, setActiveIndex] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
   const { role, isAuthentication } = useAuth();
+  const { totalUnreadCount } = useChat();
 
   useEffect(() => {
     if (!isAuthentication || role) return;
@@ -124,6 +126,11 @@ function SideBar() {
               >
                 {item.name}
               </span>
+              {item.link === "/messages" && totalUnreadCount > 0 && (
+                <span className="ml-auto min-w-5 h-5 px-1 rounded-full bg-[#14a19f] text-white text-[11px] leading-5 text-center">
+                  {totalUnreadCount}
+                </span>
+              )}
             </Link>
           </li>
         ))}
