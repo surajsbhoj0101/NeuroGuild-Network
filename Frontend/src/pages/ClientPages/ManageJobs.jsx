@@ -92,6 +92,7 @@ function ManageJobs() {
             proposal: job.proposal,
             createdAt: job.createdAt,
             status: job.status,
+            freelancerId: job.JobDetails?.freelancerId,
             freelancerName:
               job.JobDetails?.freelancerDetails?.BasicInformation?.name ||
               "Unknown",
@@ -131,6 +132,7 @@ function ManageJobs() {
             proposal: job.proposal,
             createdAt: job.createdAt,
             status: job.status,
+            freelancerId: job.JobDetails?.freelancerId,
             freelancerName:
               job.JobDetails?.freelancerDetails?.BasicInformation?.name ||
               "Unknown",
@@ -158,92 +160,97 @@ function ManageJobs() {
 
       const submittedJobsArr = Array.isArray(data.categorized?.submitted)
         ? data.categorized.submitted.map((job) => ({
-            jobId: job.jobId,
-            jobTitle: job.JobDetails?.title || "Untitled Job",
-            jobDescription: job.JobDetails?.description || "",
-            clientName:
-              job.JobDetails?.clientDetails?.companyDetails?.companyName || "You",
-            clientAddress: job.JobDetails?.clientAddress,
-            freelancerName:
-              job.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-              "Unknown",
-            freelancerAddress: job.bidder,
-            budget: job.bidAmount ?? job.JobDetails?.budget,
-            deadline: job.JobDetails?.deadline,
-            skills: job.JobDetails?.skills || [],
-          }))
+          jobId: job.jobId,
+          jobTitle: job.JobDetails?.title || "Untitled Job",
+          jobDescription: job.JobDetails?.description || "",
+          clientName:
+            job.JobDetails?.clientDetails?.companyDetails?.companyName || "You",
+          clientAddress: job.JobDetails?.clientAddress,
+          freelancerName:
+            job.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+            "Unknown",
+          freelancerId: job.JobDetails?.freelancerId,
+          freelancerAddress: job.bidder,
+          budget: job.bidAmount ?? job.JobDetails?.budget,
+          deadline: job.JobDetails?.deadline,
+          skills: job.JobDetails?.skills || [],
+        }))
         : [];
 
       const completedJobsArr = Array.isArray(data.categorized?.completed)
         ? data.categorized.completed.map((job) => ({
-            jobId: job.jobId,
-            jobTitle: job.JobDetails?.title || "Untitled Job",
-            jobDescription: job.JobDetails?.description || "",
-            clientName:
-              job.JobDetails?.clientDetails?.companyDetails?.companyName || "You",
-            clientAddress: job.JobDetails?.clientAddress,
-            freelancerName:
-              job.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-              "Unknown",
-            freelancerAddress: job.bidder,
-            budget: job.bidAmount ?? job.JobDetails?.budget,
-            deadline: job.JobDetails?.deadline,
-            skills: job.JobDetails?.skills || [],
-          }))
+          jobId: job.jobId,
+          jobTitle: job.JobDetails?.title || "Untitled Job",
+          jobDescription: job.JobDetails?.description || "",
+          clientName:
+            job.JobDetails?.clientDetails?.companyDetails?.companyName || "You",
+          clientAddress: job.JobDetails?.clientAddress,
+          freelancerId: job.JobDetails?.freelancerId,
+          freelancerName:
+            job.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+            "Unknown",
+          freelancerAddress: job.bidder,
+          budget: job.bidAmount ?? job.JobDetails?.budget,
+          deadline: job.JobDetails?.deadline,
+          skills: job.JobDetails?.skills || [],
+        }))
         : [];
 
       const disputedJobsArr = Array.isArray(data.categorized?.disputed)
         ? data.categorized.disputed.map((job) => ({
-            jobId: job.jobId,
-            jobTitle: job.JobDetails?.title || "Untitled Job",
-            jobDescription: job.JobDetails?.description || "",
-            clientName:
-              job.JobDetails?.clientDetails?.companyDetails?.companyName || "You",
-            clientAddress: job.JobDetails?.clientAddress,
-            freelancerName:
-              job.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-              "Unknown",
-            freelancerAddress: job.bidder,
-            budget: job.bidAmount ?? job.JobDetails?.budget,
-            deadline: job.JobDetails?.deadline,
-            skills: job.JobDetails?.skills || [],
-          }))
+          jobId: job.jobId,
+          jobTitle: job.JobDetails?.title || "Untitled Job",
+          jobDescription: job.JobDetails?.description || "",
+          freelancerId: job.JobDetails?.freelancerId,
+          clientName:
+            job.JobDetails?.clientDetails?.companyDetails?.companyName || "You",
+          clientAddress: job.JobDetails?.clientAddress,
+          freelancerName:
+            job.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+            "Unknown",
+          freelancerAddress: job.bidder,
+          budget: job.bidAmount ?? job.JobDetails?.budget,
+          deadline: job.JobDetails?.deadline,
+          skills: job.JobDetails?.skills || [],
+        }))
         : [];
 
       const cancelledJobsArr = Array.isArray(data.categorized?.cancelled)
         ? data.categorized.cancelled.map((job) => ({
-            jobId: job.jobId,
-            jobTitle: job.JobDetails?.title || "Untitled Job",
-            jobDescription: job.JobDetails?.description || "",
-            clientName:
-              job.JobDetails?.clientDetails?.companyDetails?.companyName || "You",
-            clientAddress: job.JobDetails?.clientAddress,
-            freelancerName:
-              job.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-              "Unknown",
-            freelancerAddress: job.bidder,
-            budget: job.bidAmount ?? job.JobDetails?.budget,
-            deadline: job.JobDetails?.deadline,
-            skills: job.JobDetails?.skills || [],
-          }))
+          jobId: job.jobId,
+          jobTitle: job.JobDetails?.title || "Untitled Job",
+          jobDescription: job.JobDetails?.description || "",
+          freelancerId: job.JobDetails?.freelancerId,
+          clientName:
+            job.JobDetails?.clientDetails?.companyDetails?.companyName || "You",
+          clientAddress: job.JobDetails?.clientAddress,
+          freelancerName:
+            job.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+            "Unknown",
+          freelancerAddress: job.bidder,
+          budget: job.bidAmount ?? job.JobDetails?.budget,
+          deadline: job.JobDetails?.deadline,
+          skills: job.JobDetails?.skills || [],
+        }))
         : [];
 
       const expiredJobsArr = Array.isArray(data.categorized?.expired)
         ? data.categorized.expired.map((job) => ({
-            jobId: job.jobId,
-            jobTitle: job.JobDetails?.title || "Untitled Job",
-            jobDescription: job.JobDetails?.description || "",
-            clientName:
-              job.JobDetails?.clientDetails?.companyDetails?.companyName || "You",
-            clientAddress: job.JobDetails?.clientAddress,
-            freelancerName:
-              job.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-              "Unknown",
-            freelancerAddress: job.bidder,
-            budget: job.bidAmount ?? job.JobDetails?.budget,
-            deadline: job.JobDetails?.deadline,
-            skills: job.JobDetails?.skills || [],
-          }))
+          jobId: job.jobId,
+          jobTitle: job.JobDetails?.title || "Untitled Job",
+          jobDescription: job.JobDetails?.description || "",
+          freelancerId: job.JobDetails?.freelancerId,
+          clientName:
+            job.JobDetails?.clientDetails?.companyDetails?.companyName || "You",
+          clientAddress: job.JobDetails?.clientAddress,
+          freelancerName:
+            job.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+            "Unknown",
+          freelancerAddress: job.bidder,
+          budget: job.bidAmount ?? job.JobDetails?.budget,
+          deadline: job.JobDetails?.deadline,
+          skills: job.JobDetails?.skills || [],
+        }))
         : [];
 
       setOpenJobs(opJobs);
@@ -279,31 +286,17 @@ function ManageJobs() {
       setLoading(false);
     }
   }
-  
+
   const handleShowContract = (project) => {
     if (!project?.jobId) return;
     navigate(`/job/${project.jobId}`);
   };
 
   const handleMessage = (project) => {
-    const participantName =
-      project?.freelancerName ||
-      project?.bid?.freelancerName ||
-      project?.bids?.[0]?.freelancerName ||
-      project?.freelancerAddress ||
-      project?.bid?.freelancerAddress ||
-      project?.bids?.[0]?.freelancerAddress;
-
-    const participantWallet =
-      project?.freelancerAddress ||
-      project?.bid?.freelancerAddress ||
-      project?.bids?.[0]?.freelancerAddress;
-
-    navigate("/messages", {
+    console.log(project?.clientId)
+    navigate(`/messages/${project?.clientId}`, {
       state: {
-        recipient: participantName,
-        participantWallet,
-        participantName,
+        recipient: project?.freelancerId
       },
     });
   };
@@ -371,11 +364,10 @@ function ManageJobs() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`shrink-0 px-4 md:px-6 py-3 font-medium text-sm border-b-2 transition-colors rounded-t-lg ${
-                  activeTab === tab.id
-                    ? "text-[#14a19f] border-[#14a19f] bg-[#14a19f]/10"
-                    : "text-gray-400 border-transparent hover:text-gray-300"
-                }`}
+                className={`shrink-0 px-4 md:px-6 py-3 font-medium text-sm border-b-2 transition-colors rounded-t-lg ${activeTab === tab.id
+                  ? "text-[#14a19f] border-[#14a19f] bg-[#14a19f]/10"
+                  : "text-gray-400 border-transparent hover:text-gray-300"
+                  }`}
               >
                 {tab.label}
                 {tab.count > 0 && (
