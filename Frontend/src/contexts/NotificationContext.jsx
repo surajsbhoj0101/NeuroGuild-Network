@@ -3,9 +3,9 @@ import { useAuth } from "./AuthContext";
 import { useSocket } from "./SocketContext";
 import api from "../utils/api";
 
-const ChatContext = createContext(null);
+const NotificationContext = createContext(null);
 
-export function ChatProvider({ children }) {
+export function NotificationProvider({ children }) {
   const { isAuthentication, userId } = useAuth();
   const { socket } = useSocket();
 
@@ -33,7 +33,8 @@ export function ChatProvider({ children }) {
     }
   }, [isAuthentication]);
 
-  const pushAppNotification = useCallback(async (payload) => {
+  // Generic notification creator for any module (jobs, governance, payments, etc.)
+  const addNotification = useCallback(async (payload) => {
     if (!isAuthentication) return null;
     try {
       const res = await api.post("/api/notifications", {
@@ -57,6 +58,30 @@ export function ChatProvider({ children }) {
       return null;
     }
   }, [isAuthentication]);
+
+  const addJobNotification = useCallback(
+    async ({ title, description = "", link = "/client/manage-jobs", metadata = {} }) =>
+      addNotification({
+        type: "job",
+        title: title || "Job update",
+        description,
+        link,
+        metadata,
+      }),
+    [addNotification],
+  );
+
+  const addSystemNotification = useCallback(
+    async ({ title, description = "", link = "", metadata = {} }) =>
+      addNotification({
+        type: "system",
+        title: title || "System update",
+        description,
+        link,
+        metadata,
+      }),
+    [addNotification],
+  );
 
   const markAppNotificationRead = useCallback((id) => {
     if (!id) return;
@@ -139,6 +164,10 @@ export function ChatProvider({ children }) {
     }
   }, [isAuthentication]);
 
+  const refreshNotifications = useCallback(async () => {
+    await Promise.all([refreshUnreadCounts(), fetchAppNotifications()]);
+  }, [fetchAppNotifications, refreshUnreadCounts]);
+
   useEffect(() => {
     if (!isAuthentication) {
       setUnreadByConversation({});
@@ -147,9 +176,8 @@ export function ChatProvider({ children }) {
       setActiveConversationId(null);
       return;
     }
-    refreshUnreadCounts();
-    fetchAppNotifications();
-  }, [fetchAppNotifications, isAuthentication, refreshUnreadCounts]);
+    refreshNotifications();
+  }, [isAuthentication, refreshNotifications]);
 
   useEffect(() => {
     if (!socket) return;
@@ -249,8 +277,13 @@ export function ChatProvider({ children }) {
       isLoadingAppNotifications,
       refreshUnreadCounts,
       fetchAppNotifications,
+      refreshNotifications,
       markConversationRead,
-      pushAppNotification,
+      addNotification,
+      addJobNotification,
+      addSystemNotification,
+      // Backward-compatible alias
+      pushAppNotification: addNotification,
       markAppNotificationRead,
       markAllAppNotificationsRead,
       activeConversationId,
@@ -267,21 +300,28 @@ export function ChatProvider({ children }) {
       isLoadingAppNotifications,
       refreshUnreadCounts,
       fetchAppNotifications,
+      refreshNotifications,
       markConversationRead,
-      pushAppNotification,
+      addNotification,
+      addJobNotification,
+      addSystemNotification,
       markAppNotificationRead,
       markAllAppNotificationsRead,
       activeConversationId,
     ]
   );
 
-  return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
+  return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>;
 }
 
-export function useChat() {
-  const context = useContext(ChatContext);
+export function useNotifications() {
+  const context = useContext(NotificationContext);
   if (!context) {
-    throw new Error("useChat must be used inside ChatProvider");
+    throw new Error("useNotifications must be used inside NotificationProvider");
   }
   return context;
 }
+
+// Backward-compatible aliases
+export const ChatProvider = NotificationProvider;
+export const useChat = useNotifications;

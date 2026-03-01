@@ -12,6 +12,11 @@ import axios from "axios"
 
 dotenv.config();
 
+const ACCESS_TOKEN_EXPIRES_IN = "7d";
+const ACCESS_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const PENDING_TOKEN_EXPIRES_IN = "30m";
+const PENDING_TOKEN_MAX_AGE_MS = 15 * 60 * 1000;
+
 
 
 const getUserQuery = `
@@ -115,14 +120,14 @@ export const createUser = async (req, res) => {
         userId: user._id,
       },
       process.env.JWT_SECRET,
-      { expiresIn: 12 * 60 * 60 }
+      { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
     );
 
     res.cookie("access_token", newToken, {
       httpOnly: true,
       secure: false,
       sameSite: "lax",
-      maxAge: 12 * 60 * 60 * 1000,
+      maxAge: ACCESS_TOKEN_MAX_AGE_MS,
     });
     pendingAuthStore.delete(pendingKey);
 
@@ -251,15 +256,16 @@ export const verifySiwe = async (req, res) => {
       };
     }
 
+    const hasUser = !!user;
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "30m",
+      expiresIn: hasUser ? ACCESS_TOKEN_EXPIRES_IN : PENDING_TOKEN_EXPIRES_IN,
     });
 
     res.cookie("access_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 15 * 60 * 1000,
+      maxAge: hasUser ? ACCESS_TOKEN_MAX_AGE_MS : PENDING_TOKEN_MAX_AGE_MS,
     });
     console.log("Set done");
     return res.status(200).json({

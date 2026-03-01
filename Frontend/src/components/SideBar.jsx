@@ -8,14 +8,14 @@ import { FiMessageSquare } from "react-icons/fi";
 import { Vote } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
-import { useChat } from "../contexts/ChatContext";
+import { useNotifications } from "../contexts/NotificationContext";
 
 function SideBar() {
   const [activeIndex, setActiveIndex] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
   const { role, isAuthentication } = useAuth();
-  const { totalUnreadCount } = useChat();
+  const { totalUnreadCount } = useNotifications();
 
   useEffect(() => {
     if (!isAuthentication || role) return;

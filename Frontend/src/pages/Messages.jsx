@@ -3,7 +3,7 @@ import { Send, Search, MoreVertical, Phone, Video, Plus } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSocket } from "../contexts/SocketContext";
 import { useAuth } from "../contexts/AuthContext";
-import { useChat } from "../contexts/ChatContext";
+import { useNotifications } from "../contexts/NotificationContext";
 import api from "../utils/api";
 import NoticeToast from "../components/NoticeToast";
 
@@ -65,7 +65,7 @@ function Messages() {
   const { recipientId } = useParams();
   const { socket, isSocketConnected } = useSocket();
   const { userId } = useAuth();
-  const { markConversationRead, setActiveConversationId } = useChat();
+  const { markConversationRead, setActiveConversationId } = useNotifications();
 
   // Core page state:
   // conversations -> left sidebar source of truth.

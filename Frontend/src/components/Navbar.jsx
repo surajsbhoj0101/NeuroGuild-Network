@@ -7,7 +7,7 @@ import { HiOutlineMenuAlt3, HiX } from "react-icons/hi";
 import { Bell, MessageCircle, Sparkles } from "lucide-react";
 import Snowfall from "react-snowfall";
 import { useTheme } from "../contexts/ThemeContext";
-import { useChat } from "../contexts/ChatContext";
+import { useNotifications } from "../contexts/NotificationContext";
 import CustomConnectButton from "./CustomConnectButton";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/images/logo.png";
@@ -24,7 +24,7 @@ function Navbar() {
     markConversationRead,
     markAppNotificationRead,
     markAllAppNotificationsRead,
-  } = useChat();
+  } = useNotifications();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
