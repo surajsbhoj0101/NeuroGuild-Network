@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import Notification from "../models/notifications_models/notification.model.js";
+import { getSocketIO } from "../sockets/io.socket.js";
 
 const isValidUserId = (value) =>
   typeof value === "string" && value.trim().length > 0;
@@ -86,6 +87,12 @@ export const createNotification = async (req, res) => {
       metadata,
       createdBy: currentUserId,
     });
+
+    // Push realtime notification to recipient room.
+    const io = getSocketIO();
+    if (io) {
+      io.to(recipient).emit("notificationCreated", notification.toObject());
+    }
 
     return res.status(201).json({
       success: true,
