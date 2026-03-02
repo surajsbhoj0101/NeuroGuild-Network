@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 
 dotenv.config();
+dotenv.config({ path: "./contract.env" });
 
 export const requireAuth = async (req, res, next) => {
   try {

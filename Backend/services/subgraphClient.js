@@ -2,6 +2,7 @@ import axios from "axios";
 import dotenv from "dotenv";
 
 dotenv.config();
+dotenv.config({ path: "./contract.env" });
 
 const API_KEY = process.env.SUBGRAPH_API_KEY;
 const SUBGRAPH_ID = process.env.SUBGRAPH_ID; // MUST be Qm...

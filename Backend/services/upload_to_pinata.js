@@ -1,7 +1,8 @@
 import { PinataSDK } from "pinata";
 import dotenv from 'dotenv'
 
-dotenv.config()
+dotenv.config();
+dotenv.config({ path: "./contract.env" });
 
 const pinata = new PinataSDK({
     pinataJwt: process.env.PINATA_JWT,

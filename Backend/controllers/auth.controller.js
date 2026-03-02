@@ -11,6 +11,7 @@ import crypto from "crypto";
 import axios from "axios"
 
 dotenv.config();
+dotenv.config({ path: "./contract.env" });
 
 const ACCESS_TOKEN_EXPIRES_IN = "7d";
 const ACCESS_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;

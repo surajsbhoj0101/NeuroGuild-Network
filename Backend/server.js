@@ -1,6 +1,6 @@
 // server.js
 import express from "express";
-// import dotenv from "dotenv";
+import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.routes.js";
@@ -13,7 +13,8 @@ import conversationRoutes from "./routes/conversation.routes.js";
 import { Server } from "socket.io";
 import { createServer } from "http";
 import socketHandler from "./sockets/handler.socket.js";
-// dotenv.config();
+dotenv.config();
+dotenv.config({ path: "./contract.env" });
 
 const app = express();
 app.use(cookieParser());

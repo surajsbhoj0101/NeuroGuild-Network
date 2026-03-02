@@ -14,6 +14,7 @@ import skillTokenizable from "../services/tokenizableSkills.js";
 
 
 dotenv.config();
+dotenv.config({ path: "./contract.env" });
 export const test = async (req, res) => {
     res.send("Hello")
 }

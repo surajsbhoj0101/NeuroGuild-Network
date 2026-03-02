@@ -13,6 +13,7 @@ import { getJsonFromIpfs } from "../services/ipfs_to_json.js";
 import { json } from "express";
 
 dotenv.config();
+dotenv.config({ path: "./contract.env" });
 
 const clientJobFetchQuery = `
 query ClientJobs($client: Bytes!) {

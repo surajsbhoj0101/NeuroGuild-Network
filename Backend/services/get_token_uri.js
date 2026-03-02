@@ -3,9 +3,11 @@ import { Contract, JsonRpcProvider } from "ethers";
 import { ERC721SBT } from "../abis/ERC721SBT.js";
 
 dotenv.config();
+dotenv.config({ path: "./contract.env" });
 
 const provider = new JsonRpcProvider(process.env.RPC_URL);
-const contractAddress = process.env.SBT_CONTRACT_ADDRESS;
+const contractAddress =
+  process.env.REPUTATIONSBT_ADDRESS || process.env.SBT_CONTRACT_ADDRESS;
 
 export async function getTokenUri(tokenId) {
     try {
@@ -30,6 +32,5 @@ export async function getTokenUri(tokenId) {
         return false;
     }
 }
-
 
 
