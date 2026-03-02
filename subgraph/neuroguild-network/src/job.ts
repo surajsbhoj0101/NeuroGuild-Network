@@ -18,20 +18,30 @@ import {
 } from "../generated/schema";
 
 import {
+  BidAccepted as BidAcceptedEvent,
+  BidRejected as BidRejectedEvent,
+  BidSubmitted as BidSubmittedEvent,
+  ClaimAfterExpiredDeadlineSuccessful as ClaimAfterExpiredDeadlineSuccessfulEvent,
+  ClientRated as ClientRatedEvent,
+  DisputeRaised as DisputeRaisedEvent,
+  DisputeResolved as DisputeResolvedEvent,
+  FeeUpdated as FeeUpdatedEvent,
+  FreelancerRated as FreelancerRatedEvent,
+  FundLocked as FundLockedEvent,
+  FundRefunded as FundRefundedEvent,
+  FundReleased as FundReleasedEvent,
+  JobCancelled as JobCancelledEvent,
+  JobCompleted as JobCompletedEvent,
   JobCreated as JobCreatedEvent,
   JobDetailsUpdated as JobDetailsUpdatedEvent,
   JobStarted as JobStartedEvent,
-  JobCompleted as JobCompletedEvent,
-  JobCancelled as JobCancelledEvent,
-  BidSubmitted as BidSubmittedEvent,
-  BidAccepted as BidAcceptedEvent,
-  BidRejected as BidRejectedEvent,
+  ReputationAddressUpdated as ReputationAddressUpdatedEvent,
+  ReputationPenaltyUpdated as ReputationPenaltyUpdatedEvent,
+  ReputationRewardUpdated as ReputationRewardUpdatedEvent,
+  ReviewPeriodUpdated as ReviewPeriodUpdatedEvent,
+  TimelockUpdated as TimelockUpdatedEvent,
+  TreasuryUpdated as TreasuryUpdatedEvent,
   WorkSubmitted as WorkSubmittedEvent,
-  DisputeRaised as DisputeRaisedEvent,
-  DisputeResolved as DisputeResolvedEvent,
-  FundLocked as FundLockedEvent,
-  FundReleased as FundReleasedEvent,
-  FundRefunded as FundRefundedEvent,
 } from "../generated/JobContract/JobContract";
 
 /* ----------------------------- JOB CREATED ----------------------------- */
@@ -380,3 +390,31 @@ export function handleFundRefunded(event: FundRefundedEvent): void {
   evt.transactionHash = event.transaction.hash;
   evt.save();
 }
+
+export function handleClaimAfterExpiredDeadlineSuccessful(
+  _event: ClaimAfterExpiredDeadlineSuccessfulEvent
+): void {}
+
+export function handleClientRated(_event: ClientRatedEvent): void {}
+
+export function handleFeeUpdated(_event: FeeUpdatedEvent): void {}
+
+export function handleFreelancerRated(_event: FreelancerRatedEvent): void {}
+
+export function handleReputationAddressUpdated(
+  _event: ReputationAddressUpdatedEvent
+): void {}
+
+export function handleReputationPenaltyUpdated(
+  _event: ReputationPenaltyUpdatedEvent
+): void {}
+
+export function handleReputationRewardUpdated(
+  _event: ReputationRewardUpdatedEvent
+): void {}
+
+export function handleReviewPeriodUpdated(_event: ReviewPeriodUpdatedEvent): void {}
+
+export function handleTimelockUpdated(_event: TimelockUpdatedEvent): void {}
+
+export function handleTreasuryUpdated(_event: TreasuryUpdatedEvent): void {}

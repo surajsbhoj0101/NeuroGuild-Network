@@ -1,5 +1,6 @@
 import { UserRegistered as UserRegisteredEvent } from "../generated/UserRegistry/UserRegistry";
 import { UserBlocked as UserBlockedEvent } from "../generated/UserRegistry/UserRegistry";
+import { TimelockUpdated as TimelockUpdatedEvent } from "../generated/UserRegistry/UserRegistry";
 import { UserUnblocked as UserUnblockedEvent } from "../generated/UserRegistry/UserRegistry";
 import {
   UserBlocked,
@@ -64,3 +65,5 @@ export function handleUserUnblocked(event: UserUnblockedEvent): void {
   history.transactionHash = event.transaction.hash;
   history.save();
 }
+
+export function handleTimelockUpdated(_event: TimelockUpdatedEvent): void {}

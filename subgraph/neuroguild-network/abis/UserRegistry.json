@@ -187,6 +187,25 @@
     },
     {
         "type": "event",
+        "name": "TimelockUpdated",
+        "inputs": [
+            {
+                "name": "oldTimelock",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            },
+            {
+                "name": "newTimelock",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
         "name": "UserBlocked",
         "inputs": [
             {
@@ -243,6 +262,11 @@
     {
         "type": "error",
         "name": "InvalidRole",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "UserNotRegistered",
         "inputs": []
     }
 ]

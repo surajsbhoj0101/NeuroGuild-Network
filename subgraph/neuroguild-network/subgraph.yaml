@@ -8,40 +8,124 @@ schema:
 
 dataSources:
   - kind: ethereum
-    name: UserRegistry
+    name: Box
     network: base-sepolia
     source:
-      address: "0x08c24ab12B38BdB97976f634865aCC0e3E8C34a8"
-      abi: UserRegistry
-      startBlock: 36279559
+      address: "0x955a3a49d2920db97de7360da066c51b406941cf"
+      abi: Box
+      startBlock: 38344069
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
       language: wasm/assemblyscript
-      entities:
-        - User
-        - UserRegistered
-        - UserBlocked
-        - UserUnblocked
       abis:
-        - name: UserRegistry
-          file: ./abis/UserRegistry.json
+        - name: Box
+          file: ./abis/Box.json
       eventHandlers:
-        - event: UserRegistered(indexed address,uint8)
-          handler: handleUserRegistered
-        - event: UserBlocked(indexed address)
-          handler: handleUserBlocked
-        - event: UserUnblocked(indexed address)
-          handler: handleUserUnblocked
-      file: ./src/user-registry.ts
+        - event: OwnershipTransferred(indexed address,indexed address)
+          handler: handleOwnershipTransferred
+        - event: ValueChanged(uint256)
+          handler: handleValueChanged
+      file: ./src/box.ts
+
+  - kind: ethereum
+    name: CouncilRegistry
+    network: base-sepolia
+    source:
+      address: "0x8143aec797ba83e30bd5f96e099f09f73743e255"
+      abi: CouncilRegistry
+      startBlock: 38344069
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      abis:
+        - name: CouncilRegistry
+          file: ./abis/CouncilRegistry.json
+      eventHandlers:
+        - event: CouncilAdded(indexed address)
+          handler: handleCouncilAdded
+        - event: CouncilRemoved(indexed address)
+          handler: handleCouncilRemoved
+        - event: TimelockUpdated(indexed address,indexed address)
+          handler: handleTimelockUpdated
+      file: ./src/council-registry.ts
+
+  - kind: ethereum
+    name: GovernanceContract
+    network: base-sepolia
+    source:
+      address: "0xbc13f64dae4d4edff007df565b09e2cad5f22667"
+      abi: GovernanceContract
+      startBlock: 38344069
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      abis:
+        - name: GovernanceContract
+          file: ./abis/GovernanceContract.json
+      eventHandlers:
+        - event: AdminRenounced(indexed address)
+          handler: handleAdminRenounced
+        - event: EIP712DomainChanged()
+          handler: handleEIP712DomainChanged
+        - event: ProposalCanceled(uint256)
+          handler: handleProposalCanceled
+        - event: ProposalCreated(uint256,address,address[],uint256[],string[],bytes[],uint256,uint256,string)
+          handler: handleProposalCreated
+        - event: ProposalExecuted(uint256)
+          handler: handleProposalExecuted
+        - event: ProposalQueued(uint256,uint256)
+          handler: handleProposalQueued
+        - event: QuorumNumeratorUpdated(uint256,uint256)
+          handler: handleQuorumNumeratorUpdated
+        - event: ReputationContractUpdated(indexed address,indexed address)
+          handler: handleReputationContractUpdated
+        - event: TimelockChange(address,address)
+          handler: handleTimelockChange
+        - event: VoteCast(indexed address,uint256,uint8,uint256,string)
+          handler: handleVoteCast
+        - event: VoteCastWithParams(indexed address,uint256,uint8,uint256,string,bytes)
+          handler: handleVoteCastWithParams
+      file: ./src/governance-contract.ts
+
+  - kind: ethereum
+    name: GovernanceToken
+    network: base-sepolia
+    source:
+      address: "0x1b3895aed453d9463a8bb88b2e99fda2a55623f6"
+      abi: GovernanceToken
+      startBlock: 38344069
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      abis:
+        - name: GovernanceToken
+          file: ./abis/GovernanceToken.json
+      eventHandlers:
+        - event: Approval(indexed address,indexed address,uint256)
+          handler: handleApproval
+        - event: DelegateChanged(indexed address,indexed address,indexed address)
+          handler: handleDelegateChanged
+        - event: DelegateVotesChanged(indexed address,uint256,uint256)
+          handler: handleDelegateVotesChanged
+        - event: EIP712DomainChanged()
+          handler: handleEIP712DomainChanged
+        - event: OwnershipTransferred(indexed address,indexed address)
+          handler: handleOwnershipTransferred
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: ./src/governance-token.ts
 
   - kind: ethereum
     name: JobContract
     network: base-sepolia
     source:
-      address: "0xCC9C13c3b199D14fb73C9BB6d89D922Cd182839C"
+      address: "0x096f411f97178ceadaa8877f26524c6b7b7b20a8"
       abi: JobContract
-      startBlock: 36279559
+      startBlock: 38344069
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -49,7 +133,6 @@ dataSources:
       entities:
         - Job
         - Bid
-
         - JobCreated
         - JobDetailsUpdated
         - BidSubmitted
@@ -64,52 +147,250 @@ dataSources:
         - FundLocked
         - FundReleased
         - FundRefunded
-
       abis:
         - name: JobContract
           file: ./abis/JobContract.json
-
       eventHandlers:
-        - event: JobCreated(indexed bytes32,indexed address,uint256,uint256,uint256,string)
-          handler: handleJobCreated
-
-        - event: JobDetailsUpdated(indexed bytes32,indexed address,uint256,uint256,uint256,string)
-          handler: handleJobDetailsUpdated
-
-        - event: BidSubmitted(indexed bytes32,indexed address,uint256,uint256,string)
-          handler: handleBidSubmitted
-
         - event: BidAccepted(indexed bytes32,indexed address,uint256,uint256)
           handler: handleBidAccepted
-
         - event: BidRejected(indexed bytes32,indexed address,uint256,uint256)
           handler: handleBidRejected
-
-        - event: JobStarted(indexed bytes32,indexed address)
-          handler: handleJobStarted
-
-        - event: WorkSubmitted(indexed bytes32,indexed address,string)
-          handler: handleWorkSubmitted
-
-        - event: JobCompleted(indexed bytes32,indexed address)
-          handler: handleJobCompleted
-
-        - event: JobCancelled(indexed bytes32,indexed address)
-          handler: handleJobCancelled
-
+        - event: BidSubmitted(indexed bytes32,indexed address,uint256,uint256,string)
+          handler: handleBidSubmitted
+        - event: ClaimAfterExpiredDeadlineSuccessful(indexed bytes32)
+          handler: handleClaimAfterExpiredDeadlineSuccessful
+        - event: ClientRated(indexed bytes32,indexed address,indexed address,uint8)
+          handler: handleClientRated
         - event: DisputeRaised(indexed bytes32,indexed address,string)
           handler: handleDisputeRaised
-
         - event: DisputeResolved(indexed bytes32,address)
           handler: handleDisputeResolved
-
+        - event: FeeUpdated(uint256,uint256,uint256,uint256)
+          handler: handleFeeUpdated
+        - event: FreelancerRated(indexed bytes32,indexed address,indexed address,uint8)
+          handler: handleFreelancerRated
         - event: FundLocked(indexed bytes32,uint256,uint256,indexed address,indexed address)
           handler: handleFundLocked
-
-        - event: FundReleased(indexed bytes32,uint256,uint256)
-          handler: handleFundReleased
-
         - event: FundRefunded(indexed bytes32,uint256,indexed address)
           handler: handleFundRefunded
-
+        - event: FundReleased(indexed bytes32,uint256,uint256)
+          handler: handleFundReleased
+        - event: JobCancelled(indexed bytes32,indexed address)
+          handler: handleJobCancelled
+        - event: JobCompleted(indexed bytes32,indexed address)
+          handler: handleJobCompleted
+        - event: JobCreated(indexed bytes32,indexed address,uint256,uint256,uint256,string)
+          handler: handleJobCreated
+        - event: JobDetailsUpdated(indexed bytes32,indexed address,uint256,uint256,uint256,string)
+          handler: handleJobDetailsUpdated
+        - event: JobStarted(indexed bytes32,indexed address)
+          handler: handleJobStarted
+        - event: ReputationAddressUpdated(indexed address,indexed address)
+          handler: handleReputationAddressUpdated
+        - event: ReputationPenaltyUpdated(uint8,uint8)
+          handler: handleReputationPenaltyUpdated
+        - event: ReputationRewardUpdated(uint8,uint8)
+          handler: handleReputationRewardUpdated
+        - event: ReviewPeriodUpdated(uint256,uint256)
+          handler: handleReviewPeriodUpdated
+        - event: TimelockUpdated(indexed address,indexed address)
+          handler: handleTimelockUpdated
+        - event: TreasuryUpdated(indexed address,indexed address)
+          handler: handleTreasuryUpdated
+        - event: WorkSubmitted(indexed bytes32,indexed address,string)
+          handler: handleWorkSubmitted
       file: ./src/job.ts
+
+  - kind: ethereum
+    name: ReputationSBT
+    network: base-sepolia
+    source:
+      address: "0x72a65044d2bfa8b0a43bc2fc9f25dc6916b8d340"
+      abi: ReputationSBT
+      startBlock: 38344069
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      abis:
+        - name: ReputationSBT
+          file: ./abis/ReputationSBT.json
+      eventHandlers:
+        - event: BidAccepted(indexed bytes32,indexed address,uint256,uint256)
+          handler: handleBidAccepted
+        - event: BidRejected(indexed bytes32,indexed address,uint256,uint256)
+          handler: handleBidRejected
+        - event: BidSubmitted(indexed bytes32,indexed address,uint256,uint256,string)
+          handler: handleBidSubmitted
+        - event: ClaimAfterExpiredDeadlineSuccessful(indexed bytes32)
+          handler: handleClaimAfterExpiredDeadlineSuccessful
+        - event: ClientRated(indexed bytes32,indexed address,indexed address,uint8)
+          handler: handleClientRated
+        - event: DisputeRaised(indexed bytes32,indexed address,string)
+          handler: handleDisputeRaised
+        - event: DisputeResolved(indexed bytes32,address)
+          handler: handleDisputeResolved
+        - event: FeeUpdated(uint256,uint256,uint256,uint256)
+          handler: handleFeeUpdated
+        - event: FreelancerRated(indexed bytes32,indexed address,indexed address,uint8)
+          handler: handleFreelancerRated
+        - event: FundLocked(indexed bytes32,uint256,uint256,indexed address,indexed address)
+          handler: handleFundLocked
+        - event: FundRefunded(indexed bytes32,uint256,indexed address)
+          handler: handleFundRefunded
+        - event: FundReleased(indexed bytes32,uint256,uint256)
+          handler: handleFundReleased
+        - event: JobCancelled(indexed bytes32,indexed address)
+          handler: handleJobCancelled
+        - event: JobCompleted(indexed bytes32,indexed address)
+          handler: handleJobCompleted
+        - event: JobCreated(indexed bytes32,indexed address,uint256,uint256,uint256,string)
+          handler: handleJobCreated
+        - event: JobDetailsUpdated(indexed bytes32,indexed address,uint256,uint256,uint256,string)
+          handler: handleJobDetailsUpdated
+        - event: JobStarted(indexed bytes32,indexed address)
+          handler: handleJobStarted
+        - event: ReputationAddressUpdated(indexed address,indexed address)
+          handler: handleReputationAddressUpdated
+        - event: ReputationPenaltyUpdated(uint8,uint8)
+          handler: handleReputationPenaltyUpdated
+        - event: ReputationRewardUpdated(uint8,uint8)
+          handler: handleReputationRewardUpdated
+        - event: ReviewPeriodUpdated(uint256,uint256)
+          handler: handleReviewPeriodUpdated
+        - event: TimelockUpdated(indexed address,indexed address)
+          handler: handleTimelockUpdated
+        - event: TreasuryUpdated(indexed address,indexed address)
+          handler: handleTreasuryUpdated
+        - event: WorkSubmitted(indexed bytes32,indexed address,string)
+          handler: handleWorkSubmitted
+      file: ./src/reputation-sbt.ts
+
+  - kind: ethereum
+    name: Timelock
+    network: base-sepolia
+    source:
+      address: "0x62ff267661eb73d435fadd9d5ebb71fd35391195"
+      abi: Timelock
+      startBlock: 38344069
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      abis:
+        - name: Timelock
+          file: ./abis/Timelock.json
+      eventHandlers:
+        - event: CallExecuted(indexed bytes32,indexed uint256,address,uint256,bytes)
+          handler: handleCallExecuted
+        - event: CallSalt(indexed bytes32,bytes32)
+          handler: handleCallSalt
+        - event: CallScheduled(indexed bytes32,indexed uint256,address,uint256,bytes,bytes32,uint256)
+          handler: handleCallScheduled
+        - event: Cancelled(indexed bytes32)
+          handler: handleCancelled
+        - event: MinDelayChange(uint256,uint256)
+          handler: handleMinDelayChange
+        - event: RoleAdminChanged(indexed bytes32,indexed bytes32,indexed bytes32)
+          handler: handleRoleAdminChanged
+        - event: RoleGranted(indexed bytes32,indexed address,indexed address)
+          handler: handleRoleGranted
+        - event: RoleRevoked(indexed bytes32,indexed address,indexed address)
+          handler: handleRoleRevoked
+      file: ./src/timelock.ts
+
+  - kind: ethereum
+    name: SkillSBT
+    network: base-sepolia
+    source:
+      address: "0x30cbc9f86a4ffcc1dd758fb799e9d295b0fa3ed6"
+      abi: SkillSBT
+      startBlock: 38344069
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      abis:
+        - name: SkillSBT
+          file: ./abis/SkillSBT.json
+      eventHandlers:
+        - event: Approval(indexed address,indexed address,indexed uint256)
+          handler: handleApproval
+        - event: ApprovalForAll(indexed address,indexed address,bool)
+          handler: handleApprovalForAll
+        - event: BatchMetadataUpdate(uint256,uint256)
+          handler: handleBatchMetadataUpdate
+        - event: CouncilRegistryUpdated(indexed address,indexed address)
+          handler: handleCouncilRegistryUpdated
+        - event: MetadataUpdate(uint256)
+          handler: handleMetadataUpdate
+        - event: SkillMinted(indexed uint256,indexed address,indexed bytes32,uint8,uint8,uint8,string)
+          handler: handleSkillMinted
+        - event: SkillUpgraded(uint256,uint8,uint8)
+          handler: handleSkillUpgraded
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleTransfer
+      file: ./src/skill-sbt.ts
+
+  - kind: ethereum
+    name: Treasury
+    network: base-sepolia
+    source:
+      address: "0x106f949bf8b830acc07fc1fdf86ab86db344f819"
+      abi: Treasury
+      startBlock: 38344069
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      abis:
+        - name: Treasury
+          file: ./abis/Treasury.json
+      eventHandlers:
+        - event: CouncilPaid(indexed address,uint256)
+          handler: handleCouncilPaid
+        - event: CouncilRegistryUpdated(indexed address,indexed address)
+          handler: handleCouncilRegistryUpdated
+        - event: CouncilRewardAdded(indexed address,uint256)
+          handler: handleCouncilRewardAdded
+        - event: DeveloperPaid(indexed address,uint256)
+          handler: handleDeveloperPaid
+        - event: DeveloperRewardAdded(indexed address,uint256)
+          handler: handleDeveloperRewardAdded
+        - event: EmergencyWithdrawn(indexed address,uint256)
+          handler: handleEmergencyWithdrawn
+        - event: ProtocolFeeReceived(indexed address,uint256)
+          handler: handleProtocolFeeReceived
+        - event: TimelockUpdated(indexed address,indexed address)
+          handler: handleTimelockUpdated
+      file: ./src/treasury.ts
+
+  - kind: ethereum
+    name: UserRegistry
+    network: base-sepolia
+    source:
+      address: "0x9e27ed2d00f7815e650599509df315de17a0d27f"
+      abi: UserRegistry
+      startBlock: 38344069
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - UserRegistered
+        - UserBlocked
+        - UserUnblocked
+      abis:
+        - name: UserRegistry
+          file: ./abis/UserRegistry.json
+      eventHandlers:
+        - event: TimelockUpdated(indexed address,indexed address)
+          handler: handleTimelockUpdated
+        - event: UserBlocked(indexed address)
+          handler: handleUserBlocked
+        - event: UserRegistered(indexed address,uint8)
+          handler: handleUserRegistered
+        - event: UserUnblocked(indexed address)
+          handler: handleUserUnblocked
+      file: ./src/user-registry.ts

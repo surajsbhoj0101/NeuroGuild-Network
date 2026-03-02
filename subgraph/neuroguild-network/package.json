@@ -11,10 +11,19 @@
     "test": "graph test"
   },
   "dependencies": {
-    "@graphprotocol/graph-cli": "0.98.1",
-    "@graphprotocol/graph-ts": "0.37.0"
+    "@graphprotocol/graph-cli": "0.98.1"
+  },
+  "overrides": {
+    "axios": "^1.8.2",
+    "cross-spawn": "^7.0.6",
+    "ejs": "^3.1.10",
+    "glob": "^11.0.4",
+    "js-yaml": "^4.1.1",
+    "semver": "^7.7.3",
+    "undici": "^7.18.2"
   },
   "devDependencies": {
+    "@graphprotocol/graph-ts": "^0.38.2",
     "matchstick-as": "^0.6.0"
   }
 }
