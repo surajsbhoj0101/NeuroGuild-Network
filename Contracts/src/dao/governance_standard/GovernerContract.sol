@@ -36,6 +36,11 @@ contract GoverContract is
 {
     address public admin; // temporary 
     IReputationSBT reputation;
+    event ReputationContractUpdated(
+        address indexed oldReputation,
+        address indexed newReputation
+    );
+    event AdminRenounced(address indexed oldAdmin);
     constructor(
         IVotes _token,
         TimelockController _timelock
@@ -54,11 +59,15 @@ contract GoverContract is
     }
 
     function setReputation(address _reputation) external onlyAdmin{
+        address oldReputation = address(reputation);
         reputation = IReputationSBT(_reputation);
+        emit ReputationContractUpdated(oldReputation, _reputation);
     }
 
     function renounceAdmin() external onlyAdmin {
+        address oldAdmin = admin;
         admin = address(0);
+        emit AdminRenounced(oldAdmin);
     }
 
     function votingDelay() public pure override returns (uint256) {

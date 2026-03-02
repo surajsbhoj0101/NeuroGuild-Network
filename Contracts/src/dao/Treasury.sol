@@ -9,6 +9,17 @@ contract Treasury {
     using SafeERC20 for IERC20;
 
     error OnlyTimelock();
+    event TimelockUpdated(address indexed oldTimelock, address indexed newTimelock);
+    event CouncilRegistryUpdated(
+        address indexed oldRegistry,
+        address indexed newRegistry
+    );
+    event ProtocolFeeReceived(address indexed from, uint256 amount);
+    event CouncilRewardAdded(address indexed council, uint256 amount);
+    event DeveloperRewardAdded(address indexed dev, uint256 amount);
+    event CouncilPaid(address indexed council, uint256 amount);
+    event DeveloperPaid(address indexed dev, uint256 amount);
+    event EmergencyWithdrawn(address indexed to, uint256 amount);
 
     address public timelock;
     IERC20 public stableToken; 
@@ -31,20 +42,25 @@ contract Treasury {
 
     function setTimelock(address _timelock) external onlyTimelock {
         require(_timelock != address(0), "Invalid timelock");
+        address oldTimelock = timelock;
         timelock = _timelock;
+        emit TimelockUpdated(oldTimelock, _timelock);
     }
 
     function setCouncilRegistry(address _registry) external onlyTimelock {
         require(_registry != address(0), "Invalid registry");
+        address oldRegistry = address(councilRegistry);
         councilRegistry = ICouncilRegistry(_registry);
+        emit CouncilRegistryUpdated(oldRegistry, _registry);
     }
 
     // stableToken.transferFrom(jobContract, treasury, fee)
     // No function needed — ERC20 transfer is enough.
     // This is intentionally EMPTY.
 
-    function receiveProtocolFee(uint256 /*amount*/) external pure {
-        // No logic needed — stableToken already transferred
+    function receiveProtocolFee(uint256 amount) external {
+        // No accounting needed — stableToken is transferred directly.
+        emit ProtocolFeeReceived(msg.sender, amount);
     }
 
     function addCouncilReward(address council, uint256 amount)
@@ -53,6 +69,7 @@ contract Treasury {
     {
         require(councilRegistry.isCouncil(council), "Not a council member");
         pendingCouncilRewards[council] += amount;
+        emit CouncilRewardAdded(council, amount);
     }
 
     function addDeveloperReward(address dev, uint256 amount)
@@ -60,6 +77,7 @@ contract Treasury {
         onlyTimelock
     {
         pendingDevRewards[dev] += amount;
+        emit DeveloperRewardAdded(dev, amount);
     }
 
     function payCouncil(address council) external onlyTimelock {
@@ -68,6 +86,7 @@ contract Treasury {
         require(amount > 0, "Nothing to pay");
 
         stableToken.safeTransfer(council, amount);
+        emit CouncilPaid(council, amount);
     }
 
     function payDeveloper(address dev) external onlyTimelock {
@@ -76,6 +95,7 @@ contract Treasury {
         require(amount > 0, "Nothing to pay");
 
         stableToken.safeTransfer(dev, amount);
+        emit DeveloperPaid(dev, amount);
     }
 
     function emergencyWithdraw(address to, uint256 amount)
@@ -83,5 +103,6 @@ contract Treasury {
         onlyTimelock
     {
         stableToken.safeTransfer(to, amount);
+        emit EmergencyWithdrawn(to, amount);
     }
 }

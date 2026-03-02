@@ -30,6 +30,10 @@ contract SkillSBT is ERC721URIStorage {
         SkillLevel level,
         string metadataURI
     );
+    event CouncilRegistryUpdated(
+        address indexed oldRegistry,
+        address indexed newRegistry
+    );
 
     enum SkillLevel {
         Beginner,
@@ -75,7 +79,9 @@ contract SkillSBT is ERC721URIStorage {
     }
 
     function updateCouncilRegistry(address newRegistry) external onlyTimelock {
+        address oldRegistry = address(councilRegistry);
         councilRegistry = ICouncilRegistry(newRegistry);
+        emit CouncilRegistryUpdated(oldRegistry, newRegistry);
     }
 
     function mintSkill(

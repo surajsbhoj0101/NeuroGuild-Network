@@ -10,6 +10,7 @@ contract UserRegistry {
     event UserRegistered(address indexed wallet, Role role);
     event UserBlocked(address indexed wallet);
     event UserUnblocked(address indexed wallet);
+    event TimelockUpdated(address indexed oldTimelock, address indexed newTimelock);
 
     enum Role {
         Client,
@@ -37,7 +38,9 @@ contract UserRegistry {
     mapping(address => User) public users;
 
     function setTimelock(address _resolver) external onlyTimelock {
+        address oldTimelock = timelock;
         timelock = _resolver;
+        emit TimelockUpdated(oldTimelock, _resolver);
     }
 
     function registerUser(Role _role) external {

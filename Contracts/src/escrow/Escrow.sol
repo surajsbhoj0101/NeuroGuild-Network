@@ -33,6 +33,14 @@ contract Escrow {
         uint256 amountRefunded,
         address indexed client
     );
+    event TimelockUpdated(address indexed oldTimelock, address indexed newTimelock);
+    event TreasuryUpdated(address indexed oldTreasury, address indexed newTreasury);
+    event FeeUpdated(
+        uint256 oldClientFeeBps,
+        uint256 newClientFeeBps,
+        uint256 oldProtocolFeeBps,
+        uint256 newProtocolFeeBps
+    );
 
     struct EscrowInfo {
         address client;
@@ -66,11 +74,15 @@ contract Escrow {
     }
 
     function setTimelock(address _timelock) external virtual onlyTimelock {
+        address oldTimelock = timelock;
         timelock = _timelock;
+        emit TimelockUpdated(oldTimelock, _timelock);
     }
 
     function setTreasury(address _treasury) external onlyTimelock {
+        address oldTreasury = treasury;
         treasury = _treasury;
+        emit TreasuryUpdated(oldTreasury, _treasury);
     }
 
     function setFee(
@@ -80,8 +92,16 @@ contract Escrow {
         if (_clientFeeBps > 10000 || _protocolFeeBps > 10000) {
             revert InvalidFeeBps();
         }
+        uint256 oldClientFeeBps = clientFeeBps;
+        uint256 oldProtocolFeeBps = protocolFeeBps;
         clientFeeBps = _clientFeeBps;
         protocolFeeBps = _protocolFeeBps;
+        emit FeeUpdated(
+            oldClientFeeBps,
+            _clientFeeBps,
+            oldProtocolFeeBps,
+            _protocolFeeBps
+        );
     }
 
     function _lockFunds(

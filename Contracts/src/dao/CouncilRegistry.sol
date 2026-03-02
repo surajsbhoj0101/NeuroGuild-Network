@@ -11,6 +11,9 @@ contract CouncilRegistry {
     error AlreadyCouncil();
     error NotCouncil();
     error InvalidCouncilAddress();
+    event TimelockUpdated(address indexed oldTimelock, address indexed newTimelock);
+    event CouncilAdded(address indexed member);
+    event CouncilRemoved(address indexed member);
 
     modifier onlyTimelock() {
         if (msg.sender != timelock) revert OnlyTimelock();
@@ -23,7 +26,9 @@ contract CouncilRegistry {
 
     function setTimelock(address _timelock) external onlyTimelock {
         require(_timelock != address(0), "Invalid timelock");
+        address oldTimelock = timelock;
         timelock = _timelock;
+        emit TimelockUpdated(oldTimelock, _timelock);
     }
 
     function addCouncil(address member) external onlyTimelock {
@@ -31,7 +36,7 @@ contract CouncilRegistry {
         if (isCouncil[member]) revert AlreadyCouncil();
         isCouncil[member] = true;
         councilMembers.push(member);
-        
+        emit CouncilAdded(member);
     }
 
     function removeCouncil(address member) external onlyTimelock {
@@ -47,6 +52,7 @@ contract CouncilRegistry {
                 break;
             }
         }
+        emit CouncilRemoved(member);
     }
 
     function getCouncilMembers() external view returns (address[] memory) {

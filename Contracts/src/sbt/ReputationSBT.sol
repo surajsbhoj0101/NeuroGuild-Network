@@ -23,6 +23,11 @@ contract ReputationSBT is ERC721URIStorage {
 
     event RatingRecorded(uint256 indexed tokenId, uint16 newAverageRating, uint8 rating);
     event MetadataUpdated(uint256 indexed tokenId, string newURI);
+    event JobContractUpdated(
+        address indexed oldJobContract,
+        address indexed newJobContract
+    );
+    event TimelockUpdated(address indexed oldTimelock, address indexed newTimelock);
 
     
     struct Reputation {
@@ -65,12 +70,16 @@ contract ReputationSBT is ERC721URIStorage {
 
     function setJobContract(address _jobContract) external onlyTimelock {
         require(_jobContract != address(0), "Invalid jobContract address");
+        address oldJobContract = jobContract;
         jobContract = _jobContract;
+        emit JobContractUpdated(oldJobContract, _jobContract);
     }
 
     function setTimelock(address _timelock) external onlyTimelock {
         require(_timelock != address(0), "Invalid timelock address");
+        address oldTimelock = timelock;
         timelock = _timelock;
+        emit TimelockUpdated(oldTimelock, _timelock);
     }
 
     function getTokenId(address user) external view returns (uint256) {

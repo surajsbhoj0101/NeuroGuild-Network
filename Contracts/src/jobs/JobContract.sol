@@ -91,6 +91,25 @@ contract JobContract is Escrow, ReentrancyGuard {
     event JobCancelled(bytes32 indexed jobId, address indexed client);
 
     event ClaimAfterExpiredDeadlineSuccessful(bytes32 indexed jobId);
+    event ReviewPeriodUpdated(uint256 oldReviewPeriod, uint256 newReviewPeriod);
+    event ReputationAddressUpdated(
+        address indexed oldReputation,
+        address indexed newReputation
+    );
+    event ReputationRewardUpdated(uint8 oldReward, uint8 newReward);
+    event ReputationPenaltyUpdated(uint8 oldPenalty, uint8 newPenalty);
+    event FreelancerRated(
+        bytes32 indexed jobId,
+        address indexed client,
+        address indexed freelancer,
+        uint8 rating
+    );
+    event ClientRated(
+        bytes32 indexed jobId,
+        address indexed freelancer,
+        address indexed client,
+        uint8 rating
+    );
 
     enum JobStatus {
         Open,
@@ -178,6 +197,8 @@ contract JobContract is Escrow, ReentrancyGuard {
         address initialRepAddress,
         address _treasury
     ) Escrow(token, _treasury, _timelock) {
+        if (initialReviewPeriod <= 1)
+            revert ReviewPeriodMustBeGreaterThanOne();
         registry = UserRegistry(_registryAddress);
         reviewPeriod = uint256(initialReviewPeriod) * 1 days; // store as seconds
         Escrow.timelock = _timelock;
@@ -188,16 +209,22 @@ contract JobContract is Escrow, ReentrancyGuard {
 
     function setReviewPeriod(uint8 _reviewPeriod) external onlyTimelock {
         if (_reviewPeriod <= 1) revert ReviewPeriodMustBeGreaterThanOne(); // days
+        uint256 oldReviewPeriod = reviewPeriod;
         reviewPeriod = uint256(_reviewPeriod) * 1 days;
+        emit ReviewPeriodUpdated(oldReviewPeriod, reviewPeriod);
     }
 
     function setReputationAddress(address _rep) external onlyTimelock {
+        address oldReputation = address(reputation);
         reputation = IReputationSBT(_rep);
+        emit ReputationAddressUpdated(oldReputation, _rep);
     }
 
     function setTimelock(address _timelock) external override onlyTimelock {
         require(_timelock != address(0), "Invalid timelock address");
+        address oldTimelock = Escrow.timelock;
         Escrow.timelock = _timelock;
+        emit TimelockUpdated(oldTimelock, _timelock);
     }
 
     function createJob(
@@ -279,11 +306,15 @@ contract JobContract is Escrow, ReentrancyGuard {
     }
 
     function setRepReward(uint8 reward) external onlyTimelock {
+        uint8 oldReward = reputationReward;
         reputationReward = reward;
+        emit ReputationRewardUpdated(oldReward, reward);
     }
 
     function setRepPenalty(uint8 penalty) external onlyTimelock {
+        uint8 oldPenalty = reputationPenalty;
         reputationPenalty = penalty;
+        emit ReputationPenaltyUpdated(oldPenalty, penalty);
     }
 
     function submitBid(
@@ -559,6 +590,7 @@ contract JobContract is Escrow, ReentrancyGuard {
         clientRatedFreelancer[jobId] = true;
 
         _recordRating(job.freelancer, rating);
+        emit FreelancerRated(jobId, msg.sender, job.freelancer, rating);
     }
 
     function rateClient(bytes32 jobId, uint8 rating) external onlyFreelancer {
@@ -572,6 +604,7 @@ contract JobContract is Escrow, ReentrancyGuard {
         freelancerRatedClient[jobId] = true;
 
         _recordRating(job.client, rating);
+        emit ClientRated(jobId, msg.sender, job.client, rating);
     }
 
     function getJobStatus(bytes32 jobId) external view returns (JobStatus) {
