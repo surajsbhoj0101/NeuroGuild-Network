@@ -14,6 +14,7 @@ contract Escrow {
     error cannotLockedTwice();
     error InvalidState();
     error OnlyTimelock();
+    error InvalidFeeBps();
 
     event FundLocked(
         bytes32 indexed jobId,
@@ -76,6 +77,9 @@ contract Escrow {
         uint256 _clientFeeBps,
         uint256 _protocolFeeBps
     ) external onlyTimelock {
+        if (_clientFeeBps > 10000 || _protocolFeeBps > 10000) {
+            revert InvalidFeeBps();
+        }
         clientFeeBps = _clientFeeBps;
         protocolFeeBps = _protocolFeeBps;
     }
@@ -111,14 +115,16 @@ contract Escrow {
 
         uint256 protocolFee = (e.bidAmount * protocolFeeBps) / 10000; // 8%
         uint256 freelancerAmount = e.bidAmount - protocolFee; // 92%
+        uint256 clientFee = e.amountLocked - e.bidAmount;
+        uint256 treasuryAmount = protocolFee + clientFee;
 
         // Send funds
         USDC.safeTransfer(e.freelancer, freelancerAmount);
-        USDC.safeTransfer(treasury, protocolFee);
+        USDC.safeTransfer(treasury, treasuryAmount);
 
         e.released = true;
 
-        emit FundReleased(jobId, freelancerAmount, protocolFee);
+        emit FundReleased(jobId, freelancerAmount, treasuryAmount);
     }
 
     function _refundClient(bytes32 jobId) internal {

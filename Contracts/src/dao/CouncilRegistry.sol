@@ -10,6 +10,7 @@ contract CouncilRegistry {
     error OnlyTimelock();
     error AlreadyCouncil();
     error NotCouncil();
+    error InvalidCouncilAddress();
 
     modifier onlyTimelock() {
         if (msg.sender != timelock) revert OnlyTimelock();
@@ -26,6 +27,7 @@ contract CouncilRegistry {
     }
 
     function addCouncil(address member) external onlyTimelock {
+        if (member == address(0)) revert InvalidCouncilAddress();
         if (isCouncil[member]) revert AlreadyCouncil();
         isCouncil[member] = true;
         councilMembers.push(member);

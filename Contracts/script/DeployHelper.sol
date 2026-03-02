@@ -46,12 +46,10 @@ library DeployHelper {
         GovernanceToken govToken = new GovernanceToken();
         d.govToken = address(govToken);
 
-        // Timelock with deployer as proposer & executor
-        address[] memory proposers = new address[](1);
-        proposers[0] = deployer;
-
-        address[] memory executors = new address[](1);
-        executors[0] = deployer;
+        // Timelock starts with empty proposer/executor sets.
+        // Deployer is temporary admin only for role wiring.
+        address[] memory proposers = new address[](0);
+        address[] memory executors = new address[](0);
 
         TimeLock timelock = new TimeLock(
             minDelay,

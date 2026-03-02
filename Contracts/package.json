@@ -1,0 +1,18 @@
+{
+  "name": "contracts",
+  "version": "1.0.0",
+  "description": "**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**",
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "deploy": "forge script script/DeploymentScript.sol:DeploymentScript --rpc-url baseSepolia --broadcast && node ./script/postDeploy.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postDeploy": "node ./script/postDeploy.js"
+  }
+}

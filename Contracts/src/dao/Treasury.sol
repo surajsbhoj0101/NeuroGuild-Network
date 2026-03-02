@@ -2,9 +2,12 @@
 pragma solidity ^0.8.28;
 
 import {IERC20} from "../../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "../../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ICouncilRegistry} from "./interfaces/ICouncilRegistry.sol";
 
 contract Treasury {
+    using SafeERC20 for IERC20;
+
     error OnlyTimelock();
 
     address public timelock;
@@ -64,7 +67,7 @@ contract Treasury {
         pendingCouncilRewards[council] = 0;
         require(amount > 0, "Nothing to pay");
 
-        stableToken.transfer(council, amount);
+        stableToken.safeTransfer(council, amount);
     }
 
     function payDeveloper(address dev) external onlyTimelock {
@@ -72,13 +75,13 @@ contract Treasury {
         pendingDevRewards[dev] = 0;
         require(amount > 0, "Nothing to pay");
 
-        stableToken.transfer(dev, amount);
+        stableToken.safeTransfer(dev, amount);
     }
 
     function emergencyWithdraw(address to, uint256 amount)
         external
         onlyTimelock
     {
-        stableToken.transfer(to, amount);
+        stableToken.safeTransfer(to, amount);
     }
 }

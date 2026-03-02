@@ -5,6 +5,7 @@ contract UserRegistry {
     error InvalidRole();
     error ClientIsBlocked();
     error FreelancerIsBlocked();
+    error UserNotRegistered();
 
     event UserRegistered(address indexed wallet, Role role);
     event UserBlocked(address indexed wallet);
@@ -61,11 +62,13 @@ contract UserRegistry {
     }
 
     function isClient(address _wallet) external view returns (bool) {
+        if (!users[_wallet].exists) revert UserNotRegistered();
         if (users[_wallet].blocked) revert ClientIsBlocked();
         return users[_wallet].role == Role.Client;
     }
 
     function isFreelancer(address _wallet) external view returns (bool) {
+        if (!users[_wallet].exists) revert UserNotRegistered();
         if (users[_wallet].blocked) revert FreelancerIsBlocked();
         return users[_wallet].role == Role.Freelancer;
     }

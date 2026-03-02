@@ -31,6 +31,22 @@ contract Tests is Test {
         assertEq(reg.isClient(address(this)), true);
     }
 
+    function testUnregisteredUserCannotCreateJob() public {
+        JobContract job = JobContract(deployed.jobContract);
+        uint256 start = 1000;
+        vm.warp(start);
+
+        vm.startPrank(vm.addr(99));
+        vm.expectRevert(UserRegistry.UserNotRegistered.selector);
+        job.createJob(
+            "ipfs:https://",
+            8 * 1e18,
+            start + 1 days,
+            start + 2 days
+        );
+        vm.stopPrank();
+    }
+
     function testJobLifeCycle() public {
         //declare
         address client = vm.addr(1);
@@ -162,6 +178,8 @@ contract Tests is Test {
         Treasury treasury = Treasury(address(deployed.treasury));
         console.log(usdc.balanceOf(deployed.treasury));
         console.log(usdc.balanceOf(freelancer));
+        assertEq(usdc.balanceOf(deployed.treasury), 12 * 1e17); // 1.2 USDC
+        assertEq(usdc.balanceOf(address(job)), 0); // no stranded client fee
 
         //Give ratings
         vm.startPrank(client);
@@ -291,9 +309,28 @@ contract Tests is Test {
 
     function testGovernance() public {
         address client = vm.addr(1);
-        address freelancer = vm.addr(2);
 
         GoverContract gov = GoverContract(payable(address(deployed.governor)));
+        TimeLock timeLock = TimeLock(payable(address(deployed.timelock)));
+        GovernanceToken token = GovernanceToken(address(deployed.govToken));
+
+        // Ensure deployer/test contract is no longer timelock admin or proposer.
+        assertEq(
+            timeLock.hasRole(timeLock.DEFAULT_ADMIN_ROLE(), address(this)),
+            false
+        );
+        assertEq(
+            timeLock.hasRole(timeLock.PROPOSER_ROLE(), address(this)),
+            false
+        );
+        assertEq(timeLock.hasRole(timeLock.PROPOSER_ROLE(), address(gov)), true);
+
+        // Non-proposer cannot schedule directly on timelock.
+        vm.startPrank(client);
+        vm.expectRevert();
+        timeLock.schedule(address(0), 0, "", bytes32(0), bytes32(0), 2 minutes);
+        vm.stopPrank();
+
         //Add council memeber using governance
         bytes memory callData = abi.encodeWithSignature(
             "addCouncil(address)",
@@ -324,8 +361,6 @@ contract Tests is Test {
         assertEq(uint256(gov.state(proposalId)), 0);
         deal(address(deployed.govToken), client, 10000 * 1e18);
 
-        GovernanceToken token = GovernanceToken(address(deployed.govToken));
-
         // delegate votes
         vm.prank(client);
         token.delegate(client);
@@ -351,7 +386,6 @@ contract Tests is Test {
         );
 
         gov.queue(targets, values, calldatas, descriptionHash);
-        TimeLock timeLock = TimeLock(payable(address(deployed.timelock)));
 
         // timelock waiting period
         vm.warp(block.timestamp + timeLock.getMinDelay() + 1);
@@ -362,6 +396,94 @@ contract Tests is Test {
             address(deployed.councilRegistry)
         );
         assertEq(council.isCouncil(client), true);
+
+        // second governance action: rotate UserRegistry timelock
+        address newTimelock = vm.addr(777);
+        bytes memory setTlData = abi.encodeWithSignature(
+            "setTimelock(address)",
+            newTimelock
+        );
+
+        address[] memory targets2 = new address[](1);
+        targets2[0] = address(deployed.registry);
+
+        uint256[] memory values2 = new uint256[](1);
+        values2[0] = 0;
+
+        bytes[] memory calldatas2 = new bytes[](1);
+        calldatas2[0] = setTlData;
+
+        string memory description2 = "Proposal #2: rotate registry timelock";
+        uint256 proposalId2 = gov.propose(
+            targets2,
+            values2,
+            calldatas2,
+            description2
+        );
+
+        vm.roll(block.number + gov.votingDelay() + 1);
+        vm.prank(client);
+        gov.castVote(proposalId2, 1);
+
+        vm.roll(block.number + gov.votingPeriod() + 1);
+        bytes32 descHash2 = keccak256(bytes(description2));
+        gov.queue(targets2, values2, calldatas2, descHash2);
+        vm.warp(block.timestamp + timeLock.getMinDelay() + 1);
+        gov.execute(targets2, values2, calldatas2, descHash2);
+
+        UserRegistry registry = UserRegistry(deployed.registry);
+        assertEq(registry.timelock(), newTimelock);
+    }
+
+    function testEscrowNoStrandedBalanceOnCompletion() public {
+        address client = vm.addr(11);
+        address freelancer = vm.addr(12);
+
+        deal(address(deployed.usdc), client, 100 * 1e18);
+
+        UserRegistry reg = UserRegistry(deployed.registry);
+        vm.startPrank(client);
+        reg.registerUser(UserRegistry.Role.Client);
+        vm.stopPrank();
+
+        vm.startPrank(freelancer);
+        reg.registerUser(UserRegistry.Role.Freelancer);
+        vm.stopPrank();
+
+        JobContract job = JobContract(deployed.jobContract);
+        uint256 start = 1000;
+        vm.warp(start);
+        vm.startPrank(client);
+        job.createJob("ipfs:https://", 8 * 1e18, start + 1 days, start + 2 days);
+        vm.stopPrank();
+        bytes32 jobId = job.getAllJobIds()[0];
+
+        vm.startPrank(freelancer);
+        job.submitBid(jobId, 10 * 1e18, "Sample");
+        vm.stopPrank();
+
+        vm.startPrank(client);
+        ERC20Usdc usdc = ERC20Usdc(deployed.usdc);
+        usdc.approve(address(job), 20 * 1e18);
+        job.acceptBid(jobId, 0);
+        vm.stopPrank();
+
+        vm.startPrank(freelancer);
+        job.submitWork(jobId, "proof");
+        vm.stopPrank();
+
+        vm.startPrank(address(deployed.timelock));
+        ReputationSBT rep = ReputationSBT(address(deployed.reputationSBT));
+        rep.setJobContract(address(deployed.jobContract));
+        vm.stopPrank();
+
+        vm.startPrank(client);
+        job.acceptWork(jobId);
+        vm.stopPrank();
+
+        assertEq(usdc.balanceOf(address(job)), 0);
+        assertEq(usdc.balanceOf(freelancer), 92 * 1e17); // 9.2
+        assertEq(usdc.balanceOf(deployed.treasury), 12 * 1e17); // 1.2
     }
 
     function testFundCouncil() public {
