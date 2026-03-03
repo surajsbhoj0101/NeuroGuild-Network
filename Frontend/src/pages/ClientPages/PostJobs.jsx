@@ -324,20 +324,22 @@ function PostJobs() {
           setNotice("Blockchain error: job not created.");
           return;
         }
-        setRedNotice(false);
-        setNotice("Job Created successfully !!");
+        
 
         try {
+          console.log("Sending noti")
           await addJobNotification({
             title: "New job posted",
             description: `${jobDetails.title} is now live`,
-            link: `/job/${jobId}`,
+            link: `/job/${tx?.jobId}`,
             metadata: { jobId: tx?.jobId?.toString?.() || "" },
             onlyFreelancer: true,
           });
         } catch (error) {
           console.log(error);
         }
+        setRedNotice(false);
+        setNotice("Job Created successfully !!");
       } catch (err) {
         console.error("Blockchain transaction failed:", err);
         setRedNotice(true);

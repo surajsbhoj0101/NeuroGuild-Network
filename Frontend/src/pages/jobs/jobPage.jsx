@@ -59,6 +59,9 @@ function jobPage() {
 
   const [fetchingScore, setFetchingScore] = useState(true);
   const [score, setScore] = useState(null);
+  const bidAmountNumber = Number(bidData.amount || 0);
+  const proposalLength = bidData.proposal.trim().length;
+  const isBidFormValid = bidAmountNumber > 0 && proposalLength > 0;
 
   async function getSigner() {
     let signer;
@@ -219,6 +222,27 @@ function jobPage() {
           return;
         }
 
+        const clientRecipientId =
+          jobDetails?.clientId || jobDetails?.user || jobDetails?._id;
+        if (clientRecipientId) {
+          try {
+            await api.post(
+              "http://localhost:5000/api/notifications/job-event",
+              {
+                eventType: "bid_submitted",
+                recipientId: clientRecipientId,
+                metadata: {
+                  jobId,
+                  amount: Number(bidData.amount),
+                },
+              },
+              { withCredentials: true }
+            );
+          } catch (notificationError) {
+            console.error("bid_submitted notification failed:", notificationError);
+          }
+        }
+
         setRedNotice(false);
 
         setNotice("Bid Submitted Successfully");
@@ -373,66 +397,98 @@ function jobPage() {
 
         {isBidding && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="bg-[#0d1224] w-full max-w-md rounded-xl shadow-xl p-6">
-              <h2 className="text-xl font-semibold text-white mb-4">
-                Submit Your Bid
-              </h2>
+            <div className="bg-[#0d1224] border border-[#14a19f]/20 w-full max-w-lg rounded-2xl shadow-2xl p-6">
+              <div className="flex items-start justify-between gap-3 mb-5">
+                <div>
+                  <h2 className="text-2xl font-semibold text-white">Submit Your Bid</h2>
+                  <p className="text-sm text-gray-400 mt-1">
+                    {jobDetails?.title || "This job"} • Budget ${jobDetails?.budget || 0}
+                  </p>
+                </div>
+                <button
+                  disabled={isSubmittingBid}
+                  onClick={() => setIsBidding(false)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="bg-[#121936] border border-[#14a19f]/20 rounded-xl p-3 mb-4">
+                <p className="text-xs text-gray-400">Bid Summary</p>
+                <p className="text-lg font-semibold text-[#14a19f] mt-1">
+                  ${bidAmountNumber > 0 ? bidAmountNumber : 0}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Keep it competitive and aligned with the scope.
+                </p>
+              </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-300">
-                    Bid Amount (USD)
-                  </label>
-                  <input
-                    name="amount"
-                    value={bidData.amount}
-                    onChange={handleChange}
-                    type="number"
-                    required
-                    min={1}
-                    className="w-full mt-1 p-3 rounded-lg border  dark:border-gray-600 bg-[#0b0f1d]  text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                    placeholder="Enter amount"
-                  />
+                  <label className="text-sm font-medium text-gray-300">Bid Amount (USD)</label>
+                  <div className="mt-1 relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                    <input
+                      name="amount"
+                      value={bidData.amount}
+                      onChange={handleChange}
+                      type="number"
+                      required
+                      min={1}
+                      className="w-full pl-8 pr-3 py-3 rounded-lg border border-gray-600 bg-[#0b0f1d] text-white focus:ring-2 focus:ring-[#14a19f] outline-none"
+                      placeholder="Enter amount"
+                    />
+                  </div>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-300">
-                    Proposal Details
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-300">Proposal Details</label>
+                    <span className="text-xs text-gray-500">{proposalLength} chars</span>
+                  </div>
                   <textarea
                     value={bidData.proposal}
                     name="proposal"
                     onChange={handleChange}
                     required
-                    rows="4"
-                    className="w-full mt-1 p-3 rounded-lg border border-gray-600 bg-[#0b0f1d]  text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                    placeholder="Describe how you will complete this job..."
+                    rows="5"
+                    className="w-full mt-1 p-3 rounded-lg border border-gray-600 bg-[#0b0f1d] text-white focus:ring-2 focus:ring-[#14a19f] outline-none"
+                    placeholder="Explain your approach, timeline, and expected deliverables..."
                   ></textarea>
                 </div>
               </div>
 
-              <div className="flex items-center justify-end mt-6 gap-3">
+              <div className="flex items-center justify-between mt-6 gap-3">
+                <p className="text-xs text-gray-500">
+                  {isBidFormValid
+                    ? "Ready to submit."
+                    : "Fill amount and proposal to submit."}
+                </p>
+                <div className="flex items-center gap-3">
                 <button
                   disabled={isSubmittingBid}
                   onClick={() => setIsBidding(false)}
-                  className={`px-4 py-2 rounded-lg border border-gray-400 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#13182c] transition `}
+                  className="px-4 py-2 rounded-lg border border-gray-500 text-gray-300 hover:bg-[#13182c] transition disabled:opacity-50"
                 >
                   Cancel
                 </button>
 
                 <button
-                  disabled={isSubmittingBid}
+                  disabled={isSubmittingBid || !isBidFormValid}
                   onClick={handleSubmitBid}
-                  className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+                  className="px-5 py-2 rounded-lg bg-[#14a19f] text-white font-semibold hover:bg-[#1ecac7] transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmittingBid ? (
-                    <div className="animate-pulse transition">
-                      Submitting ...
-                    </div>
+                    <div className="animate-pulse transition">Submitting...</div>
                   ) : (
-                    <div>Submit</div>
+                    <div className="flex items-center gap-2">
+                      <Check size={16} />
+                      Submit Bid
+                    </div>
                   )}
                 </button>
+                </div>
               </div>
             </div>
           </div>

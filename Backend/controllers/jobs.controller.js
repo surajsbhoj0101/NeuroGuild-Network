@@ -275,7 +275,7 @@ export const fetchJobs = async (req, res) => {
           jobId: job.id,
           clientDetails: clientDetails,
         };
-      })
+      }),
     );
 
     console.log("jobs:", jobs);
@@ -346,6 +346,7 @@ export const fetchJob = async (req, res) => {
       ...clientPlain,
       ...ipfsData,
       clientAddress: ipfsData?.client || job.client,
+      clientId: clientPlain?.user || null,
       clientName:
         clientPlain?.companyDetails?.companyName || shortAddress(job.client),
     };
@@ -507,7 +508,7 @@ export const saveJob = async (req, res) => {
           savedAt: new Date(),
         },
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true },
     );
 
     res.status(200).json({
@@ -559,7 +560,7 @@ export const saveBid = async (req, res) => {
             appliedAt: new Date(),
           },
         },
-        { upsert: true, new: true }
+        { upsert: true, new: true },
       );
     }
 
@@ -632,6 +633,9 @@ export const fetchFreelancerJobs = async (req, res) => {
     const categorized = {
       open: [],
       inProgress: [],
+      submitted: [],
+      disputed: [],
+      cancelled: [],
       expired: [],
       completed: [],
     };
@@ -646,16 +650,20 @@ export const fetchFreelancerJobs = async (req, res) => {
         getJsonFromIpfs(job.ipfsHash),
       ]);
 
+      console.log(bidData);
+
       const clientName =
-        clientDetails?.companyDetails?.companyName || shortAddress(clientAddress);
+        clientDetails?.companyDetails?.companyName ||
+        shortAddress(clientAddress);
 
       return {
         jobId: job.id,
         status: job.status,
+        bidStatus: bid?.status ? bid.status.toLowerCase() : "pending",
         createdAt: bid.createdAt,
 
         bidAmount: bid?.amount / 1e18,
-        proposal: bidData?.payload?.proposal || "",
+        proposal: bidData?.proposal || "",
         milestones: bidData?.milestones || [],
 
         JobDetails: {
@@ -679,13 +687,21 @@ export const fetchFreelancerJobs = async (req, res) => {
       const deadline = new Date(jobPayload.JobDetails.deadline);
       const now = new Date();
 
-      if (jobStatus === "IN_PROGRESS") {
+      if (jobStatus === "OPEN") {
+        categorized.open.push(jobPayload);
+      } else if (jobStatus === "IN_PROGRESS") {
         // Check if deadline has passed
         if (deadline < now) {
           categorized.expired.push(jobPayload);
         } else {
           categorized.inProgress.push(jobPayload);
         }
+      } else if (jobStatus === "SUBMITTED") {
+        categorized.submitted.push(jobPayload);
+      } else if (jobStatus === "DISPUTED") {
+        categorized.disputed.push(jobPayload);
+      } else if (jobStatus === "CANCELLED") {
+        categorized.cancelled.push(jobPayload);
       } else if (jobStatus === "COMPLETED") {
         categorized.completed.push(jobPayload);
       }
@@ -735,15 +751,15 @@ export const fetchClientsJobs = async (req, res) => {
 
       return {
         jobId: job.id,
-        status: job.status,                
-        createdAt: bid.createdAt,           
-        bidId: bid.id.split("-").pop(),     
+        status: job.status,
+        createdAt: bid.createdAt,
+        bidId: bid.id.split("-").pop(),
         bidAmount: Number(bid.amount) / 1e18,
         proposal: bidData?.proposal || "",
         milestones: bidData?.milestones || [],
         bidder: bid.bidder,
 
-        JobDetails: {                       
+        JobDetails: {
           ...jobDetails,
           budget: jobDetails?.budget,
           deadline: jobDetails?.deadline,

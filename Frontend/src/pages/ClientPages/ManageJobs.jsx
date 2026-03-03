@@ -332,6 +332,26 @@ function ManageJobs() {
         return;
       }
 
+      if (bid?.freelancerId) {
+        try {
+          await api.post(
+            "http://localhost:5000/api/notifications/job-event",
+            {
+              eventType: "bid_accepted",
+              recipientId: bid.freelancerId,
+              metadata: {
+                jobId: job.jobId,
+                bidId: bid.bidId,
+                bidAmount: bid.bidAmount,
+              },
+            },
+            { withCredentials: true }
+          );
+        } catch (notificationError) {
+          console.error("bid_accepted notification failed:", notificationError);
+        }
+      }
+
       setRedNotice(false);
       setNotice("Bid accepted successfully.");
       handleCloseBids();

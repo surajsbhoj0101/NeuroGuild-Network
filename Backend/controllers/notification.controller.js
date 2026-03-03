@@ -6,6 +6,27 @@ import User from "../models/user.model.js";
 const isValidUserId = (value) =>
   typeof value === "string" && value.trim().length > 0;
 
+const jobEventTemplates = {
+  bid_submitted: {
+    allowedSenderRole: "freelancer",
+    title: "New bid received",
+    description: "A freelancer submitted a bid on your job.",
+    link: "/client/manage-jobs",
+  },
+  bid_accepted: {
+    allowedSenderRole: "client",
+    title: "Your bid was accepted",
+    description: "A client accepted your bid. You can start working now.",
+    link: "/freelancer/manage-jobs",
+  },
+  work_submitted: {
+    allowedSenderRole: "freelancer",
+    title: "Work submitted",
+    description: "A freelancer submitted work for your review.",
+    link: "/client/manage-jobs",
+  },
+};
+
 export const getMyNotifications = async (req, res) => {
   try {
     const currentUserId = req.userId;
@@ -234,6 +255,91 @@ export const markAllNotificationsRead = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to mark notifications read",
+      error: error.message,
+    });
+  }
+};
+
+export const createJobEventNotification = async (req, res) => {
+  try {
+    const currentUserId = req.userId;
+    if (!isValidUserId(currentUserId)) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const eventType = String(req.body?.eventType || "").trim();
+    const template = jobEventTemplates[eventType];
+    if (!template) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid eventType",
+      });
+    }
+
+    const recipientId = String(req.body?.recipientId || "").trim();
+    if (!isValidUserId(recipientId)) {
+      return res.status(400).json({
+        success: false,
+        message: "recipientId is required",
+      });
+    }
+
+    if (recipientId === currentUserId) {
+      return res.status(400).json({
+        success: false,
+        message: "recipientId must be another user",
+      });
+    }
+
+    const currentUser = await User.findById(currentUserId).select("role");
+    if (!currentUser) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    if (currentUser.role !== template.allowedSenderRole) {
+      return res.status(403).json({
+        success: false,
+        message: "Not allowed for this role",
+      });
+    }
+
+    const title = String(req.body?.title || template.title).trim();
+    const description = String(req.body?.description || template.description).trim();
+    const link = String(req.body?.link || template.link).trim();
+    const metadata =
+      req.body?.metadata && typeof req.body.metadata === "object"
+        ? req.body.metadata
+        : {};
+
+    const notification = await Notification.create({
+      recipient: recipientId,
+      type: "job",
+      title,
+      description,
+      link,
+      metadata: {
+        eventType,
+        ...metadata,
+      },
+      createdBy: currentUserId,
+    });
+
+    const io = getSocketIO();
+    if (io) {
+      io.to(recipientId).emit("notificationCreated", notification.toObject());
+    }
+
+    return res.status(201).json({
+      success: true,
+      notification,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to create job event notification",
       error: error.message,
     });
   }

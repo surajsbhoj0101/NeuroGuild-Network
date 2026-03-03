@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAccount } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
+import { BrowserProvider } from "ethers";
 import { AlertCircle } from "lucide-react";
 import SideBar from "../../components/SideBar";
 import api from "../../utils/api.js";
@@ -9,6 +10,7 @@ import FreelancerStats from "../../components/FreelancerStats";
 import NoticeToast from "../../components/NoticeToast";
 import StatusProjectCard from "../../components/StatusProjectCard";
 import { useAuth } from "../../contexts/AuthContext.jsx";
+import { submitWorkOnChain } from "../../utils/submit_work.js";
 
 function EmptyState({ title, description, ctaLabel, onCta }) {
   return (
@@ -30,14 +32,17 @@ function EmptyState({ title, description, ctaLabel, onCta }) {
 
 function ManageJobs() {
   const { address } = useAccount();
+  const { data: walletClient } = useWalletClient();
   const { isAuthentication } = useAuth();
   const navigate = useNavigate();
 
   const [notice, setNotice] = useState(null);
   const [redNotice, setRedNotice] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("InProgress");
+  const [activeTab, setActiveTab] = useState("MyBids");
+  const [submittingWorkJobId, setSubmittingWorkJobId] = useState(null);
 
+  const [myBids, setMyBids] = useState([]);
   const [activeProjects, setActiveProjects] = useState([]);
   const [submittedProjects, setSubmittedProjects] = useState([]);
   const [disputedProjects, setDisputedProjects] = useState([]);
@@ -49,6 +54,7 @@ function ManageJobs() {
     totalEarnings: 0,
     activeProjects: 0,
     pendingBids: 0,
+    myBids: 0,
     inProgressProjects: 0,
     submittedProjects: 0,
     disputedProjects: 0,
@@ -87,148 +93,187 @@ function ManageJobs() {
 
       const inProgressProjects = Array.isArray(data.categorized?.inProgress)
         ? data.categorized.inProgress.map((project) => ({
-          jobId: project.jobId,
-          jobTitle: project.JobDetails?.title || "Untitled Job",
-          jobDescription: project.JobDetails?.description || "",
-          clientName:
-            project.JobDetails?.clientName ||
-            project.JobDetails?.clientDetails?.companyDetails?.companyName ||
-            project.JobDetails?.clientAddress,
-          clientAddress: project.JobDetails?.clientAddress,
-          clientId: project.JobDetails?.clientId,
-          freelancerName:
-            project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-            "You",
-          freelancerAddress: address,
-          contractValue: project.bidAmount,
-          deadline:
-            project.JobDetails?.completion || project.JobDetails?.deadline,
-          status: "Active",
-          skills: project.JobDetails?.skills || [],
-          milestones: project?.milestones || [],
-        }))
+            jobId: project.jobId,
+            jobTitle: project.JobDetails?.title || "Untitled Job",
+            jobDescription: project.JobDetails?.description || "",
+            clientName:
+              project.JobDetails?.clientName ||
+              project.JobDetails?.clientDetails?.companyDetails?.companyName ||
+              project.JobDetails?.clientAddress,
+            clientAddress: project.JobDetails?.clientAddress,
+            clientId: project.JobDetails?.clientId,
+            freelancerName:
+              project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+              "You",
+            freelancerAddress: address,
+            contractValue: project.bidAmount,
+            deadline:
+              project.JobDetails?.completion || project.JobDetails?.deadline,
+            status: "Active",
+            skills: project.JobDetails?.skills || [],
+            milestones: project?.milestones || [],
+          }))
         : [];
 
       const completedProj = Array.isArray(data.categorized?.completed)
         ? data.categorized.completed.map((project) => ({
-          jobId: project.jobId,
-          jobTitle: project.JobDetails?.title || "Untitled Job",
-          jobDescription: project.JobDetails?.description || "",
-          clientName:
-            project.JobDetails?.clientName ||
-            project.JobDetails?.clientDetails?.companyDetails?.companyName ||
-            project.JobDetails?.clientAddress,
-          clientAddress: project.JobDetails?.clientAddress,
-          clientId: project.JobDetails?.clientId,
-          freelancerName:
-            project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-            "You",
-          freelancerAddress: address,
-          budget: project.bidAmount,
-          deadline:
-            project.JobDetails?.completion || project.JobDetails?.deadline,
-          amountEarned: project.bidAmount,
-          completedDate: project.completedDate || project.updatedAt,
-          clientRating: project.clientRating,
-          clientComment: project.clientComment,
-          daysWorked: project.daysWorked || 0,
-          deliverables: project.deliverables || 0,
-        }))
+            jobId: project.jobId,
+            jobTitle: project.JobDetails?.title || "Untitled Job",
+            jobDescription: project.JobDetails?.description || "",
+            clientName:
+              project.JobDetails?.clientName ||
+              project.JobDetails?.clientDetails?.companyDetails?.companyName ||
+              project.JobDetails?.clientAddress,
+            clientAddress: project.JobDetails?.clientAddress,
+            clientId: project.JobDetails?.clientId,
+            freelancerName:
+              project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+              "You",
+            freelancerAddress: address,
+            budget: project.bidAmount,
+            deadline:
+              project.JobDetails?.completion || project.JobDetails?.deadline,
+            amountEarned: project.bidAmount,
+            completedDate: project.completedDate || project.updatedAt,
+            clientRating: project.clientRating,
+            clientComment: project.clientComment,
+            daysWorked: project.daysWorked || 0,
+            deliverables: project.deliverables || 0,
+          }))
         : [];
 
       const expiredProj = Array.isArray(data.categorized?.expired)
         ? data.categorized.expired.map((project) => ({
-          jobId: project.jobId,
-          jobTitle: project.JobDetails?.title || "Untitled Job",
-          jobDescription: project.JobDetails?.description || "",
-          clientName:
-            project.JobDetails?.clientName ||
-            project.JobDetails?.clientDetails?.companyDetails?.companyName ||
-            project.JobDetails?.clientAddress,
-          clientAddress: project.JobDetails?.clientAddress,
-          clientId: project.JobDetails?.clientId,
-          freelancerName:
-            project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-            "You",
-          freelancerAddress: address,
-          contractValue: project.bidAmount,
-          deadline:
-            project.JobDetails?.completion || project.JobDetails?.deadline,
-          status: "Expired",
-          skills: project.JobDetails?.skills || [],
-          milestones: project?.milestones || [],
-        }))
+            jobId: project.jobId,
+            jobTitle: project.JobDetails?.title || "Untitled Job",
+            jobDescription: project.JobDetails?.description || "",
+            clientName:
+              project.JobDetails?.clientName ||
+              project.JobDetails?.clientDetails?.companyDetails?.companyName ||
+              project.JobDetails?.clientAddress,
+            clientAddress: project.JobDetails?.clientAddress,
+            clientId: project.JobDetails?.clientId,
+            freelancerName:
+              project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+              "You",
+            freelancerAddress: address,
+            contractValue: project.bidAmount,
+            deadline:
+              project.JobDetails?.completion || project.JobDetails?.deadline,
+            status: "Expired",
+            skills: project.JobDetails?.skills || [],
+            milestones: project?.milestones || [],
+          }))
         : [];
 
       const submittedProj = Array.isArray(data.categorized?.submitted)
         ? data.categorized.submitted.map((project) => ({
-          jobId: project.jobId,
-          jobTitle: project.JobDetails?.title || "Untitled Job",
-          jobDescription: project.JobDetails?.description || "",
-          clientName:
-            project.JobDetails?.clientName ||
-            project.JobDetails?.clientDetails?.companyDetails?.companyName ||
-            project.JobDetails?.clientAddress,
-          clientAddress: project.JobDetails?.clientAddress,
-          clientId: project.JobDetails?.clientId,
-          freelancerName:
-            project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-            "You",
-          freelancerAddress: address,
-          contractValue: project.bidAmount,
-          deadline:
-            project.JobDetails?.completion || project.JobDetails?.deadline,
-          status: "Submitted",
-          skills: project.JobDetails?.skills || [],
-        }))
+            jobId: project.jobId,
+            jobTitle: project.JobDetails?.title || "Untitled Job",
+            jobDescription: project.JobDetails?.description || "",
+            clientName:
+              project.JobDetails?.clientName ||
+              project.JobDetails?.clientDetails?.companyDetails?.companyName ||
+              project.JobDetails?.clientAddress,
+            clientAddress: project.JobDetails?.clientAddress,
+            clientId: project.JobDetails?.clientId,
+            freelancerName:
+              project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+              "You",
+            freelancerAddress: address,
+            contractValue: project.bidAmount,
+            deadline:
+              project.JobDetails?.completion || project.JobDetails?.deadline,
+            status: "Submitted",
+            skills: project.JobDetails?.skills || [],
+          }))
         : [];
 
       const disputedProj = Array.isArray(data.categorized?.disputed)
         ? data.categorized.disputed.map((project) => ({
-          jobId: project.jobId,
-          jobTitle: project.JobDetails?.title || "Untitled Job",
-          jobDescription: project.JobDetails?.description || "",
-          clientName:
-            project.JobDetails?.clientName ||
-            project.JobDetails?.clientDetails?.companyDetails?.companyName ||
-            project.JobDetails?.clientAddress,
-          clientAddress: project.JobDetails?.clientAddress,
-          clientId: project.JobDetails?.clientId,
-          freelancerName:
-            project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-            "You",
-          freelancerAddress: address,
-          contractValue: project.bidAmount,
-          deadline:
-            project.JobDetails?.completion || project.JobDetails?.deadline,
-          status: "Disputed",
-          skills: project.JobDetails?.skills || [],
-        }))
+            jobId: project.jobId,
+            jobTitle: project.JobDetails?.title || "Untitled Job",
+            jobDescription: project.JobDetails?.description || "",
+            clientName:
+              project.JobDetails?.clientName ||
+              project.JobDetails?.clientDetails?.companyDetails?.companyName ||
+              project.JobDetails?.clientAddress,
+            clientAddress: project.JobDetails?.clientAddress,
+            clientId: project.JobDetails?.clientId,
+            freelancerName:
+              project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+              "You",
+            freelancerAddress: address,
+            contractValue: project.bidAmount,
+            deadline:
+              project.JobDetails?.completion || project.JobDetails?.deadline,
+            status: "Disputed",
+            skills: project.JobDetails?.skills || [],
+          }))
         : [];
 
       const cancelledProj = Array.isArray(data.categorized?.cancelled)
         ? data.categorized.cancelled.map((project) => ({
-          jobId: project.jobId,
-          jobTitle: project.JobDetails?.title || "Untitled Job",
-          jobDescription: project.JobDetails?.description || "",
-          clientName:
-            project.JobDetails?.clientName ||
-            project.JobDetails?.clientDetails?.companyDetails?.companyName ||
-            project.JobDetails?.clientAddress,
-          clientAddress: project.JobDetails?.clientAddress,
-          clientId: project.JobDetails?.clientId,
-          freelancerName:
-            project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-            "You",
-          freelancerAddress: address,
-          contractValue: project.bidAmount,
-          deadline:
-            project.JobDetails?.completion || project.JobDetails?.deadline,
-          status: "Cancelled",
-          skills: project.JobDetails?.skills || [],
-        }))
+            jobId: project.jobId,
+            jobTitle: project.JobDetails?.title || "Untitled Job",
+            jobDescription: project.JobDetails?.description || "",
+            clientName:
+              project.JobDetails?.clientName ||
+              project.JobDetails?.clientDetails?.companyDetails?.companyName ||
+              project.JobDetails?.clientAddress,
+            clientAddress: project.JobDetails?.clientAddress,
+            clientId: project.JobDetails?.clientId,
+            freelancerName:
+              project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+              "You",
+            freelancerAddress: address,
+            contractValue: project.bidAmount,
+            deadline:
+              project.JobDetails?.completion || project.JobDetails?.deadline,
+            status: "Cancelled",
+            skills: project.JobDetails?.skills || [],
+          }))
         : [];
 
+      const myBidProjects = [
+        ...(Array.isArray(data.categorized?.open) ? data.categorized.open : []),
+        ...(Array.isArray(data.categorized?.inProgress)
+          ? data.categorized.inProgress
+          : []),
+        ...(Array.isArray(data.categorized?.submitted)
+          ? data.categorized.submitted
+          : []),
+        ...(Array.isArray(data.categorized?.completed)
+          ? data.categorized.completed
+          : []),
+        ...(Array.isArray(data.categorized?.disputed)
+          ? data.categorized.disputed
+          : []),
+        ...(Array.isArray(data.categorized?.cancelled)
+          ? data.categorized.cancelled
+          : []),
+        ...(Array.isArray(data.categorized?.expired)
+          ? data.categorized.expired
+          : []),
+      ].map((project) => ({
+        jobId: project.jobId,
+        jobTitle: project.JobDetails?.title || "Untitled Job",
+        jobDescription: project.JobDetails?.description || "",
+        clientName:
+          project.JobDetails?.clientName ||
+          project.JobDetails?.clientDetails?.companyDetails?.companyName ||
+          project.JobDetails?.clientAddress,
+        clientAddress: project.JobDetails?.clientAddress,
+        clientId: project.JobDetails?.clientId,
+        bidAmount: project.bidAmount,
+        proposal: project.proposal || "",
+        deadline: project.JobDetails?.completion || project.JobDetails?.deadline,
+        bidStatus: (project.bidStatus || "pending").toLowerCase(),
+        jobStatus: project.status || "OPEN",
+        createdAt: project.createdAt,
+      }));
+
+      setMyBids(myBidProjects);
       setActiveProjects(inProgressProjects);
       setSubmittedProjects(submittedProj);
       setDisputedProjects(disputedProj);
@@ -239,7 +284,9 @@ function ManageJobs() {
       setStats({
         totalEarnings: 0,
         activeProjects: inProgressProjects.length,
-        pendingBids: 0,
+        pendingBids: myBidProjects.filter((bid) => bid.bidStatus === "pending")
+          .length,
+        myBids: myBidProjects.length,
         inProgressProjects: inProgressProjects.length,
         submittedProjects: submittedProj.length,
         disputedProjects: disputedProj.length,
@@ -269,12 +316,91 @@ function ManageJobs() {
   const handleMessage = (project) => {
     navigate(`/messages/${project?.clientId}`, {
       state: {
-        recipient: project?.clientId
+        recipient: project?.clientId,
       },
     });
   };
 
-  const handleArchive = () => { };
+  const handleArchive = () => {};
+
+  async function getSigner() {
+    if (!walletClient || !window.ethereum) return null;
+    const provider = new BrowserProvider(window.ethereum);
+    return provider.getSigner();
+  }
+
+  const handleSubmitWork = async (project) => {
+    try {
+      const signer = await getSigner();
+      if (!signer) {
+        setRedNotice(true);
+        setNotice("Wallet signer not available. Reconnect wallet.");
+        return;
+      }
+
+      const ipfsProof = window.prompt(
+        "Enter deliverable proof link (IPFS CID/URL):",
+        "ipfs://"
+      );
+
+      if (ipfsProof === null) return;
+
+      if (!ipfsProof.trim()) {
+        setRedNotice(true);
+        setNotice("Proof link is required to submit work.");
+        return;
+      }
+
+      setSubmittingWorkJobId(project.jobId);
+      const ok = await submitWorkOnChain(project.jobId, ipfsProof, signer);
+
+      if (!ok) {
+        setRedNotice(true);
+        setNotice("Failed to submit work.");
+        return;
+      }
+
+      if (project?.clientId) {
+        try {
+          await api.post(
+            "http://localhost:5000/api/notifications/job-event",
+            {
+              eventType: "work_submitted",
+              recipientId: project.clientId,
+              metadata: {
+                jobId: project.jobId,
+                proof: ipfsProof,
+              },
+            },
+            { withCredentials: true }
+          );
+        } catch (notificationError) {
+          console.error("work_submitted notification failed:", notificationError);
+        }
+      }
+
+      setRedNotice(false);
+      setNotice("Work submitted successfully.");
+      setActiveTab("Submitted");
+      await fetchDashboardData();
+    } catch (error) {
+      console.error("submit work error:", error);
+      setRedNotice(true);
+      setNotice(error?.reason || error?.message || "Unable to submit work.");
+    } finally {
+      setSubmittingWorkJobId(null);
+    }
+  };
+
+  const getBidStatusClasses = (status) => {
+    if (status === "accepted") {
+      return "bg-green-500/20 text-green-300 border border-green-500/40";
+    }
+    if (status === "rejected") {
+      return "bg-red-500/20 text-red-300 border border-red-500/40";
+    }
+    return "bg-amber-500/20 text-amber-300 border border-amber-500/40";
+  };
 
   return (
     <>
@@ -304,6 +430,11 @@ function ManageJobs() {
 
           <div className="flex gap-2 mb-6 border-b border-[#14a19f]/20 overflow-x-auto pb-1">
             {[
+              {
+                id: "MyBids",
+                label: "My Bids",
+                count: stats.myBids,
+              },
               {
                 id: "InProgress",
                 label: "InProgress",
@@ -338,10 +469,11 @@ function ManageJobs() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`shrink-0 px-4 md:px-6 py-3 font-medium text-sm border-b-2 transition-colors rounded-t-lg ${activeTab === tab.id
-                  ? "text-[#14a19f] border-[#14a19f] bg-[#14a19f]/10"
-                  : "text-gray-400 border-transparent hover:text-gray-300"
-                  }`}
+                className={`shrink-0 px-4 md:px-6 py-3 font-medium text-sm border-b-2 transition-colors rounded-t-lg ${
+                  activeTab === tab.id
+                    ? "text-[#14a19f] border-[#14a19f] bg-[#14a19f]/10"
+                    : "text-gray-400 border-transparent hover:text-gray-300"
+                }`}
               >
                 {tab.label}
                 {tab.count > 0 && (
@@ -359,6 +491,88 @@ function ManageJobs() {
             </div>
           ) : (
             <>
+              {activeTab === "MyBids" && (
+                <div>
+                  {myBids.length === 0 ? (
+                    <EmptyState
+                      title="No bids submitted yet"
+                      description="Your proposals will appear here with status updates."
+                      ctaLabel="Browse Jobs"
+                      onCta={() => navigate("/browse-jobs")}
+                    />
+                  ) : (
+                    <div className="grid gap-4">
+                      {myBids.map((bid) => (
+                        <div
+                          key={`${bid.jobId}-${bid.createdAt || bid.jobStatus}`}
+                          className="backdrop-blur-md border border-[#14a19f]/20 bg-[#0d1224]/50 rounded-xl p-5 hover:border-[#14a19f]/40 transition-all space-y-4"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <h3 className="text-lg font-semibold text-white">
+                                {bid.jobTitle || "Untitled Job"}
+                              </h3>
+                              <p className="text-xs text-gray-400 mt-1">
+                                Job ID: {bid.jobId || "N/A"}
+                              </p>
+                            </div>
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${getBidStatusClasses(
+                                bid.bidStatus
+                              )}`}
+                            >
+                              {bid.bidStatus}
+                            </span>
+                          </div>
+
+                          <p className="text-sm text-gray-300 bg-[#161c32]/50 rounded p-3">
+                            {bid.jobDescription || "No description provided."}
+                          </p>
+
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                            <div>
+                              <p className="text-gray-500 text-xs">Your Bid</p>
+                              <p className="text-gray-300 font-medium">
+                                ${bid?.bidAmount ?? 0}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500 text-xs">Job Status</p>
+                              <p className="text-gray-300 font-medium capitalize">
+                                {(bid?.jobStatus || "OPEN")
+                                  .replace("_", " ")
+                                  .toLowerCase()}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500 text-xs">Deadline</p>
+                              <p className="text-gray-300 font-medium">
+                                {bid?.deadline
+                                  ? new Date(bid.deadline).toLocaleDateString()
+                                  : "N/A"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500 text-xs">Client</p>
+                              <p className="text-gray-300 font-medium line-clamp-1">
+                                {bid?.clientName || bid?.clientAddress || "N/A"}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div>
+                            <p className="text-gray-500 text-xs mb-1">Proposal</p>
+                            <p className="text-sm text-gray-300 bg-[#161c32]/50 rounded p-3">
+                              {bid?.proposal || "No proposal text available."}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {activeTab === "InProgress" && (
                 <div>
                   {activeProjects.length === 0 ? (
@@ -374,6 +588,17 @@ function ManageJobs() {
                           project={project}
                           status="InProgress"
                           showActions={true}
+                          extraActions={
+                            <button
+                              onClick={() => handleSubmitWork(project)}
+                              disabled={submittingWorkJobId === project.jobId}
+                              className="w-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-sm font-semibold py-2 rounded transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                              {submittingWorkJobId === project.jobId
+                                ? "Submitting..."
+                                : "Submit Work"}
+                            </button>
+                          }
                           onShowContract={() => handleShowContract(project)}
                           onMessage={() => handleMessage(project)}
                         />
@@ -506,7 +731,6 @@ function ManageJobs() {
                   )}
                 </div>
               )}
-
             </>
           )}
         </div>
