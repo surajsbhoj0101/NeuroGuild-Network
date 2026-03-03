@@ -11,13 +11,15 @@ dataSources:
     name: Box
     network: base-sepolia
     source:
-      address: "0x955a3a49d2920db97de7360da066c51b406941cf"
+      address: "0xa25698a328f6b0dac84a9e937f77c050e4587ec2"
       abi: Box
-      startBlock: 38344069
+      startBlock: 38387731
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
       language: wasm/assemblyscript
+      entities:
+        - BoxState
       abis:
         - name: Box
           file: ./abis/Box.json
@@ -32,13 +34,16 @@ dataSources:
     name: CouncilRegistry
     network: base-sepolia
     source:
-      address: "0x8143aec797ba83e30bd5f96e099f09f73743e255"
+      address: "0xdb238fe68b3f30887ec77d37caf5fed5802a7ea5"
       abi: CouncilRegistry
-      startBlock: 38344069
+      startBlock: 38387731
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
       language: wasm/assemblyscript
+      entities:
+        - User
+        - ProtocolConfig
       abis:
         - name: CouncilRegistry
           file: ./abis/CouncilRegistry.json
@@ -55,21 +60,21 @@ dataSources:
     name: GovernanceContract
     network: base-sepolia
     source:
-      address: "0xbc13f64dae4d4edff007df565b09e2cad5f22667"
+      address: "0x659973b6a5cc7859f3fbb81ec5ec1fff43cd5f80"
       abi: GovernanceContract
-      startBlock: 38344069
+      startBlock: 38387731
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
       language: wasm/assemblyscript
+      entities:
+        - Proposal
+        - ProposalVoteHistory
+        - ProtocolConfig
       abis:
         - name: GovernanceContract
           file: ./abis/GovernanceContract.json
       eventHandlers:
-        - event: AdminRenounced(indexed address)
-          handler: handleAdminRenounced
-        - event: EIP712DomainChanged()
-          handler: handleEIP712DomainChanged
         - event: ProposalCanceled(uint256)
           handler: handleProposalCanceled
         - event: ProposalCreated(uint256,address,address[],uint256[],string[],bytes[],uint256,uint256,string)
@@ -94,13 +99,17 @@ dataSources:
     name: GovernanceToken
     network: base-sepolia
     source:
-      address: "0x1b3895aed453d9463a8bb88b2e99fda2a55623f6"
+      address: "0x57a1386ae8042bf786c22002c438f68108673a9b"
       abi: GovernanceToken
-      startBlock: 38344069
+      startBlock: 38387731
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
       language: wasm/assemblyscript
+      entities:
+        - TokenAccount
+        - GovernanceApproval
+        - GovernanceTransferHistory
       abis:
         - name: GovernanceToken
           file: ./abis/GovernanceToken.json
@@ -111,10 +120,6 @@ dataSources:
           handler: handleDelegateChanged
         - event: DelegateVotesChanged(indexed address,uint256,uint256)
           handler: handleDelegateVotesChanged
-        - event: EIP712DomainChanged()
-          handler: handleEIP712DomainChanged
-        - event: OwnershipTransferred(indexed address,indexed address)
-          handler: handleOwnershipTransferred
         - event: Transfer(indexed address,indexed address,uint256)
           handler: handleTransfer
       file: ./src/governance-token.ts
@@ -123,30 +128,31 @@ dataSources:
     name: JobContract
     network: base-sepolia
     source:
-      address: "0x096f411f97178ceadaa8877f26524c6b7b7b20a8"
+      address: "0xf7f5c2169894ed703f1e29bb030fbb818d2c6b0b"
       abi: JobContract
-      startBlock: 38344069
+      startBlock: 38387731
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
       language: wasm/assemblyscript
       entities:
         - Job
-        - Bid
-        - JobCreated
-        - JobDetailsUpdated
-        - BidSubmitted
-        - BidAccepted
-        - BidRejected
-        - JobStarted
-        - WorkSubmitted
-        - JobCompleted
-        - JobCancelled
-        - DisputeRaised
-        - DisputeResolved
-        - FundLocked
-        - FundReleased
-        - FundRefunded
+        - JobBid
+        - JobDispute
+        - ProtocolConfig
+        - JobBidSubmittedHistory
+        - JobBidAcceptedHistory
+        - JobBidRejectedHistory
+        - WorkSubmittedHistory
+        - JobCompletedHistory
+        - JobCancelledHistory
+        - DisputeRaisedHistory
+        - DisputeResolvedHistory
+        - FundLockedHistory
+        - FundReleasedHistory
+        - FundRefundedHistory
+        - ClientRatedHistory
+        - FreelancerRatedHistory
       abis:
         - name: JobContract
           file: ./abis/JobContract.json
@@ -157,8 +163,6 @@ dataSources:
           handler: handleBidRejected
         - event: BidSubmitted(indexed bytes32,indexed address,uint256,uint256,string)
           handler: handleBidSubmitted
-        - event: ClaimAfterExpiredDeadlineSuccessful(indexed bytes32)
-          handler: handleClaimAfterExpiredDeadlineSuccessful
         - event: ClientRated(indexed bytes32,indexed address,indexed address,uint8)
           handler: handleClientRated
         - event: DisputeRaised(indexed bytes32,indexed address,string)
@@ -202,81 +206,26 @@ dataSources:
       file: ./src/job.ts
 
   - kind: ethereum
-    name: ReputationSBT
-    network: base-sepolia
-    source:
-      address: "0x72a65044d2bfa8b0a43bc2fc9f25dc6916b8d340"
-      abi: ReputationSBT
-      startBlock: 38344069
-    mapping:
-      kind: ethereum/events
-      apiVersion: 0.0.9
-      language: wasm/assemblyscript
-      abis:
-        - name: ReputationSBT
-          file: ./abis/ReputationSBT.json
-      eventHandlers:
-        - event: BidAccepted(indexed bytes32,indexed address,uint256,uint256)
-          handler: handleBidAccepted
-        - event: BidRejected(indexed bytes32,indexed address,uint256,uint256)
-          handler: handleBidRejected
-        - event: BidSubmitted(indexed bytes32,indexed address,uint256,uint256,string)
-          handler: handleBidSubmitted
-        - event: ClaimAfterExpiredDeadlineSuccessful(indexed bytes32)
-          handler: handleClaimAfterExpiredDeadlineSuccessful
-        - event: ClientRated(indexed bytes32,indexed address,indexed address,uint8)
-          handler: handleClientRated
-        - event: DisputeRaised(indexed bytes32,indexed address,string)
-          handler: handleDisputeRaised
-        - event: DisputeResolved(indexed bytes32,address)
-          handler: handleDisputeResolved
-        - event: FeeUpdated(uint256,uint256,uint256,uint256)
-          handler: handleFeeUpdated
-        - event: FreelancerRated(indexed bytes32,indexed address,indexed address,uint8)
-          handler: handleFreelancerRated
-        - event: FundLocked(indexed bytes32,uint256,uint256,indexed address,indexed address)
-          handler: handleFundLocked
-        - event: FundRefunded(indexed bytes32,uint256,indexed address)
-          handler: handleFundRefunded
-        - event: FundReleased(indexed bytes32,uint256,uint256)
-          handler: handleFundReleased
-        - event: JobCancelled(indexed bytes32,indexed address)
-          handler: handleJobCancelled
-        - event: JobCompleted(indexed bytes32,indexed address)
-          handler: handleJobCompleted
-        - event: JobCreated(indexed bytes32,indexed address,uint256,uint256,uint256,string)
-          handler: handleJobCreated
-        - event: JobDetailsUpdated(indexed bytes32,indexed address,uint256,uint256,uint256,string)
-          handler: handleJobDetailsUpdated
-        - event: JobStarted(indexed bytes32,indexed address)
-          handler: handleJobStarted
-        - event: ReputationAddressUpdated(indexed address,indexed address)
-          handler: handleReputationAddressUpdated
-        - event: ReputationPenaltyUpdated(uint8,uint8)
-          handler: handleReputationPenaltyUpdated
-        - event: ReputationRewardUpdated(uint8,uint8)
-          handler: handleReputationRewardUpdated
-        - event: ReviewPeriodUpdated(uint256,uint256)
-          handler: handleReviewPeriodUpdated
-        - event: TimelockUpdated(indexed address,indexed address)
-          handler: handleTimelockUpdated
-        - event: TreasuryUpdated(indexed address,indexed address)
-          handler: handleTreasuryUpdated
-        - event: WorkSubmitted(indexed bytes32,indexed address,string)
-          handler: handleWorkSubmitted
-      file: ./src/reputation-sbt.ts
-
-  - kind: ethereum
     name: Timelock
     network: base-sepolia
     source:
-      address: "0x62ff267661eb73d435fadd9d5ebb71fd35391195"
+      address: "0xd1ea9975cfa0faff3e0a530fd764f5f3a3c060b1"
       abi: Timelock
-      startBlock: 38344069
+      startBlock: 38387731
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
       language: wasm/assemblyscript
+      entities:
+        - TimelockOperation
+        - TimelockRole
+        - TimelockRoleConfig
+        - ProtocolConfig
+        - CallScheduledHistory
+        - CallExecutedHistory
+        - TimelockCancelledHistory
+        - RoleGrantedHistory
+        - RoleRevokedHistory
       abis:
         - name: Timelock
           file: ./abis/Timelock.json
@@ -303,13 +252,20 @@ dataSources:
     name: SkillSBT
     network: base-sepolia
     source:
-      address: "0x30cbc9f86a4ffcc1dd758fb799e9d295b0fa3ed6"
+      address: "0xd9086d6dcfe3906be7a3799ceae5bcbaa3870eda"
       abi: SkillSBT
-      startBlock: 38344069
+      startBlock: 38387731
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
       language: wasm/assemblyscript
+      entities:
+        - SkillToken
+        - SkillOperatorApproval
+        - ProtocolConfig
+        - SkillMintedHistory
+        - SkillUpgradedHistory
+        - SkillTransferHistory
       abis:
         - name: SkillSBT
           file: ./abis/SkillSBT.json
@@ -318,12 +274,8 @@ dataSources:
           handler: handleApproval
         - event: ApprovalForAll(indexed address,indexed address,bool)
           handler: handleApprovalForAll
-        - event: BatchMetadataUpdate(uint256,uint256)
-          handler: handleBatchMetadataUpdate
         - event: CouncilRegistryUpdated(indexed address,indexed address)
           handler: handleCouncilRegistryUpdated
-        - event: MetadataUpdate(uint256)
-          handler: handleMetadataUpdate
         - event: SkillMinted(indexed uint256,indexed address,indexed bytes32,uint8,uint8,uint8,string)
           handler: handleSkillMinted
         - event: SkillUpgraded(uint256,uint8,uint8)
@@ -336,13 +288,22 @@ dataSources:
     name: Treasury
     network: base-sepolia
     source:
-      address: "0x106f949bf8b830acc07fc1fdf86ab86db344f819"
+      address: "0x40cc546602a460c4047152da8b74ba9946d094c6"
       abi: Treasury
-      startBlock: 38344069
+      startBlock: 38387731
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
       language: wasm/assemblyscript
+      entities:
+        - TreasuryAccount
+        - ProtocolConfig
+        - CouncilPaidHistory
+        - CouncilRewardAddedHistory
+        - DeveloperPaidHistory
+        - DeveloperRewardAddedHistory
+        - EmergencyWithdrawnHistory
+        - ProtocolFeeReceivedHistory
       abis:
         - name: Treasury
           file: ./abis/Treasury.json
@@ -369,18 +330,19 @@ dataSources:
     name: UserRegistry
     network: base-sepolia
     source:
-      address: "0x9e27ed2d00f7815e650599509df315de17a0d27f"
+      address: "0x5281f3e78fc4985f66d860c65bd99717ab36c183"
       abi: UserRegistry
-      startBlock: 38344069
+      startBlock: 38387731
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
       language: wasm/assemblyscript
       entities:
         - User
-        - UserRegistered
-        - UserBlocked
-        - UserUnblocked
+        - ProtocolConfig
+        - UserRegisteredHistory
+        - UserBlockedHistory
+        - UserUnblockedHistory
       abis:
         - name: UserRegistry
           file: ./abis/UserRegistry.json

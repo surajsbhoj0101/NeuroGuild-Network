@@ -1,27 +1,27 @@
 import {
   Job,
-  Bid,
-  JobCreated,
-  JobDetailsUpdated,
-  JobStarted,
-  JobCompleted,
-  JobCancelled,
-  BidSubmitted,
-  BidAccepted,
-  BidRejected,
-  WorkSubmitted,
-  DisputeRaised,
-  DisputeResolved,
-  FundLocked,
-  FundReleased,
-  FundRefunded,
+  JobBid,
+  JobDispute,
+  ProtocolConfig,
+  JobBidSubmittedHistory,
+  JobBidAcceptedHistory,
+  JobBidRejectedHistory,
+  WorkSubmittedHistory,
+  JobCompletedHistory,
+  JobCancelledHistory,
+  DisputeRaisedHistory,
+  DisputeResolvedHistory,
+  FundLockedHistory,
+  FundReleasedHistory,
+  FundRefundedHistory,
+  ClientRatedHistory,
+  FreelancerRatedHistory,
 } from "../generated/schema";
 
 import {
   BidAccepted as BidAcceptedEvent,
   BidRejected as BidRejectedEvent,
   BidSubmitted as BidSubmittedEvent,
-  ClaimAfterExpiredDeadlineSuccessful as ClaimAfterExpiredDeadlineSuccessfulEvent,
   ClientRated as ClientRatedEvent,
   DisputeRaised as DisputeRaisedEvent,
   DisputeResolved as DisputeResolvedEvent,
@@ -43,367 +43,391 @@ import {
   TreasuryUpdated as TreasuryUpdatedEvent,
   WorkSubmitted as WorkSubmittedEvent,
 } from "../generated/JobContract/JobContract";
+import { BigInt } from "@graphprotocol/graph-ts";
 
-/* ----------------------------- JOB CREATED ----------------------------- */
+function historyId(txHash: string, logIndex: string): string {
+  return txHash + "-" + logIndex;
+}
+
+function getConfig(ts: BigInt): ProtocolConfig {
+  let cfg = ProtocolConfig.load("global");
+  if (cfg == null) {
+    cfg = new ProtocolConfig("global");
+    cfg.createdAt = ts;
+  }
+  return cfg;
+}
 
 export function handleJobCreated(event: JobCreatedEvent): void {
   let jobId = event.params.jobId.toHex();
   let job = new Job(jobId);
-
   job.client = event.params.client;
   job.freelancer = null;
-
   job.status = "OPEN";
-  job.bidCount = 0;
-
   job.budget = event.params.budget;
   job.bidDeadline = event.params.bidDeadline;
   job.expireDeadline = event.params.expireDeadline;
-
   job.ipfsHash = event.params.ipfs;
   job.ipfsProof = null;
-
-  job.createdAt = event.block.timestamp;
   job.submittedAt = null;
   job.completedAt = null;
-
   job.fundLockedAt = null;
   job.fundReleasedAt = null;
   job.fundRefundedAt = null;
-
   job.fundLockedAmount = null;
   job.fundReleasedAmount = null;
   job.fundRefundedAmount = null;
-
+  job.bidCount = 0;
+  job.createdAt = event.block.timestamp;
+  job.updatedAt = event.block.timestamp;
   job.save();
-
-  let evt = new JobCreated(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  );
-  evt.jobId = event.params.jobId;
-  evt.client = event.params.client;
-  evt.budget = event.params.budget;
-  evt.bidDeadline = event.params.bidDeadline;
-  evt.expireDeadline = event.params.expireDeadline;
-  evt.ipfs = event.params.ipfs;
-  evt.blockNumber = event.block.number;
-  evt.blockTimestamp = event.block.timestamp;
-  evt.transactionHash = event.transaction.hash;
-  evt.save();
 }
-
-/* ------------------------- JOB DETAILS UPDATED -------------------------- */
 
 export function handleJobDetailsUpdated(event: JobDetailsUpdatedEvent): void {
   let job = Job.load(event.params.jobId.toHex());
-  if (!job) return;
-
+  if (job == null) return;
   job.budget = event.params.budget;
   job.bidDeadline = event.params.bidDeadline;
   job.expireDeadline = event.params.expireDeadline;
   job.ipfsHash = event.params.ipfs;
+  job.updatedAt = event.block.timestamp;
   job.save();
-
-  let evt = new JobDetailsUpdated(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  );
-  evt.jobId = event.params.jobId;
-  evt.client = event.params.client;
-  evt.budget = event.params.budget;
-  evt.bidDeadline = event.params.bidDeadline;
-  evt.expireDeadline = event.params.expireDeadline;
-  evt.ipfs = event.params.ipfs;
-  evt.blockNumber = event.block.number;
-  evt.blockTimestamp = event.block.timestamp;
-  evt.transactionHash = event.transaction.hash;
-  evt.save();
 }
-
-/* ----------------------------- JOB STARTED ------------------------------ */
 
 export function handleJobStarted(event: JobStartedEvent): void {
   let job = Job.load(event.params.jobId.toHex());
-  if (!job) return;
-
+  if (job == null) return;
   job.freelancer = event.params.freelancer;
   job.status = "IN_PROGRESS";
+  job.updatedAt = event.block.timestamp;
   job.save();
-
-  let evt = new JobStarted(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  );
-  evt.jobId = event.params.jobId;
-  evt.freelancer = event.params.freelancer;
-  evt.blockNumber = event.block.number;
-  evt.blockTimestamp = event.block.timestamp;
-  evt.transactionHash = event.transaction.hash;
-  evt.save();
 }
-
-/* ---------------------------- WORK SUBMITTED ---------------------------- */
 
 export function handleWorkSubmitted(event: WorkSubmittedEvent): void {
   let job = Job.load(event.params.jobId.toHex());
-  if (!job) return;
+  if (job == null) return;
 
   job.ipfsProof = event.params.ipfsProof;
   job.submittedAt = event.block.timestamp;
   job.status = "SUBMITTED";
+  job.updatedAt = event.block.timestamp;
   job.save();
 
-  let evt = new WorkSubmitted(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
+  let h = new WorkSubmittedHistory(
+    historyId(event.transaction.hash.toHex(), event.logIndex.toString())
   );
-  evt.jobId = event.params.jobId;
-  evt.freelancer = event.params.freelancer;
-  evt.ipfsProof = event.params.ipfsProof;
-  evt.blockNumber = event.block.number;
-  evt.blockTimestamp = event.block.timestamp;
-  evt.transactionHash = event.transaction.hash;
-  evt.save();
+  h.jobId = event.params.jobId;
+  h.freelancer = event.params.freelancer;
+  h.ipfsProof = event.params.ipfsProof;
+  h.blockNumber = event.block.number;
+  h.transactionHash = event.transaction.hash;
+  h.timestamp = event.block.timestamp;
+  h.save();
 }
-
-/* ---------------------------- JOB COMPLETED ----------------------------- */
 
 export function handleJobCompleted(event: JobCompletedEvent): void {
   let job = Job.load(event.params.jobId.toHex());
-  if (!job) return;
+  if (job == null) return;
 
   job.status = "COMPLETED";
   job.completedAt = event.block.timestamp;
+  job.updatedAt = event.block.timestamp;
   job.save();
 
-  let evt = new JobCompleted(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
+  let h = new JobCompletedHistory(
+    historyId(event.transaction.hash.toHex(), event.logIndex.toString())
   );
-  evt.jobId = event.params.jobId;
-  evt.freelancer = event.params.freelancer;
-  evt.blockNumber = event.block.number;
-  evt.blockTimestamp = event.block.timestamp;
-  evt.transactionHash = event.transaction.hash;
-  evt.save();
+  h.jobId = event.params.jobId;
+  h.freelancer = event.params.freelancer;
+  h.blockNumber = event.block.number;
+  h.transactionHash = event.transaction.hash;
+  h.timestamp = event.block.timestamp;
+  h.save();
 }
-
-/* ---------------------------- JOB CANCELLED ----------------------------- */
 
 export function handleJobCancelled(event: JobCancelledEvent): void {
   let job = Job.load(event.params.jobId.toHex());
-  if (!job) return;
+  if (job == null) return;
 
   job.status = "CANCELLED";
+  job.updatedAt = event.block.timestamp;
   job.save();
 
-  let evt = new JobCancelled(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
+  let h = new JobCancelledHistory(
+    historyId(event.transaction.hash.toHex(), event.logIndex.toString())
   );
-  evt.jobId = event.params.jobId;
-  evt.client = event.params.client;
-  evt.blockNumber = event.block.number;
-  evt.blockTimestamp = event.block.timestamp;
-  evt.transactionHash = event.transaction.hash;
-  evt.save();
+  h.jobId = event.params.jobId;
+  h.client = event.params.client;
+  h.blockNumber = event.block.number;
+  h.transactionHash = event.transaction.hash;
+  h.timestamp = event.block.timestamp;
+  h.save();
 }
-
-/* ---------------------------- BID SUBMITTED ----------------------------- */
 
 export function handleBidSubmitted(event: BidSubmittedEvent): void {
   let job = Job.load(event.params.jobId.toHex());
-  if (!job) return;
+  if (job == null) return;
 
-  let bidId =
-    event.params.jobId.toHex() + "-" + event.params.bidIndex.toString();
-  let bid = new Bid(bidId);
-
+  let bidId = event.params.jobId.toHex() + "-" + event.params.bidIndex.toString();
+  let bid = new JobBid(bidId);
   bid.job = job.id;
-  bid.bidder = event.params.freelancer;
-  bid.status = "PENDING";
+  bid.bidIndex = event.params.bidIndex;
+  bid.freelancer = event.params.freelancer;
   bid.amount = event.params.amount;
+  bid.proposalIpfs = event.params.proposalIpfs;
+  bid.status = "PENDING";
   bid.createdAt = event.block.timestamp;
-  bid.ipfsProposal = event.params.proposalIpfs;
+  bid.updatedAt = event.block.timestamp;
   bid.save();
 
   job.bidCount = job.bidCount + 1;
+  job.updatedAt = event.block.timestamp;
   job.save();
 
-  let evt = new BidSubmitted(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
+  let h = new JobBidSubmittedHistory(
+    historyId(event.transaction.hash.toHex(), event.logIndex.toString())
   );
-  evt.jobId = event.params.jobId;
-  evt.freelancer = event.params.freelancer;
-  evt.amount = event.params.amount;
-  evt.bidIndex = event.params.bidIndex;
-  evt.proposalIpfs = event.params.proposalIpfs;
-  evt.blockNumber = event.block.number;
-  evt.blockTimestamp = event.block.timestamp;
-  evt.transactionHash = event.transaction.hash;
-  evt.save();
+  h.jobId = event.params.jobId;
+  h.freelancer = event.params.freelancer;
+  h.amount = event.params.amount;
+  h.bidIndex = event.params.bidIndex;
+  h.proposalIpfs = event.params.proposalIpfs;
+  h.blockNumber = event.block.number;
+  h.transactionHash = event.transaction.hash;
+  h.timestamp = event.block.timestamp;
+  h.save();
 }
-
-/* ---------------------------- BID ACCEPTED ------------------------------ */
 
 export function handleBidAccepted(event: BidAcceptedEvent): void {
   let job = Job.load(event.params.jobId.toHex());
-  if (!job) return;
+  if (job == null) return;
 
-  let bidId =
-    event.params.jobId.toHex() + "-" + event.params.bidIndex.toString();
-  let bid = Bid.load(bidId);
-  if (bid) {
+  let bidId = event.params.jobId.toHex() + "-" + event.params.bidIndex.toString();
+  let bid = JobBid.load(bidId);
+  if (bid != null) {
     bid.status = "ACCEPTED";
+    bid.updatedAt = event.block.timestamp;
     bid.save();
   }
 
   job.freelancer = event.params.freelancer;
   job.status = "IN_PROGRESS";
+  job.updatedAt = event.block.timestamp;
   job.save();
 
-  let evt = new BidAccepted(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
+  let h = new JobBidAcceptedHistory(
+    historyId(event.transaction.hash.toHex(), event.logIndex.toString())
   );
-  evt.jobId = event.params.jobId;
-  evt.freelancer = event.params.freelancer;
-  evt.amount = event.params.amount;
-  evt.bidIndex = event.params.bidIndex;
-  evt.blockNumber = event.block.number;
-  evt.blockTimestamp = event.block.timestamp;
-  evt.transactionHash = event.transaction.hash;
-  evt.save();
+  h.jobId = event.params.jobId;
+  h.freelancer = event.params.freelancer;
+  h.amount = event.params.amount;
+  h.bidIndex = event.params.bidIndex;
+  h.blockNumber = event.block.number;
+  h.transactionHash = event.transaction.hash;
+  h.timestamp = event.block.timestamp;
+  h.save();
 }
 
-/* ---------------------------- BID REJECTED ------------------------------ */
-
 export function handleBidRejected(event: BidRejectedEvent): void {
-  let bidId =
-    event.params.jobId.toHex() + "-" + event.params.bidIndex.toString();
-  let bid = Bid.load(bidId);
-  if (bid) {
+  let bidId = event.params.jobId.toHex() + "-" + event.params.bidIndex.toString();
+  let bid = JobBid.load(bidId);
+  if (bid != null) {
     bid.status = "REJECTED";
+    bid.updatedAt = event.block.timestamp;
     bid.save();
   }
 
-  let evt = new BidRejected(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
+  let h = new JobBidRejectedHistory(
+    historyId(event.transaction.hash.toHex(), event.logIndex.toString())
   );
-  evt.jobId = event.params.jobId;
-  evt.freelancer = event.params.freelancer;
-  evt.amount = event.params.amount;
-  evt.bidIndex = event.params.bidIndex;
-  evt.blockNumber = event.block.number;
-  evt.blockTimestamp = event.block.timestamp;
-  evt.transactionHash = event.transaction.hash;
-  evt.save();
+  h.jobId = event.params.jobId;
+  h.freelancer = event.params.freelancer;
+  h.amount = event.params.amount;
+  h.bidIndex = event.params.bidIndex;
+  h.blockNumber = event.block.number;
+  h.transactionHash = event.transaction.hash;
+  h.timestamp = event.block.timestamp;
+  h.save();
 }
-
-/* ---------------------------- DISPUTES ---------------------------------- */
 
 export function handleDisputeRaised(event: DisputeRaisedEvent): void {
   let job = Job.load(event.params.jobId.toHex());
-  if (job) {
+  if (job != null) {
     job.status = "DISPUTED";
+    job.updatedAt = event.block.timestamp;
     job.save();
   }
 
-  let evt = new DisputeRaised(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
+  let dispute = JobDispute.load(event.params.jobId.toHex());
+  if (dispute == null) {
+    dispute = new JobDispute(event.params.jobId.toHex());
+    dispute.job = event.params.jobId.toHex();
+    dispute.createdAt = event.block.timestamp;
+  }
+  dispute.status = "OPEN";
+  dispute.raisedBy = event.params.by;
+  dispute.reasonIpfs = event.params.reasonIpfs;
+  dispute.winner = null;
+  dispute.resolvedAt = null;
+  dispute.updatedAt = event.block.timestamp;
+  dispute.save();
+
+  let h = new DisputeRaisedHistory(
+    historyId(event.transaction.hash.toHex(), event.logIndex.toString())
   );
-  evt.jobId = event.params.jobId;
-  evt.by = event.params.by;
-  evt.reasonIpfs = event.params.reasonIpfs;
-  evt.blockNumber = event.block.number;
-  evt.blockTimestamp = event.block.timestamp;
-  evt.transactionHash = event.transaction.hash;
-  evt.save();
+  h.jobId = event.params.jobId;
+  h.by = event.params.by;
+  h.reasonIpfs = event.params.reasonIpfs;
+  h.blockNumber = event.block.number;
+  h.transactionHash = event.transaction.hash;
+  h.timestamp = event.block.timestamp;
+  h.save();
 }
 
 export function handleDisputeResolved(event: DisputeResolvedEvent): void {
-  let evt = new DisputeResolved(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  );
-  evt.jobId = event.params.jobId;
-  evt.winner = event.params.winner;
-  evt.blockNumber = event.block.number;
-  evt.blockTimestamp = event.block.timestamp;
-  evt.transactionHash = event.transaction.hash;
-  evt.save();
-}
+  let dispute = JobDispute.load(event.params.jobId.toHex());
+  if (dispute != null) {
+    dispute.status = "RESOLVED";
+    dispute.winner = event.params.winner;
+    dispute.resolvedAt = event.block.timestamp;
+    dispute.updatedAt = event.block.timestamp;
+    dispute.save();
+  }
 
-/* ------------------------------ FUNDS ----------------------------------- */
+  let h = new DisputeResolvedHistory(
+    historyId(event.transaction.hash.toHex(), event.logIndex.toString())
+  );
+  h.jobId = event.params.jobId;
+  h.winner = event.params.winner;
+  h.blockNumber = event.block.number;
+  h.transactionHash = event.transaction.hash;
+  h.timestamp = event.block.timestamp;
+  h.save();
+}
 
 export function handleFundLocked(event: FundLockedEvent): void {
   let job = Job.load(event.params.jobId.toHex());
-  if (!job) return;
+  if (job == null) return;
 
   job.fundLockedAt = event.block.timestamp;
   job.fundLockedAmount = event.params.amountLocked;
+  job.updatedAt = event.block.timestamp;
   job.save();
 
-  let evt = new FundLocked(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
+  let h = new FundLockedHistory(
+    historyId(event.transaction.hash.toHex(), event.logIndex.toString())
   );
-  evt.jobId = event.params.jobId;
-  evt.amountLocked = event.params.amountLocked;
-  evt.bidAmount = event.params.bidAmount;
-  evt.client = event.params.client;
-  evt.freelancer = event.params.freelancer;
-  evt.blockNumber = event.block.number;
-  evt.blockTimestamp = event.block.timestamp;
-  evt.transactionHash = event.transaction.hash;
-  evt.save();
+  h.jobId = event.params.jobId;
+  h.amountLocked = event.params.amountLocked;
+  h.bidAmount = event.params.bidAmount;
+  h.client = event.params.client;
+  h.freelancer = event.params.freelancer;
+  h.blockNumber = event.block.number;
+  h.transactionHash = event.transaction.hash;
+  h.timestamp = event.block.timestamp;
+  h.save();
 }
 
 export function handleFundReleased(event: FundReleasedEvent): void {
   let job = Job.load(event.params.jobId.toHex());
-  if (!job) return;
+  if (job == null) return;
 
   job.fundReleasedAt = event.block.timestamp;
   job.fundReleasedAmount = event.params.amountToFreelancer;
+  job.updatedAt = event.block.timestamp;
   job.save();
 
-  let evt = new FundReleased(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
+  let h = new FundReleasedHistory(
+    historyId(event.transaction.hash.toHex(), event.logIndex.toString())
   );
-  evt.jobId = event.params.jobId;
-  evt.amountToFreelancer = event.params.amountToFreelancer;
-  evt.feeToTreasury = event.params.feeToTreasury;
-  evt.blockNumber = event.block.number;
-  evt.blockTimestamp = event.block.timestamp;
-  evt.transactionHash = event.transaction.hash;
-  evt.save();
+  h.jobId = event.params.jobId;
+  h.amountToFreelancer = event.params.amountToFreelancer;
+  h.feeToTreasury = event.params.feeToTreasury;
+  h.blockNumber = event.block.number;
+  h.transactionHash = event.transaction.hash;
+  h.timestamp = event.block.timestamp;
+  h.save();
 }
 
 export function handleFundRefunded(event: FundRefundedEvent): void {
   let job = Job.load(event.params.jobId.toHex());
-  if (!job) return;
+  if (job == null) return;
 
   job.fundRefundedAt = event.block.timestamp;
   job.fundRefundedAmount = event.params.amountRefunded;
+  job.updatedAt = event.block.timestamp;
   job.save();
 
-  let evt = new FundRefunded(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
+  let h = new FundRefundedHistory(
+    historyId(event.transaction.hash.toHex(), event.logIndex.toString())
   );
-  evt.jobId = event.params.jobId;
-  evt.amountRefunded = event.params.amountRefunded;
-  evt.client = event.params.client;
-  evt.blockNumber = event.block.number;
-  evt.blockTimestamp = event.block.timestamp;
-  evt.transactionHash = event.transaction.hash;
-  evt.save();
+  h.jobId = event.params.jobId;
+  h.amountRefunded = event.params.amountRefunded;
+  h.client = event.params.client;
+  h.blockNumber = event.block.number;
+  h.transactionHash = event.transaction.hash;
+  h.timestamp = event.block.timestamp;
+  h.save();
 }
 
-export function handleClaimAfterExpiredDeadlineSuccessful(
-  _event: ClaimAfterExpiredDeadlineSuccessfulEvent
-): void {}
+export function handleClientRated(event: ClientRatedEvent): void {
+  let job = Job.load(event.params.jobId.toHex());
+  if (job != null) {
+    job.clientRating = event.params.rating;
+    job.updatedAt = event.block.timestamp;
+    job.save();
+  }
 
-export function handleClientRated(_event: ClientRatedEvent): void {}
+  let h = new ClientRatedHistory(
+    historyId(event.transaction.hash.toHex(), event.logIndex.toString())
+  );
+  h.jobId = event.params.jobId;
+  h.freelancer = event.params.freelancer;
+  h.client = event.params.client;
+  h.rating = event.params.rating;
+  h.blockNumber = event.block.number;
+  h.transactionHash = event.transaction.hash;
+  h.timestamp = event.block.timestamp;
+  h.save();
+}
 
-export function handleFeeUpdated(_event: FeeUpdatedEvent): void {}
+export function handleFreelancerRated(event: FreelancerRatedEvent): void {
+  let job = Job.load(event.params.jobId.toHex());
+  if (job != null) {
+    job.freelancerRating = event.params.rating;
+    job.updatedAt = event.block.timestamp;
+    job.save();
+  }
 
-export function handleFreelancerRated(_event: FreelancerRatedEvent): void {}
+  let h = new FreelancerRatedHistory(
+    historyId(event.transaction.hash.toHex(), event.logIndex.toString())
+  );
+  h.jobId = event.params.jobId;
+  h.client = event.params.client;
+  h.freelancer = event.params.freelancer;
+  h.rating = event.params.rating;
+  h.blockNumber = event.block.number;
+  h.transactionHash = event.transaction.hash;
+  h.timestamp = event.block.timestamp;
+  h.save();
+}
+
+export function handleFeeUpdated(event: FeeUpdatedEvent): void {
+  let cfg = getConfig(event.block.timestamp);
+  cfg.clientFeeBps = event.params.newClientFeeBps;
+  cfg.protocolFeeBps = event.params.newProtocolFeeBps;
+  cfg.updatedAt = event.block.timestamp;
+  cfg.save();
+}
 
 export function handleReputationAddressUpdated(
-  _event: ReputationAddressUpdatedEvent
-): void {}
+  event: ReputationAddressUpdatedEvent
+): void {
+  let cfg = getConfig(event.block.timestamp);
+  cfg.reputationContract = event.params.newReputation;
+  cfg.updatedAt = event.block.timestamp;
+  cfg.save();
+}
 
 export function handleReputationPenaltyUpdated(
   _event: ReputationPenaltyUpdatedEvent
@@ -413,8 +437,23 @@ export function handleReputationRewardUpdated(
   _event: ReputationRewardUpdatedEvent
 ): void {}
 
-export function handleReviewPeriodUpdated(_event: ReviewPeriodUpdatedEvent): void {}
+export function handleReviewPeriodUpdated(event: ReviewPeriodUpdatedEvent): void {
+  let cfg = getConfig(event.block.timestamp);
+  cfg.reviewPeriod = event.params.newReviewPeriod;
+  cfg.updatedAt = event.block.timestamp;
+  cfg.save();
+}
 
-export function handleTimelockUpdated(_event: TimelockUpdatedEvent): void {}
+export function handleTimelockUpdated(event: TimelockUpdatedEvent): void {
+  let cfg = getConfig(event.block.timestamp);
+  cfg.timelock = event.params.newTimelock;
+  cfg.updatedAt = event.block.timestamp;
+  cfg.save();
+}
 
-export function handleTreasuryUpdated(_event: TreasuryUpdatedEvent): void {}
+export function handleTreasuryUpdated(event: TreasuryUpdatedEvent): void {
+  let cfg = getConfig(event.block.timestamp);
+  cfg.treasury = event.params.newTreasury;
+  cfg.updatedAt = event.block.timestamp;
+  cfg.save();
+}

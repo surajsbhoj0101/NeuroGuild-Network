@@ -1,11 +1,11 @@
 {
   "base-sepolia": {
     "JobContract": {
-      "address": "0x99cC070581894D736e6FC91dc9D2084490427a21",
-      "startBlock": 34489115
+      "address": "0xf7f5c2169894ed703f1e29bb030fbb818d2c6b0b",
+      "startBlock": 38387731
     },
     "UserRegistry": {
-      "address": "0xcb52c690334cac8D2C06268DE946b0a09BcF2486"
+      "address": "0x5281f3e78fc4985f66d860c65bd99717ab36c183"
     }
   }
 }

@@ -1,69 +1,106 @@
-import { UserRegistered as UserRegisteredEvent } from "../generated/UserRegistry/UserRegistry";
-import { UserBlocked as UserBlockedEvent } from "../generated/UserRegistry/UserRegistry";
-import { TimelockUpdated as TimelockUpdatedEvent } from "../generated/UserRegistry/UserRegistry";
-import { UserUnblocked as UserUnblockedEvent } from "../generated/UserRegistry/UserRegistry";
 import {
-  UserBlocked,
-  UserRegistered,
-  UserUnblocked,
+  TimelockUpdated as TimelockUpdatedEvent,
+  UserBlocked as UserBlockedEvent,
+  UserRegistered as UserRegisteredEvent,
+  UserUnblocked as UserUnblockedEvent,
+} from "../generated/UserRegistry/UserRegistry";
+import { BigInt } from "@graphprotocol/graph-ts";
+import {
+  ProtocolConfig,
+  User,
+  UserBlockedHistory,
+  UserRegisteredHistory,
+  UserUnblockedHistory,
 } from "../generated/schema";
-import { User } from "../generated/schema";
+
+function getConfig(ts: BigInt): ProtocolConfig {
+  let cfg = ProtocolConfig.load("global");
+  if (cfg == null) {
+    cfg = new ProtocolConfig("global");
+    cfg.createdAt = ts;
+  }
+  return cfg;
+}
 
 export function handleUserRegistered(event: UserRegisteredEvent): void {
   let userId = event.params.wallet.toHex();
+  let user = User.load(userId);
+  if (user == null) {
+    user = new User(userId);
+    user.wallet = event.params.wallet;
+    user.createdAt = event.block.timestamp;
+    user.isCouncil = false;
+  }
 
-  let user = new User(userId);
-  user.wallet = event.params.wallet;
   user.role = event.params.role;
-  user.createdAt = event.block.timestamp;
   user.isBlocked = false;
+  user.updatedAt = event.block.timestamp;
   user.save();
 
-  let history = new UserRegistered(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
+  let history = new UserRegisteredHistory(
+    event.transaction.hash.toHex() + "-" + event.logIndex.toString()
   );
   history.wallet = event.params.wallet;
   history.role = event.params.role;
   history.blockNumber = event.block.number;
-  history.blockTimestamp = event.block.timestamp;
   history.transactionHash = event.transaction.hash;
+  history.timestamp = event.block.timestamp;
   history.save();
 }
 
 export function handleUserBlocked(event: UserBlockedEvent): void {
   let userId = event.params.wallet.toHex();
   let user = User.load(userId);
-  if (!user) return;
+  if (user == null) {
+    user = new User(userId);
+    user.wallet = event.params.wallet;
+    user.role = 0;
+    user.isCouncil = false;
+    user.createdAt = event.block.timestamp;
+  }
 
   user.isBlocked = true;
+  user.updatedAt = event.block.timestamp;
   user.save();
 
-  let history = new UserBlocked(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
+  let history = new UserBlockedHistory(
+    event.transaction.hash.toHex() + "-" + event.logIndex.toString()
   );
   history.wallet = event.params.wallet;
   history.blockNumber = event.block.number;
-  history.blockTimestamp = event.block.timestamp;
   history.transactionHash = event.transaction.hash;
+  history.timestamp = event.block.timestamp;
   history.save();
 }
 
 export function handleUserUnblocked(event: UserUnblockedEvent): void {
   let userId = event.params.wallet.toHex();
   let user = User.load(userId);
-  if (!user) return;
+  if (user == null) {
+    user = new User(userId);
+    user.wallet = event.params.wallet;
+    user.role = 0;
+    user.isCouncil = false;
+    user.createdAt = event.block.timestamp;
+  }
 
   user.isBlocked = false;
+  user.updatedAt = event.block.timestamp;
   user.save();
 
-  let history = new UserUnblocked(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
+  let history = new UserUnblockedHistory(
+    event.transaction.hash.toHex() + "-" + event.logIndex.toString()
   );
   history.wallet = event.params.wallet;
   history.blockNumber = event.block.number;
-  history.blockTimestamp = event.block.timestamp;
   history.transactionHash = event.transaction.hash;
+  history.timestamp = event.block.timestamp;
   history.save();
 }
 
-export function handleTimelockUpdated(_event: TimelockUpdatedEvent): void {}
+export function handleTimelockUpdated(event: TimelockUpdatedEvent): void {
+  let cfg = getConfig(event.block.timestamp);
+  cfg.timelock = event.params.newTimelock;
+  cfg.updatedAt = event.block.timestamp;
+  cfg.save();
+}
