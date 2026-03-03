@@ -38,6 +38,9 @@ contract Treasury {
         timelock = _timelock;
         stableToken = IERC20(_stableToken);
         councilRegistry = ICouncilRegistry(_councilRegistry);
+
+        emit TimelockUpdated(address(0), _timelock);
+        emit CouncilRegistryUpdated(address(0), _councilRegistry);
     }
 
     function setTimelock(address _timelock) external onlyTimelock {

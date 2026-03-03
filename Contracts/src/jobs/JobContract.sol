@@ -201,10 +201,14 @@ contract JobContract is Escrow, ReentrancyGuard {
             revert ReviewPeriodMustBeGreaterThanOne();
         registry = UserRegistry(_registryAddress);
         reviewPeriod = uint256(initialReviewPeriod) * 1 days; // store as seconds
-        Escrow.timelock = _timelock;
         reputationReward = initialReward;
         reputationPenalty = initialPenalty;
         reputation = IReputationSBT(initialRepAddress);
+
+        emit ReviewPeriodUpdated(0, reviewPeriod);
+        emit ReputationAddressUpdated(address(0), initialRepAddress);
+        emit ReputationRewardUpdated(0, initialReward);
+        emit ReputationPenaltyUpdated(0, initialPenalty);
     }
 
     function setReviewPeriod(uint8 _reviewPeriod) external onlyTimelock {

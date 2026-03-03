@@ -22,6 +22,7 @@ contract CouncilRegistry {
 
     constructor(address _timelock) {
         timelock = _timelock;
+        emit TimelockUpdated(address(0), _timelock);
     }
 
     function setTimelock(address _timelock) external onlyTimelock {

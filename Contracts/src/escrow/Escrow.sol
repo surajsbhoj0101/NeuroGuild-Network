@@ -66,6 +66,10 @@ contract Escrow {
         timelock = _timelock;
         clientFeeBps = 400;
         protocolFeeBps = 800;
+
+        emit TreasuryUpdated(address(0), _treasury);
+        emit TimelockUpdated(address(0), _timelock);
+        emit FeeUpdated(0, clientFeeBps, 0, protocolFeeBps);
     }
 
     modifier onlyTimelock() virtual {

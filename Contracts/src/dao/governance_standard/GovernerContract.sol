@@ -40,6 +40,7 @@ contract GoverContract is
         address indexed oldReputation,
         address indexed newReputation
     );
+    event AdminInitialized(address indexed admin);
     event AdminRenounced(address indexed oldAdmin);
     constructor(
         IVotes _token,
@@ -51,6 +52,7 @@ contract GoverContract is
         GovernorTimelockControl(_timelock)
     {
         admin = msg.sender;
+        emit AdminInitialized(msg.sender);
     }
 
     modifier onlyAdmin() {
