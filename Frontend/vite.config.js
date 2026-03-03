@@ -24,16 +24,26 @@ const parseEnvFile = (filePath) => {
 const contractEnv = parseEnvFile(new URL("./contract.env", import.meta.url));
 
 const contractKeyAliases = {
-  VITE_USERREGISTRY_ADDRESS: "VITE_USER_CONTRACT_ADDRESS",
-  VITE_JOBCONTRACT_ADDRESS: "VITE_JOB_CONTRACT_ADDRESS",
-  VITE_ERC20USDC_ADDRESS: "VITE_USDC_ADDRESS",
-  VITE_REPUTATION_SBT_ADDRESS: "VITE_REPUTATIONSBT_ADDRESS",
+  VITE_BOX_ADDRESS: ["VITE_BOX_ADDRESS"],
+  VITE_COUNCILREGISTRY_ADDRESS: ["VITE_COUNCIL_REGISTRY_ADDRESS"],
+  VITE_ERC20USDC_ADDRESS: ["VITE_ERC20_USDC_ADDRESS", "VITE_USDC_ADDRESS"],
+  VITE_GOVERCONTRACT_ADDRESS: ["VITE_GOVER_CONTRACT_ADDRESS"],
+  VITE_GOVERNANCETOKEN_ADDRESS: ["VITE_GOVERNANCE_TOKEN_ADDRESS"],
+  VITE_JOBCONTRACT_ADDRESS: ["VITE_JOB_CONTRACT_ADDRESS"],
+  VITE_REPUTATIONSBT_ADDRESS: ["VITE_REPUTATION_SBT_ADDRESS"],
+  VITE_SKILLSBT_ADDRESS: ["VITE_SKILL_SBT_ADDRESS"],
+  VITE_TIMELOCK_ADDRESS: ["VITE_TIME_LOCK_ADDRESS"],
+  VITE_TREASURY_ADDRESS: ["VITE_TREASURY_ADDRESS"],
+  VITE_USERREGISTRY_ADDRESS: ["VITE_USER_REGISTRY_ADDRESS", "VITE_USER_CONTRACT_ADDRESS"],
 };
 
 const normalizedContractEnv = { ...contractEnv };
-for (const [fromKey, toKey] of Object.entries(contractKeyAliases)) {
-  if (!normalizedContractEnv[toKey] && normalizedContractEnv[fromKey]) {
-    normalizedContractEnv[toKey] = normalizedContractEnv[fromKey];
+for (const [fromKey, toKeys] of Object.entries(contractKeyAliases)) {
+  if (!normalizedContractEnv[fromKey]) continue;
+  for (const toKey of toKeys) {
+    if (!normalizedContractEnv[toKey]) {
+      normalizedContractEnv[toKey] = normalizedContractEnv[fromKey];
+    }
   }
 }
 

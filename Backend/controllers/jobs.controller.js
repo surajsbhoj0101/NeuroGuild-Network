@@ -25,11 +25,11 @@ query ClientJobs($client: Bytes!) {
 
     bids {
       id
-      bidder
+      bidder: freelancer
       amount
       createdAt
       status
-      ipfsProposal
+      ipfsProposal: proposalIpfs
 
       job {
         id
@@ -72,24 +72,24 @@ const fetchJobQuery = `
 
 const fetchOpenJobBids = `
   query GetBidsByJob($jobId: ID!) {
-    bids(
+    bids: jobBids(
       where: { job: $jobId }
     ) {
       id
-      bidder
+      bidder: freelancer
       amount
       status
       createdAt
-      ipfsProposal
+      ipfsProposal: proposalIpfs
     }
   }
 `;
 
 const fetchMyJobs = `
   query MyQuery($bidder : Bytes!) {
-  bids(where: {bidder: $bidder}) {
+  bids: jobBids(where: {freelancer: $bidder}) {
     status
-    ipfsProposal
+    ipfsProposal: proposalIpfs
     createdAt
     amount
     job {
@@ -123,6 +123,20 @@ const buildInteractionSelector = ({ userId, walletAddress, jobId }) => {
   if (or.length === 0) return null;
   if (or.length === 1) return or[0];
   return { $or: or };
+};
+
+const escapeRegex = (value = "") =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const shortAddress = (address) => {
+  if (!address) return "N/A";
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+};
+
+const findClientByWallet = async (walletAddress) => {
+  if (!walletAddress) return null;
+  const pattern = new RegExp(`^${escapeRegex(walletAddress)}$`, "i");
+  return Client.findOne({ walletAddress: pattern });
 };
 
 export const aiEnhanceJobDetails = async (req, res) => {
@@ -313,9 +327,7 @@ export const fetchJob = async (req, res) => {
       ? bids.some((b) => b.bidder.toLowerCase() === walletAddress)
       : false;
 
-    const clientDetails = await Client.findOne({
-      walletAddress: job.client.toLowerCase(),
-    });
+    const clientDetails = await findClientByWallet(job.client);
 
     const clientPlain = clientDetails
       ? clientDetails.toObject({ virtuals: false })
@@ -333,6 +345,9 @@ export const fetchJob = async (req, res) => {
     const jobDetails = {
       ...clientPlain,
       ...ipfsData,
+      clientAddress: ipfsData?.client || job.client,
+      clientName:
+        clientPlain?.companyDetails?.companyName || shortAddress(job.client),
     };
 
     return res.status(200).json({
@@ -623,12 +638,16 @@ export const fetchFreelancerJobs = async (req, res) => {
 
     const buildJobPayload = async (bid) => {
       const job = bid.job;
+      const clientAddress = job?.client || null;
 
       const [clientDetails, bidData, jobDetails] = await Promise.all([
-        Client.findOne({ walletAddress: job.client }),
+        findClientByWallet(clientAddress),
         getJsonFromIpfs(bid.ipfsProposal),
         getJsonFromIpfs(job.ipfsHash),
       ]);
+
+      const clientName =
+        clientDetails?.companyDetails?.companyName || shortAddress(clientAddress);
 
       return {
         jobId: job.id,
@@ -643,7 +662,8 @@ export const fetchFreelancerJobs = async (req, res) => {
           ...jobDetails,
           budget: jobDetails?.budget,
           deadline: jobDetails?.deadline,
-          clientAddress: jobDetails?.client,
+          clientAddress: jobDetails?.client || clientAddress,
+          clientName,
           clientId: clientDetails?.user,
           clientDetails,
         },

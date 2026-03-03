@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronRight, Loader2, MessageSquare } from "lucide-react";
+import { useWalletClient } from "wagmi";
+import { BrowserProvider } from "ethers";
 import SideBar from "../../components/SideBar";
 import ClientStats from "../../components/ClientStats";
 import api from "../../utils/api.js";
 import NoticeToast from "../../components/NoticeToast";
 import StatusProjectCard from "../../components/StatusProjectCard";
 import { useAuth } from "../../contexts/AuthContext.jsx";
+import { acceptBid } from "../../utils/accept_bid.js";
 
 function EmptyState({ title, description, ctaLabel, onCta }) {
   return (
@@ -30,6 +33,7 @@ function ManageJobs() {
   const { isAuthentication } = useAuth();
   const navigate = useNavigate();
 
+  const { data: walletClient } = useWalletClient();
   const [activeTab, setActiveTab] = useState("Open");
   const [notice, setNotice] = useState(null);
   const [redNotice, setRedNotice] = useState(false);
@@ -41,6 +45,8 @@ function ManageJobs() {
   const [disputedJobs, setDisputedJobs] = useState([]);
   const [cancelledJobs, setCancelledJobs] = useState([]);
   const [expiredJobs, setExpiredJobs] = useState([]);
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [acceptingBidId, setAcceptingBidId] = useState(null);
 
   const [stats, setStats] = useState({
     openJobs: 0,
@@ -68,6 +74,12 @@ function ManageJobs() {
     }
     return () => clearTimeout(timer);
   }, [isAuthentication, navigate]);
+
+  async function getSigner() {
+    if (!walletClient || !window.ethereum) return null;
+    const provider = new BrowserProvider(window.ethereum);
+    return provider.getSigner();
+  }
 
   async function fetchDashboardData() {
     try {
@@ -289,14 +301,60 @@ function ManageJobs() {
 
   const handleShowContract = (project) => {
     if (!project?.jobId) return;
-    navigate(`/job/${project.jobId}`);
+    navigate(`/contracts/${project.jobId}`, {
+      state: { contract: project, viewerRole: "client" },
+    });
+  };
+
+  const handleOpenBids = (job) => {
+    setSelectedJob(job);
+  };
+
+  const handleCloseBids = () => {
+    setSelectedJob(null);
+    setAcceptingBidId(null);
+  };
+
+  const handleAcceptBid = async (job, bid) => {
+    try {
+      const signer = await getSigner();
+      if (!signer) {
+        setRedNotice(true);
+        setNotice("Wallet signer not available. Reconnect wallet.");
+        return;
+      }
+
+      setAcceptingBidId(bid.bidId);
+      const ok = await acceptBid(job.jobId, bid.bidId, signer, bid.bidAmount);
+      if (!ok) {
+        setRedNotice(true);
+        setNotice("Failed to accept bid.");
+        return;
+      }
+
+      setRedNotice(false);
+      setNotice("Bid accepted successfully.");
+      handleCloseBids();
+      setActiveTab("InProgress");
+      await fetchDashboardData();
+    } catch (error) {
+      console.error("accept bid error:", error);
+      setRedNotice(true);
+      setNotice(error?.shortMessage || error?.message || "Failed to accept bid.");
+    } finally {
+      setAcceptingBidId(null);
+    }
   };
 
   const handleMessage = (project) => {
-    console.log(project?.clientId)
-    navigate(`/messages/${project?.clientId}`, {
+    if (!project?.freelancerId) {
+      setRedNotice(true);
+      setNotice("Freelancer ID is missing for this job.");
+      return;
+    }
+    navigate(`/messages/${project.freelancerId}`, {
       state: {
-        recipient: project?.freelancerId
+        recipient: project.freelancerId
       },
     });
   };
@@ -404,10 +462,22 @@ function ManageJobs() {
                       }}
                       status="Open"
                       showActions={true}
+                      extraActions={
+                        <button
+                          onClick={() => handleOpenBids(job)}
+                          className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-[#14a19f]/40 bg-[#14a19f]/10 hover:bg-[#14a19f]/20 text-[#7df3f0] text-sm font-semibold transition-colors"
+                        >
+                          Show Bids
+                          <span className="inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-[#14a19f]/30 text-[#b7fffe] text-xs">
+                            {job?.bids?.length || 0}
+                          </span>
+                        </button>
+                      }
                       onShowContract={() => handleShowContract(job)}
                       onMessage={() =>
                         handleMessage({
                           ...job,
+                          freelancerId: job?.bids?.[0]?.freelancerId,
                           freelancerName:
                             job?.bids?.[0]?.freelancerName || "N/A",
                           freelancerAddress:
@@ -439,6 +509,7 @@ function ManageJobs() {
                       onMessage={() =>
                         handleMessage({
                           ...job,
+                          freelancerId: job?.bid?.freelancerId,
                           freelancerName: job?.bid?.freelancerName || "N/A",
                           freelancerAddress:
                             job?.bid?.freelancerAddress || "N/A",
@@ -547,6 +618,107 @@ function ManageJobs() {
           )}
         </div>
       </div>
+
+      {selectedJob ? (
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-6 bg-black/55 backdrop-blur-sm">
+          <div className="w-full md:max-w-3xl max-h-[90vh] overflow-hidden rounded-t-2xl md:rounded-2xl border border-[#14a19f]/25 bg-[#0d1224] shadow-2xl">
+            <div className="p-5 border-b border-[#14a19f]/20 flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-white text-xl font-semibold">Bids For This Job</h3>
+                <p className="text-sm text-gray-400 mt-1">
+                  {selectedJob.jobTitle || "Untitled Job"} • {selectedJob?.bids?.length || 0} bid(s)
+                </p>
+              </div>
+              <button
+                onClick={handleCloseBids}
+                className="px-3 py-2 rounded-lg border border-gray-600 text-gray-300 hover:bg-gray-800/60 text-sm"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 overflow-y-auto max-h-[72vh]">
+              {!selectedJob?.bids?.length ? (
+                <div className="rounded-xl border border-[#14a19f]/20 bg-[#11172d] p-6 text-center text-gray-400">
+                  No bids found for this job.
+                </div>
+              ) : (
+                selectedJob.bids.map((bid) => (
+                  <div
+                    key={bid.bidId}
+                    className="rounded-xl border border-[#14a19f]/25 bg-[#11172d] p-4 md:p-5"
+                  >
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={bid.freelancerPfp}
+                          alt={bid.freelancerName}
+                          className="w-10 h-10 rounded-full border border-[#14a19f]/35"
+                        />
+                        <div>
+                          <p className="text-white font-semibold">{bid.freelancerName}</p>
+                          <p className="text-xs text-gray-400">{bid.freelancerAddress}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#14a19f]/20 text-[#8bf5f2] text-xs border border-[#14a19f]/35">
+                          ${bid.bidAmount}
+                        </span>
+                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-white/5 text-gray-300 text-xs border border-white/10">
+                          Bid #{bid.bidId}
+                        </span>
+                      </div>
+                    </div>
+
+                    {bid.proposal ? (
+                      <p className="mt-3 text-sm text-gray-300 leading-relaxed">
+                        {bid.proposal.length > 240
+                          ? `${bid.proposal.slice(0, 240)}...`
+                          : bid.proposal}
+                      </p>
+                    ) : null}
+
+                    <div className="mt-4 flex flex-col md:flex-row gap-2">
+                      <button
+                        onClick={() => handleAcceptBid(selectedJob, bid)}
+                        disabled={acceptingBidId === bid.bidId}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 disabled:opacity-60 disabled:cursor-not-allowed border border-emerald-400/35 text-emerald-300 text-sm font-semibold transition-colors"
+                      >
+                        {acceptingBidId === bid.bidId ? (
+                          <>
+                            <Loader2 size={16} className="animate-spin" />
+                            Accepting...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 size={16} />
+                            Accept Bid
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          handleMessage({
+                            ...selectedJob,
+                            freelancerId: bid.freelancerId,
+                          })
+                        }
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-400/30 text-blue-300 text-sm font-semibold transition-colors"
+                      >
+                        <MessageSquare size={16} />
+                        Message Freelancer
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

@@ -91,6 +91,7 @@ function ManageJobs() {
           jobTitle: project.JobDetails?.title || "Untitled Job",
           jobDescription: project.JobDetails?.description || "",
           clientName:
+            project.JobDetails?.clientName ||
             project.JobDetails?.clientDetails?.companyDetails?.companyName ||
             project.JobDetails?.clientAddress,
           clientAddress: project.JobDetails?.clientAddress,
@@ -114,6 +115,7 @@ function ManageJobs() {
           jobTitle: project.JobDetails?.title || "Untitled Job",
           jobDescription: project.JobDetails?.description || "",
           clientName:
+            project.JobDetails?.clientName ||
             project.JobDetails?.clientDetails?.companyDetails?.companyName ||
             project.JobDetails?.clientAddress,
           clientAddress: project.JobDetails?.clientAddress,
@@ -140,6 +142,7 @@ function ManageJobs() {
           jobTitle: project.JobDetails?.title || "Untitled Job",
           jobDescription: project.JobDetails?.description || "",
           clientName:
+            project.JobDetails?.clientName ||
             project.JobDetails?.clientDetails?.companyDetails?.companyName ||
             project.JobDetails?.clientAddress,
           clientAddress: project.JobDetails?.clientAddress,
@@ -163,6 +166,7 @@ function ManageJobs() {
           jobTitle: project.JobDetails?.title || "Untitled Job",
           jobDescription: project.JobDetails?.description || "",
           clientName:
+            project.JobDetails?.clientName ||
             project.JobDetails?.clientDetails?.companyDetails?.companyName ||
             project.JobDetails?.clientAddress,
           clientAddress: project.JobDetails?.clientAddress,
@@ -185,6 +189,7 @@ function ManageJobs() {
           jobTitle: project.JobDetails?.title || "Untitled Job",
           jobDescription: project.JobDetails?.description || "",
           clientName:
+            project.JobDetails?.clientName ||
             project.JobDetails?.clientDetails?.companyDetails?.companyName ||
             project.JobDetails?.clientAddress,
           clientAddress: project.JobDetails?.clientAddress,
@@ -207,6 +212,7 @@ function ManageJobs() {
           jobTitle: project.JobDetails?.title || "Untitled Job",
           jobDescription: project.JobDetails?.description || "",
           clientName:
+            project.JobDetails?.clientName ||
             project.JobDetails?.clientDetails?.companyDetails?.companyName ||
             project.JobDetails?.clientAddress,
           clientAddress: project.JobDetails?.clientAddress,
@@ -255,11 +261,12 @@ function ManageJobs() {
 
   const handleShowContract = (project) => {
     if (!project?.jobId) return;
-    navigate(`/job/${project.jobId}`);
+    navigate(`/contracts/${project.jobId}`, {
+      state: { contract: project, viewerRole: "freelancer" },
+    });
   };
 
   const handleMessage = (project) => {
-    console.log(project?.clientId)
     navigate(`/messages/${project?.clientId}`, {
       state: {
         recipient: project?.clientId

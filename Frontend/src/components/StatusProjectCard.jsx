@@ -16,6 +16,7 @@ function StatusProjectCard({
   status,
   showActions = false,
   showArchive = false,
+  extraActions = null,
   onShowContract,
   onMessage,
   onArchive,
@@ -91,6 +92,8 @@ function StatusProjectCard({
           archiveLabel="Archive"
         />
       ) : null}
+
+      {extraActions ? <div className="pt-1">{extraActions}</div> : null}
     </div>
   );
 }

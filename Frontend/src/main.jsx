@@ -32,6 +32,7 @@ import Governance from './pages/Governance.jsx';
 import Messages from './pages/Messages.jsx';
 import SideBar from './components/SideBar.jsx';
 import { Snowflake } from 'lucide-react';
+import ContractDetailsPage from './pages/ContractDetailsPage.jsx';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
@@ -142,6 +143,14 @@ const router = createBrowserRouter([
         {/* <Snowfall snowflakeCount={60} /> */}
         <Navbar />
         <JobPage />
+      </>
+    )
+  }, {
+    path: "/contracts/:jobId",
+    element: (
+      <>
+        <Navbar />
+        <ContractDetailsPage />
       </>
     )
   },

@@ -1,5 +1,5 @@
 import { Contract, parseUnits, Interface } from "ethers";
-import { ERC721SBT } from "../../../Backend/abis/ERC721SBT";
+import { ERC721SBT } from "../abis/ERC721SBT.js";
 
 const contractAddress = import.meta.env.VITE_REPUTATIONSBT_ADDRESS;
 

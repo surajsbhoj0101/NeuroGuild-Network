@@ -1,4 +1,4 @@
-import { JobContract } from "../abis/JobContract";
+import { JobContract } from "../abis/JobContract.js";
 import { Contract, parseUnits } from "ethers";
 
 const contractAddress = import.meta.env.VITE_JOB_CONTRACT_ADDRESS;

@@ -30,20 +30,32 @@ export function useAppNotifications({ isAuthentication, socket }) {
         title: payload?.title || "Notification",
         description: payload?.description || "",
         link: payload?.link || "",
+        onlyFreelancer: Boolean(payload?.onlyFreelancer),
         metadata:
           payload?.metadata && typeof payload.metadata === "object"
             ? payload.metadata
             : {},
       });
 
-      const created = res.data?.notification;
+      const created = res.data?.notification || null;
+      const createdMany = Array.isArray(res.data?.notifications)
+        ? res.data.notifications
+        : [];
+
       if (created?._id) {
         setAppNotifications((prev) => {
           if (prev.some((item) => item._id === created._id)) return prev;
           return [created, ...prev];
         });
+      } else if (createdMany.length > 0) {
+        setAppNotifications((prev) => {
+          const existing = new Set(prev.map((item) => item._id));
+          const mine = createdMany.filter((item) => item?._id && !existing.has(item._id));
+          return mine.length ? [...mine, ...prev] : prev;
+        });
       }
-      return created || null;
+
+      return created || createdMany[0] || null;
     } catch (error) {
       console.error("Failed to create app notification:", error);
       return null;
@@ -51,13 +63,20 @@ export function useAppNotifications({ isAuthentication, socket }) {
   }, [isAuthentication]);
 
   const addJobNotification = useCallback(
-    async ({ title, description = "", link = "/client/manage-jobs", metadata = {} }) =>
+    async ({
+      title,
+      description = "",
+      link = "/client/manage-jobs",
+      metadata = {},
+      onlyFreelancer = false,
+    }) =>
       addNotification({
         type: "job",
         title: title || "Job update",
         description,
         link,
         metadata,
+        onlyFreelancer,
       }),
     [addNotification],
   );
@@ -147,4 +166,3 @@ export function useAppNotifications({ isAuthentication, socket }) {
     markAllAppNotificationsRead,
   };
 }
-

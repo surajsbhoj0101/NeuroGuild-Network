@@ -1,4 +1,4 @@
-export const JobContract = [
+export const ReputationSBT = [
     {
         "type": "constructor",
         "inputs": [
@@ -1746,4 +1746,4 @@ export const JobContract = [
         "inputs": []
     }
 ];
-export default JobContract;
+export default ReputationSBT;

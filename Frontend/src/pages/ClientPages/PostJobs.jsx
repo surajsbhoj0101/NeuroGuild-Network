@@ -8,6 +8,7 @@ import "../../index.css";
 import { BrowserProvider } from "ethers";
 import { postJob } from "../../utils/post_job";
 import { useAuth } from "../../contexts/AuthContext.jsx";
+import { useNotifications } from "../../contexts/NotificationContext.jsx";
 // import { funkiMainnet } from 'viem/chains';
 
 function PostJobs() {
@@ -15,12 +16,14 @@ function PostJobs() {
   const { isAuthentication } = useAuth();
   const navigate = useNavigate();
   const timeoutRef = useRef(null);
+  const { addJobNotification } = useNotifications();
 
   const [enhancing, setEnhancing] = useState(false);
   const [applying, setApplying] = useState(false);
   const [submiting, setSubmiting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const { data: walletClient } = useWalletClient();
+
 
   const [notice, setNotice] = useState(null);
   const [redNotice, setRedNotice] = useState(false);
@@ -321,9 +324,20 @@ function PostJobs() {
           setNotice("Blockchain error: job not created.");
           return;
         }
-
         setRedNotice(false);
         setNotice("Job Created successfully !!");
+
+        try {
+          await addJobNotification({
+            title: "New job posted",
+            description: `${jobDetails.title} is now live`,
+            link: `/job/${jobId}`,
+            metadata: { jobId: tx?.jobId?.toString?.() || "" },
+            onlyFreelancer: true,
+          });
+        } catch (error) {
+          console.log(error);
+        }
       } catch (err) {
         console.error("Blockchain transaction failed:", err);
         setRedNotice(true);
@@ -337,7 +351,7 @@ function PostJobs() {
       setSubmiting(false);
       removeAllDetails();
     }
-  }, [address, jobDetails, navigate]);
+  }, [address, jobDetails, navigate, addJobNotification]);
 
   function removeAllDetails() {
     setCancelling(true);
