@@ -28,6 +28,29 @@ function pickFirstDefined(...values) {
   return null;
 }
 
+function getStatusBadgeClass(statusValue) {
+  const normalized = `${statusValue || ""}`.toLowerCase().replace("_", "");
+  if (normalized.includes("progress")) {
+    return "bg-blue-500/20 text-blue-300 border border-blue-500/40";
+  }
+  if (normalized.includes("submitted")) {
+    return "bg-amber-500/20 text-amber-300 border border-amber-500/40";
+  }
+  if (normalized.includes("completed")) {
+    return "bg-green-500/20 text-green-300 border border-green-500/40";
+  }
+  if (normalized.includes("disputed")) {
+    return "bg-orange-500/20 text-orange-300 border border-orange-500/40";
+  }
+  if (normalized.includes("cancelled")) {
+    return "bg-red-500/20 text-red-300 border border-red-500/40";
+  }
+  if (normalized.includes("expired")) {
+    return "bg-rose-500/20 text-rose-300 border border-rose-500/40";
+  }
+  return "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40";
+}
+
 function normalizeContract(raw, jobIdParam, viewerRole) {
   if (!raw) return null;
 
@@ -149,9 +172,21 @@ function ContractDetailsPage() {
             </div>
           ) : (
             <div className="w-full max-w-5xl bg-[#0d1224] border border-[#14a19f]/30 rounded-2xl shadow-2xl overflow-hidden">
-              <div className="bg-[#0d1224] border-b border-[#14a19f]/20 px-6 py-5">
-                <p className="text-xs tracking-wide uppercase text-[#14a19f]">Contract #{contract.jobId || "N/A"}</p>
-                <h2 className="text-xl md:text-2xl font-semibold text-white mt-1">{contract.jobTitle || "Untitled Job"}</h2>
+              <div className="bg-gradient-to-r from-[#0f1c2f] via-[#11253a] to-[#0d1224] border-b border-[#14a19f]/20 px-6 py-5">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                  <div>
+                    <p className="text-xs tracking-wide uppercase text-[#7df3f0]">Contract #{contract.jobId || "N/A"}</p>
+                    <h2 className="text-xl md:text-2xl font-semibold text-white mt-1">{contract.jobTitle || "Untitled Job"}</h2>
+                    <p className="text-xs text-gray-400 mt-2">
+                      {viewerRole === "freelancer" ? "Freelancer View" : viewerRole === "client" ? "Client View" : "Contract View"}
+                    </p>
+                  </div>
+                  <span
+                    className={`self-start px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeClass(contract.status)}`}
+                  >
+                    {(contract.status || "N/A").toString().replace("_", " ")}
+                  </span>
+                </div>
               </div>
 
               <div className="p-6 space-y-6">
@@ -166,7 +201,7 @@ function ContractDetailsPage() {
                   </div>
                   <div className="rounded-lg border border-[#14a19f]/20 bg-[#161c32]/40 p-4">
                     <p className="text-xs text-gray-400 mb-1">Status</p>
-                    <p className="text-white font-medium">{contract.status || "N/A"}</p>
+                    <p className="text-white font-medium">{(contract.status || "N/A").toString().replace("_", " ")}</p>
                   </div>
                   <div className="rounded-lg border border-[#14a19f]/20 bg-[#161c32]/40 p-4">
                     <p className="text-xs text-gray-400 mb-1">Job ID</p>

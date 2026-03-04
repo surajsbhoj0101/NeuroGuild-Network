@@ -21,6 +21,8 @@ query ClientJobs($client: Bytes!) {
     id
     status
     ipfsHash
+    ipfsProof
+    submittedAt
     createdAt
 
     bids {
@@ -97,6 +99,8 @@ const fetchMyJobs = `
       ipfsHash
       client
       status
+      ipfsProof
+      submittedAt
     }
   }
 }
@@ -659,6 +663,8 @@ export const fetchFreelancerJobs = async (req, res) => {
       return {
         jobId: job.id,
         status: job.status,
+        workProofLink: job?.ipfsProof || "",
+        submittedAt: job?.submittedAt || null,
         bidStatus: bid?.status ? bid.status.toLowerCase() : "pending",
         createdAt: bid.createdAt,
 
@@ -749,11 +755,13 @@ export const fetchClientsJobs = async (req, res) => {
         getJsonFromIpfs(job.ipfsHash),
       ]);
 
-      return {
-        jobId: job.id,
-        status: job.status,
-        createdAt: bid.createdAt,
-        bidId: bid.id.split("-").pop(),
+    return {
+      jobId: job.id,
+      status: job.status,
+      workProofLink: job?.ipfsProof || "",
+      submittedAt: job?.submittedAt || null,
+      createdAt: bid.createdAt,
+      bidId: bid.id.split("-").pop(),
         bidAmount: Number(bid.amount) / 1e18,
         proposal: bidData?.proposal || "",
         milestones: bidData?.milestones || [],

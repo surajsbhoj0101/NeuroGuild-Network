@@ -38,9 +38,13 @@ function ManageJobs() {
 
   const [notice, setNotice] = useState(null);
   const [redNotice, setRedNotice] = useState(false);
+  const [isSubmitWorkModalOpen, setIsSubmitWorkModalOpen] = useState(false);
+  const [submitProofLink, setSubmitProofLink] = useState("ipfs://");
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("MyBids");
   const [submittingWorkJobId, setSubmittingWorkJobId] = useState(null);
+  const [selectedSubmitProject, setSelectedSubmitProject] = useState(null);
+  const [submittedProofByJob, setSubmittedProofByJob] = useState({});
 
   const [myBids, setMyBids] = useState([]);
   const [activeProjects, setActiveProjects] = useState([]);
@@ -81,7 +85,7 @@ function ManageJobs() {
     return () => clearTimeout(timer);
   }, [isAuthentication, navigate]);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (proofOverrides = submittedProofByJob) => {
     setLoading(true);
     try {
       const response = await api.get(
@@ -93,146 +97,149 @@ function ManageJobs() {
 
       const inProgressProjects = Array.isArray(data.categorized?.inProgress)
         ? data.categorized.inProgress.map((project) => ({
-            jobId: project.jobId,
-            jobTitle: project.JobDetails?.title || "Untitled Job",
-            jobDescription: project.JobDetails?.description || "",
-            clientName:
-              project.JobDetails?.clientName ||
-              project.JobDetails?.clientDetails?.companyDetails?.companyName ||
-              project.JobDetails?.clientAddress,
-            clientAddress: project.JobDetails?.clientAddress,
-            clientId: project.JobDetails?.clientId,
-            freelancerName:
-              project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-              "You",
-            freelancerAddress: address,
-            contractValue: project.bidAmount,
-            deadline:
-              project.JobDetails?.completion || project.JobDetails?.deadline,
-            status: "Active",
-            skills: project.JobDetails?.skills || [],
-            milestones: project?.milestones || [],
-          }))
+          jobId: project.jobId,
+          jobTitle: project.JobDetails?.title || "Untitled Job",
+          jobDescription: project.JobDetails?.description || "",
+          clientName:
+            project.JobDetails?.clientName ||
+            project.JobDetails?.clientDetails?.companyDetails?.companyName ||
+            project.JobDetails?.clientAddress,
+          clientAddress: project.JobDetails?.clientAddress,
+          clientId: project.JobDetails?.clientId,
+          freelancerName:
+            project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+            "You",
+          freelancerAddress: address,
+          contractValue: project.bidAmount,
+          deadline:
+            project.JobDetails?.completion || project.JobDetails?.deadline,
+          status: "Active",
+          skills: project.JobDetails?.skills || [],
+          milestones: project?.milestones || [],
+        }))
         : [];
 
       const completedProj = Array.isArray(data.categorized?.completed)
         ? data.categorized.completed.map((project) => ({
-            jobId: project.jobId,
-            jobTitle: project.JobDetails?.title || "Untitled Job",
-            jobDescription: project.JobDetails?.description || "",
-            clientName:
-              project.JobDetails?.clientName ||
-              project.JobDetails?.clientDetails?.companyDetails?.companyName ||
-              project.JobDetails?.clientAddress,
-            clientAddress: project.JobDetails?.clientAddress,
-            clientId: project.JobDetails?.clientId,
-            freelancerName:
-              project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-              "You",
-            freelancerAddress: address,
-            budget: project.bidAmount,
-            deadline:
-              project.JobDetails?.completion || project.JobDetails?.deadline,
-            amountEarned: project.bidAmount,
-            completedDate: project.completedDate || project.updatedAt,
-            clientRating: project.clientRating,
-            clientComment: project.clientComment,
-            daysWorked: project.daysWorked || 0,
-            deliverables: project.deliverables || 0,
-          }))
+          jobId: project.jobId,
+          jobTitle: project.JobDetails?.title || "Untitled Job",
+          jobDescription: project.JobDetails?.description || "",
+          clientName:
+            project.JobDetails?.clientName ||
+            project.JobDetails?.clientDetails?.companyDetails?.companyName ||
+            project.JobDetails?.clientAddress,
+          clientAddress: project.JobDetails?.clientAddress,
+          clientId: project.JobDetails?.clientId,
+          freelancerName:
+            project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+            "You",
+          freelancerAddress: address,
+          budget: project.bidAmount,
+          deadline:
+            project.JobDetails?.completion || project.JobDetails?.deadline,
+          amountEarned: project.bidAmount,
+          completedDate: project.completedDate || project.updatedAt,
+          clientRating: project.clientRating,
+          clientComment: project.clientComment,
+          daysWorked: project.daysWorked || 0,
+          deliverables: project.deliverables || 0,
+        }))
         : [];
 
       const expiredProj = Array.isArray(data.categorized?.expired)
         ? data.categorized.expired.map((project) => ({
-            jobId: project.jobId,
-            jobTitle: project.JobDetails?.title || "Untitled Job",
-            jobDescription: project.JobDetails?.description || "",
-            clientName:
-              project.JobDetails?.clientName ||
-              project.JobDetails?.clientDetails?.companyDetails?.companyName ||
-              project.JobDetails?.clientAddress,
-            clientAddress: project.JobDetails?.clientAddress,
-            clientId: project.JobDetails?.clientId,
-            freelancerName:
-              project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-              "You",
-            freelancerAddress: address,
-            contractValue: project.bidAmount,
-            deadline:
-              project.JobDetails?.completion || project.JobDetails?.deadline,
-            status: "Expired",
-            skills: project.JobDetails?.skills || [],
-            milestones: project?.milestones || [],
-          }))
+          jobId: project.jobId,
+          jobTitle: project.JobDetails?.title || "Untitled Job",
+          jobDescription: project.JobDetails?.description || "",
+          clientName:
+            project.JobDetails?.clientName ||
+            project.JobDetails?.clientDetails?.companyDetails?.companyName ||
+            project.JobDetails?.clientAddress,
+          clientAddress: project.JobDetails?.clientAddress,
+          clientId: project.JobDetails?.clientId,
+          freelancerName:
+            project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+            "You",
+          freelancerAddress: address,
+          contractValue: project.bidAmount,
+          deadline:
+            project.JobDetails?.completion || project.JobDetails?.deadline,
+          status: "Expired",
+          skills: project.JobDetails?.skills || [],
+          milestones: project?.milestones || [],
+        }))
         : [];
 
       const submittedProj = Array.isArray(data.categorized?.submitted)
         ? data.categorized.submitted.map((project) => ({
-            jobId: project.jobId,
-            jobTitle: project.JobDetails?.title || "Untitled Job",
-            jobDescription: project.JobDetails?.description || "",
-            clientName:
-              project.JobDetails?.clientName ||
-              project.JobDetails?.clientDetails?.companyDetails?.companyName ||
-              project.JobDetails?.clientAddress,
-            clientAddress: project.JobDetails?.clientAddress,
-            clientId: project.JobDetails?.clientId,
-            freelancerName:
-              project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-              "You",
-            freelancerAddress: address,
-            contractValue: project.bidAmount,
-            deadline:
-              project.JobDetails?.completion || project.JobDetails?.deadline,
-            status: "Submitted",
-            skills: project.JobDetails?.skills || [],
-          }))
+          jobId: project.jobId,
+          jobTitle: project.JobDetails?.title || "Untitled Job",
+          jobDescription: project.JobDetails?.description || "",
+          clientName:
+            project.JobDetails?.clientName ||
+            project.JobDetails?.clientDetails?.companyDetails?.companyName ||
+            project.JobDetails?.clientAddress,
+          clientAddress: project.JobDetails?.clientAddress,
+          clientId: project.JobDetails?.clientId,
+          freelancerName:
+            project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+            "You",
+          freelancerAddress: address,
+          contractValue: project.bidAmount,
+          deadline:
+            project.JobDetails?.completion || project.JobDetails?.deadline,
+          status: "Submitted",
+          skills: project.JobDetails?.skills || [],
+          workProofLink:
+            project.workProofLink || proofOverrides[project.jobId] || "",
+          submittedAt: project.submittedAt || null,
+        }))
         : [];
 
       const disputedProj = Array.isArray(data.categorized?.disputed)
         ? data.categorized.disputed.map((project) => ({
-            jobId: project.jobId,
-            jobTitle: project.JobDetails?.title || "Untitled Job",
-            jobDescription: project.JobDetails?.description || "",
-            clientName:
-              project.JobDetails?.clientName ||
-              project.JobDetails?.clientDetails?.companyDetails?.companyName ||
-              project.JobDetails?.clientAddress,
-            clientAddress: project.JobDetails?.clientAddress,
-            clientId: project.JobDetails?.clientId,
-            freelancerName:
-              project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-              "You",
-            freelancerAddress: address,
-            contractValue: project.bidAmount,
-            deadline:
-              project.JobDetails?.completion || project.JobDetails?.deadline,
-            status: "Disputed",
-            skills: project.JobDetails?.skills || [],
-          }))
+          jobId: project.jobId,
+          jobTitle: project.JobDetails?.title || "Untitled Job",
+          jobDescription: project.JobDetails?.description || "",
+          clientName:
+            project.JobDetails?.clientName ||
+            project.JobDetails?.clientDetails?.companyDetails?.companyName ||
+            project.JobDetails?.clientAddress,
+          clientAddress: project.JobDetails?.clientAddress,
+          clientId: project.JobDetails?.clientId,
+          freelancerName:
+            project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+            "You",
+          freelancerAddress: address,
+          contractValue: project.bidAmount,
+          deadline:
+            project.JobDetails?.completion || project.JobDetails?.deadline,
+          status: "Disputed",
+          skills: project.JobDetails?.skills || [],
+        }))
         : [];
 
       const cancelledProj = Array.isArray(data.categorized?.cancelled)
         ? data.categorized.cancelled.map((project) => ({
-            jobId: project.jobId,
-            jobTitle: project.JobDetails?.title || "Untitled Job",
-            jobDescription: project.JobDetails?.description || "",
-            clientName:
-              project.JobDetails?.clientName ||
-              project.JobDetails?.clientDetails?.companyDetails?.companyName ||
-              project.JobDetails?.clientAddress,
-            clientAddress: project.JobDetails?.clientAddress,
-            clientId: project.JobDetails?.clientId,
-            freelancerName:
-              project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-              "You",
-            freelancerAddress: address,
-            contractValue: project.bidAmount,
-            deadline:
-              project.JobDetails?.completion || project.JobDetails?.deadline,
-            status: "Cancelled",
-            skills: project.JobDetails?.skills || [],
-          }))
+          jobId: project.jobId,
+          jobTitle: project.JobDetails?.title || "Untitled Job",
+          jobDescription: project.JobDetails?.description || "",
+          clientName:
+            project.JobDetails?.clientName ||
+            project.JobDetails?.clientDetails?.companyDetails?.companyName ||
+            project.JobDetails?.clientAddress,
+          clientAddress: project.JobDetails?.clientAddress,
+          clientId: project.JobDetails?.clientId,
+          freelancerName:
+            project.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+            "You",
+          freelancerAddress: address,
+          contractValue: project.bidAmount,
+          deadline:
+            project.JobDetails?.completion || project.JobDetails?.deadline,
+          status: "Cancelled",
+          skills: project.JobDetails?.skills || [],
+        }))
         : [];
 
       const myBidProjects = [
@@ -321,7 +328,7 @@ function ManageJobs() {
     });
   };
 
-  const handleArchive = () => {};
+  const handleArchive = () => { };
 
   async function getSigner() {
     if (!walletClient || !window.ethereum) return null;
@@ -329,7 +336,42 @@ function ManageJobs() {
     return provider.getSigner();
   }
 
-  const handleSubmitWork = async (project) => {
+  const getProofHref = (proof) => {
+    if (!proof) return "";
+    if (proof.startsWith("ipfs://")) {
+      return `https://ipfs.io/ipfs/${proof.replace("ipfs://", "")}`;
+    }
+    return proof;
+  };
+
+  const closeSubmitWorkModal = () => {
+    if (submittingWorkJobId) return;
+    setIsSubmitWorkModalOpen(false);
+    setSelectedSubmitProject(null);
+    setSubmitProofLink("ipfs://");
+  };
+
+  const openSubmitWorkModal = (project) => {
+    setSelectedSubmitProject(project);
+    setSubmitProofLink("ipfs://");
+    setIsSubmitWorkModalOpen(true);
+  };
+
+  const handleSubmitWork = async () => {
+    if (!selectedSubmitProject?.jobId) {
+      setRedNotice(true);
+      setNotice("Project details missing. Try again.");
+      return;
+    }
+
+    const ipfsProof = submitProofLink.trim();
+
+    if (!ipfsProof) {
+      setRedNotice(true);
+      setNotice("Proof link is required to submit work.");
+      return;
+    }
+
     try {
       const signer = await getSigner();
       if (!signer) {
@@ -338,21 +380,12 @@ function ManageJobs() {
         return;
       }
 
-      const ipfsProof = window.prompt(
-        "Enter deliverable proof link (IPFS CID/URL):",
-        "ipfs://"
+      setSubmittingWorkJobId(selectedSubmitProject.jobId);
+      const ok = await submitWorkOnChain(
+        selectedSubmitProject.jobId,
+        ipfsProof,
+        signer
       );
-
-      if (ipfsProof === null) return;
-
-      if (!ipfsProof.trim()) {
-        setRedNotice(true);
-        setNotice("Proof link is required to submit work.");
-        return;
-      }
-
-      setSubmittingWorkJobId(project.jobId);
-      const ok = await submitWorkOnChain(project.jobId, ipfsProof, signer);
 
       if (!ok) {
         setRedNotice(true);
@@ -360,15 +393,15 @@ function ManageJobs() {
         return;
       }
 
-      if (project?.clientId) {
+      if (selectedSubmitProject?.clientId) {
         try {
           await api.post(
             "http://localhost:5000/api/notifications/job-event",
             {
               eventType: "work_submitted",
-              recipientId: project.clientId,
+              recipientId: selectedSubmitProject.clientId,
               metadata: {
-                jobId: project.jobId,
+                jobId: selectedSubmitProject.jobId,
                 proof: ipfsProof,
               },
             },
@@ -381,8 +414,14 @@ function ManageJobs() {
 
       setRedNotice(false);
       setNotice("Work submitted successfully.");
+      const nextSubmittedProofByJob = {
+        ...submittedProofByJob,
+        [selectedSubmitProject.jobId]: ipfsProof,
+      };
+      setSubmittedProofByJob(nextSubmittedProofByJob);
+      closeSubmitWorkModal();
       setActiveTab("Submitted");
-      await fetchDashboardData();
+      await fetchDashboardData(nextSubmittedProofByJob);
     } catch (error) {
       console.error("submit work error:", error);
       setRedNotice(true);
@@ -402,6 +441,11 @@ function ManageJobs() {
     return "bg-amber-500/20 text-amber-300 border border-amber-500/40";
   };
 
+  const handleRaiseDisputeUIOnly = () => {
+    setRedNotice(false);
+    setNotice("Raise dispute flow will be available soon.");
+  };
+
   return (
     <>
       <NoticeToast
@@ -409,6 +453,54 @@ function ManageJobs() {
         isError={redNotice}
         onClose={() => setNotice(null)}
       />
+
+      {isSubmitWorkModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center px-4">
+          <div className="w-full max-w-lg rounded-2xl border border-[#14a19f]/30 bg-[#0d1224] p-6 shadow-2xl">
+            <h2 className="text-xl font-semibold text-white">Submit Work</h2>
+            <p className="text-sm text-gray-400 mt-2">
+              {selectedSubmitProject?.jobTitle || "Selected project"}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Job ID: {selectedSubmitProject?.jobId || "N/A"}
+            </p>
+
+            <div className="mt-5">
+              <label
+                htmlFor="proof-link"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
+                Deliverable Proof Link (IPFS CID/URL)
+              </label>
+              <input
+                id="proof-link"
+                type="text"
+                value={submitProofLink}
+                onChange={(e) => setSubmitProofLink(e.target.value)}
+                placeholder="ipfs://..."
+                className="w-full rounded-lg border border-[#14a19f]/30 bg-[#161c32] px-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#14a19f]/50"
+              />
+            </div>
+
+            <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+              <button
+                onClick={closeSubmitWorkModal}
+                disabled={Boolean(submittingWorkJobId)}
+                className="px-4 py-2 rounded-lg border border-gray-600 text-gray-300 hover:bg-gray-700/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitWork}
+                disabled={Boolean(submittingWorkJobId)}
+                className="px-4 py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {submittingWorkJobId ? "Submitting..." : "Submit Work"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="dark:bg-[#0f111d] py-4 md:py-8 flex flex-col md:flex-row gap-4 bg-[#161c32] w-full min-h-screen">
         <div className="pointer-events-none fixed right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-20 blur-3xl mix-blend-screen" />
@@ -469,11 +561,10 @@ function ManageJobs() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`shrink-0 px-4 md:px-6 py-3 font-medium text-sm border-b-2 transition-colors rounded-t-lg ${
-                  activeTab === tab.id
+                className={`shrink-0 px-4 md:px-6 py-3 font-medium text-sm border-b-2 transition-colors rounded-t-lg ${activeTab === tab.id
                     ? "text-[#14a19f] border-[#14a19f] bg-[#14a19f]/10"
                     : "text-gray-400 border-transparent hover:text-gray-300"
-                }`}
+                  }`}
               >
                 {tab.label}
                 {tab.count > 0 && (
@@ -590,7 +681,7 @@ function ManageJobs() {
                           showActions={true}
                           extraActions={
                             <button
-                              onClick={() => handleSubmitWork(project)}
+                              onClick={() => openSubmitWorkModal(project)}
                               disabled={submittingWorkJobId === project.jobId}
                               className="w-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-sm font-semibold py-2 rounded transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                             >
@@ -623,6 +714,32 @@ function ManageJobs() {
                           project={project}
                           status="Submitted"
                           showActions={true}
+                          extraActions={
+                            <div className="space-y-2">
+                              {project?.workProofLink ? (
+                                <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
+                                  <p className="text-xs text-emerald-300/90 mb-1">
+                                    Submitted Work Link
+                                  </p>
+                                  <a
+                                    href={getProofHref(project.workProofLink)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-sm text-emerald-200 underline break-all hover:text-white transition-colors"
+                                  >
+                                    {project.workProofLink}
+                                  </a>
+                                </div>
+                              ) : null}
+
+                              <button
+                                onClick={handleRaiseDisputeUIOnly}
+                                className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 text-sm font-semibold py-2 rounded transition-colors"
+                              >
+                                Raise Dispute
+                              </button>
+                            </div>
+                          }
                           onShowContract={() => handleShowContract(project)}
                           onMessage={() => handleMessage(project)}
                         />

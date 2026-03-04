@@ -25,6 +25,12 @@ const jobEventTemplates = {
     description: "A freelancer submitted work for your review.",
     link: "/client/manage-jobs",
   },
+  work_accepted: {
+    allowedSenderRole: "client",
+    title: "Work accepted",
+    description: "Your submitted work was accepted and marked complete.",
+    link: "/freelancer/manage-jobs",
+  },
 };
 
 export const getMyNotifications = async (req, res) => {

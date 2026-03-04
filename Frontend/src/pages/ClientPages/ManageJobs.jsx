@@ -10,6 +10,7 @@ import NoticeToast from "../../components/NoticeToast";
 import StatusProjectCard from "../../components/StatusProjectCard";
 import { useAuth } from "../../contexts/AuthContext.jsx";
 import { acceptBid } from "../../utils/accept_bid.js";
+import { acceptWorkOnChain } from "../../utils/accept_work.js";
 
 function EmptyState({ title, description, ctaLabel, onCta }) {
   return (
@@ -47,6 +48,8 @@ function ManageJobs() {
   const [expiredJobs, setExpiredJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
   const [acceptingBidId, setAcceptingBidId] = useState(null);
+  const [confirmAcceptWorkJob, setConfirmAcceptWorkJob] = useState(null);
+  const [acceptingWorkJobId, setAcceptingWorkJobId] = useState(null);
 
   const [stats, setStats] = useState({
     openJobs: 0,
@@ -80,6 +83,14 @@ function ManageJobs() {
     const provider = new BrowserProvider(window.ethereum);
     return provider.getSigner();
   }
+
+  const getProofHref = (proof) => {
+    if (!proof) return "";
+    if (proof.startsWith("ipfs://")) {
+      return `https://ipfs.io/ipfs/${proof.replace("ipfs://", "")}`;
+    }
+    return proof;
+  };
 
   async function fetchDashboardData() {
     try {
@@ -186,6 +197,8 @@ function ManageJobs() {
           budget: job.bidAmount ?? job.JobDetails?.budget,
           deadline: job.JobDetails?.deadline,
           skills: job.JobDetails?.skills || [],
+          workProofLink: job.workProofLink || "",
+          submittedAt: job.submittedAt || null,
         }))
         : [];
 
@@ -366,6 +379,75 @@ function ManageJobs() {
     }
   };
 
+  const openAcceptWorkDialog = (job) => {
+    setConfirmAcceptWorkJob(job);
+  };
+
+  const closeAcceptWorkDialog = () => {
+    if (acceptingWorkJobId) return;
+    setConfirmAcceptWorkJob(null);
+  };
+
+  const handleAcceptWork = async () => {
+    if (!confirmAcceptWorkJob?.jobId) {
+      setRedNotice(true);
+      setNotice("Job details missing. Try again.");
+      return;
+    }
+
+    try {
+      const signer = await getSigner();
+      if (!signer) {
+        setRedNotice(true);
+        setNotice("Wallet signer not available. Reconnect wallet.");
+        return;
+      }
+
+      setAcceptingWorkJobId(confirmAcceptWorkJob.jobId);
+      const ok = await acceptWorkOnChain(confirmAcceptWorkJob.jobId, signer);
+      if (!ok) {
+        setRedNotice(true);
+        setNotice("Failed to accept submitted work.");
+        return;
+      }
+
+      if (confirmAcceptWorkJob?.freelancerId) {
+        try {
+          await api.post(
+            "http://localhost:5000/api/notifications/job-event",
+            {
+              eventType: "work_accepted",
+              recipientId: confirmAcceptWorkJob.freelancerId,
+              metadata: {
+                jobId: confirmAcceptWorkJob.jobId,
+              },
+            },
+            { withCredentials: true }
+          );
+        } catch (notificationError) {
+          console.error("work_accepted notification failed:", notificationError);
+        }
+      }
+
+      setRedNotice(false);
+      setNotice("Work accepted successfully.");
+      setConfirmAcceptWorkJob(null);
+      setActiveTab("Completed");
+      await fetchDashboardData();
+    } catch (error) {
+      console.error("accept work error:", error);
+      setRedNotice(true);
+      setNotice(
+        error?.shortMessage ||
+        error?.reason ||
+        error?.message ||
+        "Unable to accept work."
+      );
+    } finally {
+      setAcceptingWorkJobId(null);
+    }
+  };
+
   const handleMessage = (project) => {
     if (!project?.freelancerId) {
       setRedNotice(true);
@@ -377,6 +459,11 @@ function ManageJobs() {
         recipient: project.freelancerId
       },
     });
+  };
+
+  const handleRaiseDisputeUIOnly = () => {
+    setRedNotice(false);
+    setNotice("Raise dispute flow will be available soon.");
   };
 
   return (
@@ -552,6 +639,42 @@ function ManageJobs() {
                       project={job}
                       status="Submitted"
                       showActions={true}
+                      extraActions={
+                        <div className="space-y-2">
+                          {job?.workProofLink ? (
+                            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
+                              <p className="text-xs text-emerald-300/90 mb-1">
+                                Freelancer Submitted Link
+                              </p>
+                              <a
+                                href={getProofHref(job.workProofLink)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-sm text-emerald-200 underline break-all hover:text-white transition-colors"
+                              >
+                                {job.workProofLink}
+                              </a>
+                            </div>
+                          ) : null}
+
+                          <button
+                            onClick={() => openAcceptWorkDialog(job)}
+                            disabled={acceptingWorkJobId === job.jobId}
+                            className="w-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-sm font-semibold py-2 rounded transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                          >
+                            {acceptingWorkJobId === job.jobId
+                              ? "Accepting..."
+                              : "Accept Work"}
+                          </button>
+
+                          <button
+                            onClick={handleRaiseDisputeUIOnly}
+                            className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 text-sm font-semibold py-2 rounded transition-colors"
+                          >
+                            Raise Dispute
+                          </button>
+                        </div>
+                      }
                       onShowContract={() => handleShowContract(job)}
                       onMessage={() => handleMessage(job)}
                     />
@@ -638,6 +761,38 @@ function ManageJobs() {
           )}
         </div>
       </div>
+
+      {confirmAcceptWorkJob ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-[#14a19f]/25 bg-[#0d1224] p-5 shadow-2xl">
+            <h3 className="text-white text-lg font-semibold">Accept Submitted Work</h3>
+            <p className="text-sm text-gray-300 mt-2">
+              You are about to mark this project as completed and release funds.
+              This action cannot be undone.
+            </p>
+            <p className="text-xs text-gray-400 mt-2 break-all">
+              Job ID: {confirmAcceptWorkJob.jobId}
+            </p>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={closeAcceptWorkDialog}
+                disabled={Boolean(acceptingWorkJobId)}
+                className="px-4 py-2 rounded-lg border border-gray-600 text-gray-300 hover:bg-gray-800/60 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAcceptWork}
+                disabled={Boolean(acceptingWorkJobId)}
+                className="px-4 py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 disabled:opacity-60 disabled:cursor-not-allowed border border-emerald-400/35 text-emerald-300 text-sm font-semibold transition-colors"
+              >
+                {acceptingWorkJobId ? "Confirming..." : "Yes, Accept Work"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {selectedJob ? (
         <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-6 bg-black/55 backdrop-blur-sm">
