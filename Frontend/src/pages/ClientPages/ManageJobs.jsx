@@ -108,27 +108,40 @@ function ManageJobs() {
       if (Array.isArray(data.categorized?.open)) {
         for (const job of data.categorized.open) {
           const existingJob = opJobs.find((j) => j.jobId === job.jobId);
+          if (job?.bidder) {
+            const bid = {
+              bidId: job?.bidId,
+              bidAmount: job?.bidAmount,
+              proposal: job?.proposal,
+              createdAt: job?.createdAt,
+              status: job?.status,
+              freelancerId: job?.JobDetails?.freelancerId,
+              freelancerName:
+                job.JobDetails?.freelancerDetails?.BasicInformation?.name ||
+                "Unknown",
+              freelancerAddress: `${job?.bidder?.slice(0, 6)}...${job?.bidder?.slice(
+                -6
+              )}`,
+              freelancerPfp:
+                job.JobDetails?.freelancerDetails?.BasicInformation?.avatarUrl ||
+                `https://api.dicebear.com/7.x/bottts/svg?seed=${job.bidder}`,
+            };
 
-          const bid = {
-            bidId: job.bidId,
-            bidAmount: job.bidAmount,
-            proposal: job.proposal,
-            createdAt: job.createdAt,
-            status: job.status,
-            freelancerId: job.JobDetails?.freelancerId,
-            freelancerName:
-              job.JobDetails?.freelancerDetails?.BasicInformation?.name ||
-              "Unknown",
-            freelancerAddress: `${job.bidder.slice(0, 6)}...${job.bidder.slice(
-              -6
-            )}`,
-            freelancerPfp:
-              job.JobDetails?.freelancerDetails?.BasicInformation?.avatarUrl ||
-              `https://api.dicebear.com/7.x/bottts/svg?seed=${job.bidder}`,
-          };
-
-          if (existingJob) {
-            existingJob.bids.push(bid);
+            if (existingJob) {
+              existingJob.bids.push(bid);
+            } else {
+              opJobs.push({
+                jobId: job.jobId,
+                jobTitle: job.JobDetails?.title || "Untitled Job",
+                jobDescription: job.JobDetails?.description || "",
+                budget: job.JobDetails?.budget,
+                deadline: job.JobDetails?.deadline,
+                skills: job.JobDetails?.skills || [],
+                jobType: job.JobDetails?.jobType || "Fixed",
+                submittedAt: job.createdAt,
+                bids: [bid],
+              });
+            }
           } else {
             opJobs.push({
               jobId: job.jobId,
@@ -139,7 +152,7 @@ function ManageJobs() {
               skills: job.JobDetails?.skills || [],
               jobType: job.JobDetails?.jobType || "Fixed",
               submittedAt: job.createdAt,
-              bids: [bid],
+              bids: [],
             });
           }
         }
@@ -159,7 +172,7 @@ function ManageJobs() {
             freelancerName:
               job.JobDetails?.freelancerDetails?.BasicInformation?.name ||
               "Unknown",
-            freelancerAddress: `${job.bidder.slice(0, 6)}...${job.bidder.slice(
+            freelancerAddress: `${job?.bidder?.slice(0, 6)}...${job?.bidder?.slice(
               -6
             )}`,
             freelancerPfp:
@@ -846,10 +859,10 @@ function ManageJobs() {
                       </div>
                     </div>
 
-                    {bid.proposal ? (
+                    {bid?.proposal ? (
                       <p className="mt-3 text-sm text-gray-300 leading-relaxed">
                         {bid.proposal.length > 240
-                          ? `${bid.proposal.slice(0, 240)}...`
+                          ? `${bid?.proposal?.slice(0, 240)}...`
                           : bid.proposal}
                       </p>
                     ) : null}

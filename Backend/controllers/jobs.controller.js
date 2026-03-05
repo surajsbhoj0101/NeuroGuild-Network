@@ -748,6 +748,24 @@ export const fetchClientsJobs = async (req, res) => {
       submitted: [],
     };
 
+    const buildOpenJobPayload = async (job) => {
+      console.log("Came for open");
+      const [ jobDetails] = await Promise.all([
+        getJsonFromIpfs(job.ipfsHash),
+      ]);
+
+      return {
+        jobId: job.id,
+        status: job.status,
+        JobDetails: {
+          ...jobDetails,
+          budget: jobDetails?.budget,
+          deadline: jobDetails?.deadline,
+          clientAddress: jobDetails?.client,
+        },
+      };
+    };
+
     const buildJobPayload = async (bid, job) => {
       const [freelancerDetails, bidData, jobDetails] = await Promise.all([
         Freelancer.findOne({ walletAddress: bid.bidder }),
@@ -755,13 +773,15 @@ export const fetchClientsJobs = async (req, res) => {
         getJsonFromIpfs(job.ipfsHash),
       ]);
 
-    return {
-      jobId: job.id,
-      status: job.status,
-      workProofLink: job?.ipfsProof || "",
-      submittedAt: job?.submittedAt || null,
-      createdAt: bid.createdAt,
-      bidId: bid.id.split("-").pop(),
+      console.log("Console log ,",bid.bidder)
+
+      return {
+        jobId: job.id,
+        status: job.status,
+        workProofLink: job?.ipfsProof || "",
+        submittedAt: job?.submittedAt || null,
+        createdAt: bid.createdAt,
+        bidId: bid.id.split("-").pop(),
         bidAmount: Number(bid.amount) / 1e18,
         proposal: bidData?.proposal || "",
         milestones: bidData?.milestones || [],
@@ -779,9 +799,29 @@ export const fetchClientsJobs = async (req, res) => {
     };
 
     for (const job of jobs) {
-      for (const bid of job.bids) {
-        const jobPayload = await buildJobPayload(bid, job);
+      console.log(job.bids);
+      if (job.bids.length > 0) {
+        for (const bid of job.bids) {
+          const jobPayload = await buildJobPayload(bid, job);
 
+          if (job.status === "OPEN") {
+            categorized.open.push(jobPayload);
+          } else if (job.status === "IN_PROGRESS") {
+            categorized.inProgress.push(jobPayload);
+          } else if (job.status === "SUBMITTED") {
+            categorized.submitted.push(jobPayload);
+          } else if (job.status === "COMPLETED") {
+            categorized.completed.push(jobPayload);
+          } else if (job.status === "CANCELLED") {
+            categorized.cancelled.push(jobPayload);
+          } else if (job.status === "DISPUTED") {
+            categorized.disputed.push(jobPayload);
+          }
+        }
+      } else {
+        console.log("no bids");
+        const jobPayload = await buildOpenJobPayload(job);
+        console.log(job.status);
         if (job.status === "OPEN") {
           categorized.open.push(jobPayload);
         } else if (job.status === "IN_PROGRESS") {
