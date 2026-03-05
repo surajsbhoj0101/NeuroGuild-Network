@@ -236,6 +236,7 @@ export const verifySiwe = async (req, res) => {
     const address = siweMessage.address.toLowerCase();
 
     const result = await getUser(address);
+    console.log("Tried to get user")
     const user = result?.user || null;
 
     let payload;
