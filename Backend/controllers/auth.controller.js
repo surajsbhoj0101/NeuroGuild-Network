@@ -2,13 +2,13 @@ import User from "../models/user.model.js";
 import Freelancer from "../models/freelancer_models/freelancers.model.js";
 import Client from "../models/client_models/clients.model.js";
 import { querySubgraph } from "../services/subgraphClient.js";
-import { Wallet } from "ethers";
 import { generateNonce, SiweMessage } from "siwe";
 import dotenv from "dotenv";
 import skillTokenizable from "../services/tokenizableSkills.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import axios from "axios"
+import axios from "axios";
+import redis from "../config/redis.js";
 
 dotenv.config();
 dotenv.config({ path: "./contract.env" });
@@ -17,8 +17,6 @@ const ACCESS_TOKEN_EXPIRES_IN = "7d";
 const ACCESS_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const PENDING_TOKEN_EXPIRES_IN = "30m";
 const PENDING_TOKEN_MAX_AGE_MS = 15 * 60 * 1000;
-
-
 
 const getUserQuery = `
   query GetUser($wallet: Bytes!) {
@@ -30,8 +28,23 @@ const getUserQuery = `
   }
 `;
 
-const nonceStore = new Map();
-const pendingAuthStore = new Map();
+const PENDING_AUTH_REDIS_PREFIX = "siwe:pending:";
+
+const getPendingAuthKey = (pendingSessionKey) =>
+  `${PENDING_AUTH_REDIS_PREFIX}${pendingSessionKey}`;
+
+const getPendingAuthSession = async (pendingSessionKey) => {
+  if (!pendingSessionKey) return null;
+
+  const raw = await redis.get(getPendingAuthKey(pendingSessionKey));
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
 
 const getUser = async (address) => {
   const walletAddress = address.toLowerCase();
@@ -75,8 +88,6 @@ const getUser = async (address) => {
   }
 };
 
-
-
 export const createUser = async (req, res) => {
   try {
     const { role } = req.body;
@@ -85,19 +96,25 @@ export const createUser = async (req, res) => {
     }
 
     const pendingKey = req.user?.pendingSessionKey;
-    const pending = pendingKey ? pendingAuthStore.get(pendingKey) : null;
-    if (!pending || pending.expiresAt < Date.now()) {
-      if (pendingKey) pendingAuthStore.delete(pendingKey);
-      return res.status(401).json({ message: "Pending signup session expired" });
+    const pending = await getPendingAuthSession(pendingKey);
+    if (!pending) {
+      if (pendingKey) {
+        await redis.del(getPendingAuthKey(pendingKey));
+      }
+      return res
+        .status(401)
+        .json({ message: "Pending signup session expired" });
     }
 
     const walletAddress = pending.walletAddress?.toLowerCase();
     if (!walletAddress) {
-      return res.status(400).json({ message: "Wallet not found for signup session" });
+      return res
+        .status(400)
+        .json({ message: "Wallet not found for signup session" });
     }
 
     const roleLowerCase = role.toLowerCase();
-    console.log(walletAddress, roleLowerCase)
+    console.log(walletAddress, roleLowerCase);
 
     const existingUser = await User.findOne({ wallets: walletAddress });
     if (existingUser) {
@@ -121,7 +138,7 @@ export const createUser = async (req, res) => {
         userId: user._id,
       },
       process.env.JWT_SECRET,
-      { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
+      { expiresIn: ACCESS_TOKEN_EXPIRES_IN },
     );
 
     res.cookie("access_token", newToken, {
@@ -130,7 +147,9 @@ export const createUser = async (req, res) => {
       sameSite: "lax",
       maxAge: ACCESS_TOKEN_MAX_AGE_MS,
     });
-    pendingAuthStore.delete(pendingKey);
+    if (pendingKey) {
+      await redis.del(getPendingAuthKey(pendingKey));
+    }
 
     return res.status(200).json({ isFound: true, user });
   } catch (error) {
@@ -143,9 +162,7 @@ export const getNonce = async (req, res) => {
   try {
     const nonce = generateNonce();
     console.log("nonce :", nonce);
-    nonceStore.set(nonce, {
-      expiresAt: Date.now() + 5 * 60 * 1000,
-    });
+    await redis.set(`siwe:${nonce}`,"valid","EX", 300);
     return res.status(200).json({ success: true, nonce: nonce });
   } catch (error) {
     console.log(error);
@@ -177,9 +194,9 @@ export const checkJwt = async (req, res) => {
     req.user = decoded;
 
     if (decoded?.pendingSessionKey) {
-      const pending = pendingAuthStore.get(decoded.pendingSessionKey);
-      if (!pending || pending.expiresAt < Date.now()) {
-        pendingAuthStore.delete(decoded.pendingSessionKey);
+      const pending = await getPendingAuthSession(decoded.pendingSessionKey);
+      if (!pending) {
+        await redis.del(getPendingAuthKey(decoded.pendingSessionKey));
         return res.status(401).json({
           isFound: false,
           message: "Pending signup session expired",
@@ -219,9 +236,10 @@ export const verifySiwe = async (req, res) => {
 
     const siweMessage = new SiweMessage(message);
 
-    const nonceData = nonceStore.get(siweMessage.nonce);
+    const nonceKey = `siwe:${siweMessage.nonce}`;
+    const nonceData = await redis.get(nonceKey);
 
-    if (!nonceData || nonceData.expiresAt < Date.now()) {
+    if (!nonceData) {
       return res.status(401).json({ message: "Nonce expired or invalid" });
     }
 
@@ -231,12 +249,12 @@ export const verifySiwe = async (req, res) => {
       nonce: siweMessage.nonce,
     });
 
-    nonceStore.delete(siweMessage.nonce);
+    await redis.del(nonceKey);
 
     const address = siweMessage.address.toLowerCase();
 
     const result = await getUser(address);
-    console.log("Tried to get user")
+    console.log("Tried to get user");
     const user = result?.user || null;
 
     let payload;
@@ -247,10 +265,12 @@ export const verifySiwe = async (req, res) => {
       };
     } else {
       const pendingSessionKey = crypto.randomBytes(16).toString("hex");
-      pendingAuthStore.set(pendingSessionKey, {
-        walletAddress: address,
-        expiresAt: Date.now() + 15 * 60 * 1000,
-      });
+      await redis.set(
+        getPendingAuthKey(pendingSessionKey),
+        JSON.stringify({ walletAddress: address }),
+        "EX",
+        15 * 60,
+      );
       payload = {
         role: null,
         userId: null,
@@ -303,36 +323,36 @@ export const checkSkillName = async (req, res) => {
   res.cookie("skill_access", skillName, {
     httpOnly: true,
     sameSite: "lax",
-    maxAge: 5 * 60 * 1000
+    maxAge: 5 * 60 * 1000,
   });
 
-  console.log("Name set success")
+  console.log("Name set success");
 
   res.json({ success: true });
 };
 
-//get which skill chosen at this time 
+//get which skill chosen at this time
 export const checkSkillData = async (req, res) => {
-  console.log("Name checking")
+  console.log("Name checking");
   const skillName = req.cookies.skill_access;
 
   if (!skillName || !skillTokenizable.includes(skillName)) {
-    console.log("unauthorize")
+    console.log("unauthorize");
     return res.status(401).json({ error: "Unauthorized" });
   }
 
   res.json({
     skill: skillName,
-    content: "Protected skill data"
+    content: "Protected skill data",
   });
 };
 
 export const gitHubAuthStart = async (req, res) => {
   const state = crypto.randomBytes(16).toString("hex");
-  res.cookie('oauth_state', state, {
+  res.cookie("oauth_state", state, {
     httpOnly: true,
-    sameSite: "lax"
-  })
+    sameSite: "lax",
+  });
 
   const githubUrl =
     `https://github.com/login/oauth/authorize` +
@@ -341,7 +361,7 @@ export const gitHubAuthStart = async (req, res) => {
     `&scope=read:user user:email`;
 
   res.redirect(githubUrl);
-}
+};
 
 export const githubAuthCallback = async (req, res) => {
   try {
@@ -366,43 +386,37 @@ export const githubAuthCallback = async (req, res) => {
         headers: {
           Accept: "application/json",
         },
-      }
+      },
     );
 
     const accessToken = tokenRes.data.access_token;
     if (!accessToken) {
       return res.status(401).send("GitHub token exchange failed");
     }
-    console.log("Fetching emailRes")
+    console.log("Fetching emailRes");
 
-    const userRes = await axios.get(
-      "https://api.github.com/user",
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
+    const userRes = await axios.get("https://api.github.com/user", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
 
-    const emailRes = await axios.get(
-      "https://api.github.com/user/emails",
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
+    const emailRes = await axios.get("https://api.github.com/user/emails", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
 
     const githubUser = userRes.data;
-    const primaryEmail = emailRes.data.find(e => e.primary)?.email;
+    const primaryEmail = emailRes.data.find((e) => e.primary)?.email;
 
     const token = jwt.sign(
       {
         githubUser: githubUser,
-        email: primaryEmail
+        email: primaryEmail,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "3d" }
+      { expiresIn: "3d" },
     );
 
     res.cookie("github_auth", token, {
@@ -411,9 +425,8 @@ export const githubAuthCallback = async (req, res) => {
       secure: false,
     });
 
-    console.log(process.env.FRONTEND_URL)
+    console.log(process.env.FRONTEND_URL);
     res.redirect(`${process.env.FRONTEND_URL}/mint-rules`);
-
   } catch (error) {
     console.error("GitHub OAuth Error:", error);
     res.status(500).send("OAuth failed");
@@ -424,8 +437,8 @@ export const getGithubUserData = async (req, res) => {
   try {
     const token = req.cookies?.github_auth;
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    return res.status(200).json({success:true, data: decoded})
+    return res.status(200).json({ success: true, data: decoded });
   } catch (error) {
     console.error("GitHub auth data not found", error);
   }
-}
+};
