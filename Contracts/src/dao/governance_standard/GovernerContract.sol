@@ -24,8 +24,10 @@ import {
     IVotes
 } from "../../../lib/openzeppelin-contracts/contracts/governance/utils/IVotes.sol";
 
-import {IReputationSBT} from "../interfaces/IReputation.sol";
-
+interface IGovernorReputation {
+    function userToToken(address user) external view returns (uint256);
+    function isRevoked(address user) external view returns (bool);
+}
 
 contract GoverContract is
     Governor,
@@ -34,17 +36,15 @@ contract GoverContract is
     GovernorVotesQuorumFraction,
     GovernorTimelockControl
 {
-    address public admin; // temporary 
-    IReputationSBT reputation;
-    event ReputationContractUpdated(
-        address indexed oldReputation,
-        address indexed newReputation
-    );
+    address public admin; // temporary
+    event ReputationContractUpdated(address indexed newReputation);
+    IGovernorReputation reputation;
     event AdminInitialized(address indexed admin);
     event AdminRenounced(address indexed oldAdmin);
     constructor(
         IVotes _token,
-        TimelockController _timelock
+        TimelockController _timelock,
+        address _reputation
     )
         Governor("NeuroGuildGovernor")
         GovernorVotes(_token)
@@ -52,6 +52,8 @@ contract GoverContract is
         GovernorTimelockControl(_timelock)
     {
         admin = msg.sender;
+        reputation = IGovernorReputation(_reputation);
+        emit ReputationContractUpdated(_reputation);
         emit AdminInitialized(msg.sender);
     }
 
@@ -60,10 +62,9 @@ contract GoverContract is
         _;
     }
 
-    function setReputation(address _reputation) external onlyAdmin{
-        address oldReputation = address(reputation);
-        reputation = IReputationSBT(_reputation);
-        emit ReputationContractUpdated(oldReputation, _reputation);
+    function setReputation(address _reputation) external onlyAdmin {
+        reputation = IGovernorReputation(_reputation);
+        emit ReputationContractUpdated(_reputation);
     }
 
     function renounceAdmin() external onlyAdmin {
@@ -81,18 +82,33 @@ contract GoverContract is
     }
 
     function proposalThreshold() public pure override returns (uint256) {
-        return 0;
+        return 1e18;
     }
 
     function getVotes(
         address voter,
         uint256 blockNumber
     ) public view override returns (uint256) {
-        uint256 tokenVotes = super.getVotes(voter, blockNumber);
-        return tokenVotes ;
+        return _getVotes(voter, blockNumber, "");
     }
 
+    function _getVotes(
+        address voter,
+        uint256 blockNumber,
+        bytes memory params
+    )
+        internal
+        view
+        override(Governor, GovernorVotes)
+        returns (uint256)
+    {
+        uint256 tokenId = reputation.userToToken(voter);
+        if (tokenId == 0 || reputation.isRevoked(voter)) {
+            return 0;
+        }
 
+        return super._getVotes(voter, blockNumber, params);
+    }
 
     function state(
         uint256 proposalId
@@ -107,12 +123,7 @@ contract GoverContract is
 
     function proposalNeedsQueuing(
         uint256 proposalId
-    )
-        public
-        view
-        override(Governor, GovernorTimelockControl)
-        returns (bool)
-    {
+    ) public view override(Governor, GovernorTimelockControl) returns (bool) {
         return super.proposalNeedsQueuing(proposalId);
     }
 
@@ -122,11 +133,7 @@ contract GoverContract is
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    )
-        internal
-        override(Governor, GovernorTimelockControl)
-        returns (uint48)
-    {
+    ) internal override(Governor, GovernorTimelockControl) returns (uint48) {
         return
             super._queueOperations(
                 proposalId,
@@ -158,11 +165,7 @@ contract GoverContract is
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    )
-        internal
-        override(Governor, GovernorTimelockControl)
-        returns (uint256)
-    {
+    ) internal override(Governor, GovernorTimelockControl) returns (uint256) {
         return super._cancel(targets, values, calldatas, descriptionHash);
     }
 

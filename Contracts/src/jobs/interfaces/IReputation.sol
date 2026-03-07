@@ -62,6 +62,7 @@ interface IReputationSBT {
     function userToToken(address user) external view returns (uint256);
 
     function getTokenId(address user) external view returns (uint256);
+    function isRevoked(address user) external view returns (bool);
 
     function jobContract() external view returns (address);
     function governor() external view returns (address);

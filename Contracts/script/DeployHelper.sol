@@ -17,6 +17,9 @@ import {CouncilRegistry} from "../src/dao/CouncilRegistry.sol";
 import {Treasury} from "../src/dao/Treasury.sol";
 
 library DeployHelper {
+    bytes32 internal constant BOOTSTRAP_SALT =
+        keccak256("bootstrap-reputation-job-contract");
+
     struct Deployment {
         address usdc;
         address govToken;
@@ -59,22 +62,20 @@ library DeployHelper {
         );
         d.timelock = address(timelock);
 
-        GoverContract governor = new GoverContract(govToken, timelock);
-        d.governor = address(governor);
+        ReputationSBT reputationSBT = new ReputationSBT(address(timelock));
+        d.reputationSBT = address(reputationSBT);
 
-        timelock.grantRole(timelock.PROPOSER_ROLE(), address(governor));
-        timelock.grantRole(timelock.EXECUTOR_ROLE(), address(0));
-        timelock.renounceRole(timelock.DEFAULT_ADMIN_ROLE(), deployer);
+        GoverContract governor = new GoverContract(
+            govToken,
+            timelock,
+            address(reputationSBT)
+        );
+        d.governor = address(governor);
 
         CouncilRegistry councilRegistry = new CouncilRegistry(
             address(timelock)
         );
         d.councilRegistry = address(councilRegistry);
-
-        ReputationSBT reputationSBT = new ReputationSBT(address(timelock));
-        d.reputationSBT = address(reputationSBT);
-
-        governor.setReputation(address(reputationSBT));
 
         SkillSBT skillSBT = new SkillSBT(
             address(timelock),
@@ -108,7 +109,37 @@ library DeployHelper {
         Box box = new Box(address(timelock));
         d.box = address(box);
 
+        bytes memory bootstrapReputationCall = abi.encodeCall(
+            ReputationSBT.setJobContract,
+            (address(jobContract))
+        );
+
+        timelock.grantRole(timelock.PROPOSER_ROLE(), address(governor));
+        timelock.grantRole(timelock.PROPOSER_ROLE(), deployer);
+        timelock.grantRole(timelock.EXECUTOR_ROLE(), address(0));
+
+        timelock.schedule(
+            address(reputationSBT),
+            0,
+            bootstrapReputationCall,
+            bytes32(0),
+            BOOTSTRAP_SALT,
+            minDelay
+        );
+
+        if (minDelay == 0) {
+            timelock.execute(
+                address(reputationSBT),
+                0,
+                bootstrapReputationCall,
+                bytes32(0),
+                BOOTSTRAP_SALT
+            );
+        }
+
+        timelock.revokeRole(timelock.PROPOSER_ROLE(), deployer);
         governor.renounceAdmin();
+        timelock.renounceRole(timelock.DEFAULT_ADMIN_ROLE(), deployer);
 
         return d;
     }

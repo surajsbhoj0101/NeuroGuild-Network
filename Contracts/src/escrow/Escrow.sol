@@ -78,12 +78,14 @@ contract Escrow {
     }
 
     function setTimelock(address _timelock) external virtual onlyTimelock {
+        require(_timelock != address(0), "Invalid timelock address");
         address oldTimelock = timelock;
         timelock = _timelock;
         emit TimelockUpdated(oldTimelock, _timelock);
     }
 
     function setTreasury(address _treasury) external onlyTimelock {
+        require(_treasury != address(0), "Invalid treasury address");
         address oldTreasury = treasury;
         treasury = _treasury;
         emit TreasuryUpdated(oldTreasury, _treasury);

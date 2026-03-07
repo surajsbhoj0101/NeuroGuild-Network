@@ -86,6 +86,11 @@ contract ReputationSBT is ERC721URIStorage {
         return userToToken[user];
     }
 
+    function isRevoked(address user) external view returns (bool) {
+        uint256 tokenId = userToToken[user];
+        return tokenId != 0 && repData[tokenId].revoked;
+    }
+
     function mintReputation(
         address user,
         string memory metadataURI

@@ -79,6 +79,7 @@ contract SkillSBT is ERC721URIStorage {
     }
 
     function updateCouncilRegistry(address newRegistry) external onlyTimelock {
+        require(newRegistry != address(0), "Invalid registry");
         address oldRegistry = address(councilRegistry);
         councilRegistry = ICouncilRegistry(newRegistry);
         emit CouncilRegistryUpdated(oldRegistry, newRegistry);

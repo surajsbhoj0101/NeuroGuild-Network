@@ -12,6 +12,7 @@ contract GovernanceToken is ERC20Votes, ERC20Permit, Ownable {
         ERC20Permit("NeuroSigil") // Needed for off-chain signatures
     {
         _mint(msg.sender, MAX_SUPPLY);
+        _delegate(msg.sender, msg.sender);
     }
 
     // Required overrides

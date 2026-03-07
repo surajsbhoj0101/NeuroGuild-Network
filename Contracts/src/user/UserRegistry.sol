@@ -38,6 +38,7 @@ contract UserRegistry {
     mapping(address => User) public users;
 
     function setTimelock(address _resolver) external onlyTimelock {
+        require(_resolver != address(0), "Invalid timelock");
         address oldTimelock = timelock;
         timelock = _resolver;
         emit TimelockUpdated(oldTimelock, _resolver);

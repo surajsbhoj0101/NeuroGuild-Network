@@ -155,8 +155,7 @@ contract Tests is Test {
         job.submitWork(jobId, "This is the Proof");
         vm.stopPrank();
 
-        (, , , , , , , , string memory ipfsProof, , , ) = job.jobs(jobId);
-
+        string memory ipfsProof = job.getJob(jobId).ipfsProof[0];
         assertEq(ipfsProof, "This is the Proof");
 
         //By Pass governance
@@ -348,22 +347,26 @@ contract Tests is Test {
 
         string memory description = "Proposal #1: call doSomething";
 
-        //Proposal Creation
+        vm.startPrank(address(deployed.timelock));
+        ReputationSBT rep = ReputationSBT(address(deployed.reputationSBT));
+        rep.setJobContract(address(deployed.jobContract));
+        vm.stopPrank();
 
-        uint256 proposalId = gov.propose(
-            targets,
-            values,
-            calldatas,
-            description
-        );
+        vm.prank(address(deployed.jobContract));
+        rep.mintReputation(client, "");
+
+        deal(address(deployed.govToken), client, 10000 * 1e18);
+
+        vm.prank(client);
+        token.delegate(client);
+        vm.roll(block.number + 1);
+
+        //Proposal Creation
+        vm.prank(client);
+        uint256 proposalId = gov.propose(targets, values, calldatas, description);
 
         assertTrue(proposalId != 0);
         assertEq(uint256(gov.state(proposalId)), 0);
-        deal(address(deployed.govToken), client, 10000 * 1e18);
-
-        // delegate votes
-        vm.prank(client);
-        token.delegate(client);
 
         //Voting
         vm.roll(block.number + gov.votingDelay() + 1);
@@ -414,6 +417,7 @@ contract Tests is Test {
         calldatas2[0] = setTlData;
 
         string memory description2 = "Proposal #2: rotate registry timelock";
+        vm.prank(client);
         uint256 proposalId2 = gov.propose(
             targets2,
             values2,
@@ -558,8 +562,7 @@ contract Tests is Test {
         job.submitWork(jobId, "This is the Proof");
         vm.stopPrank();
 
-        (, , , , , , , , string memory ipfsProof, , , ) = job.jobs(jobId);
-
+        string memory ipfsProof = job.getJob(jobId).ipfsProof[0];
         assertEq(ipfsProof, "This is the Proof");
 
         //By Pass governance
@@ -656,8 +659,7 @@ contract Tests is Test {
         job.submitWork(jobId, "This is the Proof");
         vm.stopPrank();
 
-        (, , , , , , , , string memory ipfsProof, , , ) = job.jobs(jobId);
-
+        string memory ipfsProof = job.getJob(jobId).ipfsProof[0];
         assertEq(ipfsProof, "This is the Proof");
 
         //By Pass governance
