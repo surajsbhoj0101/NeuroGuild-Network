@@ -38,9 +38,6 @@ app.use(
 );
 app.use(express.json());
 
-// connect DB
-connectDB();
-
 // routes
 app.use("/api/auth", authRoutes);
 
@@ -61,4 +58,13 @@ app.use("/api/notifications", notificationRoutes);
 
 // start server
 const PORT = 5000;
-server.listen(PORT, () => console.log(` Server running on port ${PORT}`));
+
+const startServer = async () => {
+  await connectDB();
+  server.listen(PORT, () => console.log(` Server running on port ${PORT}`));
+};
+
+startServer().catch((error) => {
+  console.error("Failed to start server:", error);
+  process.exit(1);
+});

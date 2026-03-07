@@ -392,8 +392,8 @@
                     },
                     {
                         "name": "ipfsProof",
-                        "type": "string",
-                        "internalType": "string"
+                        "type": "string[]",
+                        "internalType": "string[]"
                     },
                     {
                         "name": "createdAt",
@@ -555,11 +555,6 @@
             },
             {
                 "name": "ipfs",
-                "type": "string",
-                "internalType": "string"
-            },
-            {
-                "name": "ipfsProof",
                 "type": "string",
                 "internalType": "string"
             },
@@ -1666,6 +1661,11 @@
     },
     {
         "type": "error",
+        "name": "OnlyInProgressOrSubmittedJobs",
+        "inputs": []
+    },
+    {
+        "type": "error",
         "name": "OnlyOpenJobs",
         "inputs": []
     },
@@ -1714,11 +1714,6 @@
                 "internalType": "address"
             }
         ]
-    },
-    {
-        "type": "error",
-        "name": "WorkAlreadySubmitted",
-        "inputs": []
     },
     {
         "type": "error",

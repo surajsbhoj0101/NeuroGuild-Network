@@ -2,27 +2,6 @@ import Conversation from "../models/messages_models/conversation.model.js";
 import Message from "../models/messages_models/message.model.js";
 import User from "../models/user.model.js";
 
-const resolveParticipantUserId = async (payload) => {
-  const participantId = String(payload?.participantId || "").trim();
-  const participantWallet = String(payload?.walletAddress || "")
-    .trim()
-    .toLowerCase();
-
-  if (participantId) {
-    const userById = await User.findById(participantId).select("_id");
-    if (userById?._id) return userById._id;
-  }
-
-  if (participantWallet) {
-    const userByWallet = await User.findOne({
-      wallets: participantWallet,
-    }).select("_id");
-    if (userByWallet?._id) return userByWallet._id;
-  }
-
-  return null;
-};
-
 export const registerSocketEvents = (io, socket) => {
   console.log("New client connected: " + socket.id);
 

@@ -68,7 +68,7 @@ export function handleJobCreated(event: JobCreatedEvent): void {
   job.bidDeadline = event.params.bidDeadline;
   job.expireDeadline = event.params.expireDeadline;
   job.ipfsHash = event.params.ipfs;
-  job.ipfsProof = null;
+  job.ipfsProof = [];
   job.submittedAt = null;
   job.completedAt = null;
   job.fundLockedAt = null;
@@ -107,7 +107,12 @@ export function handleWorkSubmitted(event: WorkSubmittedEvent): void {
   let job = Job.load(event.params.jobId.toHex());
   if (job == null) return;
 
-  job.ipfsProof = event.params.ipfsProof;
+  let proofs = job.ipfsProof;
+  if (proofs == null) {
+    proofs = [];
+  }
+  proofs.push(event.params.ipfsProof);
+  job.ipfsProof = proofs;
   job.submittedAt = event.block.timestamp;
   job.status = "SUBMITTED";
   job.updatedAt = event.block.timestamp;

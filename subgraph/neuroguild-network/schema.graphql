@@ -121,7 +121,7 @@ type Job @entity(immutable: false) {
   bidDeadline: BigInt!
   expireDeadline: BigInt!
   ipfsHash: String
-  ipfsProof: String
+  ipfsProof: [String!]
   submittedAt: BigInt
   completedAt: BigInt
   fundLockedAt: BigInt

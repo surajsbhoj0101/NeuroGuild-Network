@@ -61,6 +61,12 @@ function ManageJobs() {
     expiredProjects: 0,
   });
 
+  const normalizeProofLinks = (proofs, fallbackProof = "") => {
+    if (Array.isArray(proofs)) return proofs.filter(Boolean);
+    if (proofs) return [proofs];
+    return fallbackProof ? [fallbackProof] : [];
+  };
+
   useEffect(() => {
     let timer;
     if (!isAuthentication) {
@@ -210,6 +216,7 @@ function ManageJobs() {
           budget: job.bidAmount ?? job.JobDetails?.budget,
           deadline: job.JobDetails?.deadline,
           skills: job.JobDetails?.skills || [],
+          workProofLinks: normalizeProofLinks(job.workProofLinks),
           workProofLink: job.workProofLink || "",
           submittedAt: job.submittedAt || null,
         }))
@@ -654,19 +661,30 @@ function ManageJobs() {
                       showActions={true}
                       extraActions={
                         <div className="space-y-2">
-                          {job?.workProofLink ? (
+                          {normalizeProofLinks(
+                            job.workProofLinks,
+                            job.workProofLink
+                          ).length > 0 ? (
                             <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
                               <p className="text-xs text-emerald-300/90 mb-1">
-                                Freelancer Submitted Link
+                                Freelancer Submitted Proofs
                               </p>
-                              <a
-                                href={getProofHref(job.workProofLink)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-sm text-emerald-200 underline break-all hover:text-white transition-colors"
-                              >
-                                {job.workProofLink}
-                              </a>
+                              <div className="space-y-1.5">
+                                {normalizeProofLinks(
+                                  job.workProofLinks,
+                                  job.workProofLink
+                                ).map((proof, index) => (
+                                  <a
+                                    key={`${job.jobId}-proof-${index}`}
+                                    href={getProofHref(proof)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="block text-sm text-emerald-200 underline break-all hover:text-white transition-colors"
+                                  >
+                                    {proof}
+                                  </a>
+                                ))}
+                              </div>
                             </div>
                           ) : null}
 

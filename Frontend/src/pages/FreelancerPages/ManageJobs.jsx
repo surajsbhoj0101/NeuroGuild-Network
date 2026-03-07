@@ -68,6 +68,12 @@ function ManageJobs() {
     openProjects: 0,
   });
 
+  const normalizeProofLinks = (proofs, fallbackProof = "") => {
+    if (Array.isArray(proofs)) return proofs.filter(Boolean);
+    if (proofs) return [proofs];
+    return fallbackProof ? [fallbackProof] : [];
+  };
+
   useEffect(() => {
     let timer;
     if (!isAuthentication) {
@@ -190,6 +196,10 @@ function ManageJobs() {
             project.JobDetails?.completion || project.JobDetails?.deadline,
           status: "Submitted",
           skills: project.JobDetails?.skills || [],
+          workProofLinks: normalizeProofLinks(
+            project.workProofLinks,
+            proofOverrides[project.jobId]
+          ),
           workProofLink:
             project.workProofLink || proofOverrides[project.jobId] || "",
           submittedAt: project.submittedAt || null,
@@ -716,21 +726,42 @@ function ManageJobs() {
                           showActions={true}
                           extraActions={
                             <div className="space-y-2">
-                              {project?.workProofLink ? (
+                              {normalizeProofLinks(
+                                project.workProofLinks,
+                                project.workProofLink
+                              ).length > 0 ? (
                                 <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
                                   <p className="text-xs text-emerald-300/90 mb-1">
-                                    Submitted Work Link
+                                    Submitted Work Proofs
                                   </p>
-                                  <a
-                                    href={getProofHref(project.workProofLink)}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-sm text-emerald-200 underline break-all hover:text-white transition-colors"
-                                  >
-                                    {project.workProofLink}
-                                  </a>
+                                  <div className="space-y-1.5">
+                                    {normalizeProofLinks(
+                                      project.workProofLinks,
+                                      project.workProofLink
+                                    ).map((proof, index) => (
+                                      <a
+                                        key={`${project.jobId}-proof-${index}`}
+                                        href={getProofHref(proof)}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="block text-sm text-emerald-200 underline break-all hover:text-white transition-colors"
+                                      >
+                                        {proof}
+                                      </a>
+                                    ))}
+                                  </div>
                                 </div>
                               ) : null}
+
+                              <button
+                                onClick={() => openSubmitWorkModal(project)}
+                                disabled={submittingWorkJobId === project.jobId}
+                                className="w-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-sm font-semibold py-2 rounded transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                              >
+                                {submittingWorkJobId === project.jobId
+                                  ? "Submitting..."
+                                  : "Submit Another Proof"}
+                              </button>
 
                               <button
                                 onClick={handleRaiseDisputeUIOnly}

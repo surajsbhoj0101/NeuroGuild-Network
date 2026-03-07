@@ -11,6 +11,11 @@ export const GovernanceContract = [
                 "name": "_timelock",
                 "type": "address",
                 "internalType": "contract TimelockController"
+            },
+            {
+                "name": "_reputation",
+                "type": "address",
+                "internalType": "address"
             }
         ],
         "stateMutability": "nonpayable"
@@ -1264,12 +1269,6 @@ export const GovernanceContract = [
         "type": "event",
         "name": "ReputationContractUpdated",
         "inputs": [
-            {
-                "name": "oldReputation",
-                "type": "address",
-                "indexed": true,
-                "internalType": "address"
-            },
             {
                 "name": "newReputation",
                 "type": "address",

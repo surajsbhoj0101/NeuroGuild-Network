@@ -15,6 +15,11 @@ import { json } from "express";
 dotenv.config();
 dotenv.config({ path: "./contract.env" });
 
+const normalizeProofLinks = (proofs) => {
+  if (Array.isArray(proofs)) return proofs.filter(Boolean);
+  return proofs ? [proofs] : [];
+};
+
 const clientJobFetchQuery = `
 query ClientJobs($client: Bytes!) {
   jobs(where: { client: $client }) {
@@ -647,6 +652,7 @@ export const fetchFreelancerJobs = async (req, res) => {
     const buildJobPayload = async (bid) => {
       const job = bid.job;
       const clientAddress = job?.client || null;
+      const workProofLinks = normalizeProofLinks(job?.ipfsProof);
 
       const [clientDetails, bidData, jobDetails] = await Promise.all([
         findClientByWallet(clientAddress),
@@ -663,7 +669,8 @@ export const fetchFreelancerJobs = async (req, res) => {
       return {
         jobId: job.id,
         status: job.status,
-        workProofLink: job?.ipfsProof || "",
+        workProofLinks,
+        workProofLink: workProofLinks[workProofLinks.length - 1] || "",
         submittedAt: job?.submittedAt || null,
         bidStatus: bid?.status ? bid.status.toLowerCase() : "pending",
         createdAt: bid.createdAt,
@@ -767,6 +774,7 @@ export const fetchClientsJobs = async (req, res) => {
     };
 
     const buildJobPayload = async (bid, job) => {
+      const workProofLinks = normalizeProofLinks(job?.ipfsProof);
       const [freelancerDetails, bidData, jobDetails] = await Promise.all([
         Freelancer.findOne({ walletAddress: bid.bidder }),
         getJsonFromIpfs(bid.ipfsProposal),
@@ -778,7 +786,8 @@ export const fetchClientsJobs = async (req, res) => {
       return {
         jobId: job.id,
         status: job.status,
-        workProofLink: job?.ipfsProof || "",
+        workProofLinks,
+        workProofLink: workProofLinks[workProofLinks.length - 1] || "",
         submittedAt: job?.submittedAt || null,
         createdAt: bid.createdAt,
         bidId: bid.id.split("-").pop(),

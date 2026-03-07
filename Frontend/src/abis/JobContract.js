@@ -392,8 +392,8 @@ export const JobContract = [
                     },
                     {
                         "name": "ipfsProof",
-                        "type": "string",
-                        "internalType": "string"
+                        "type": "string[]",
+                        "internalType": "string[]"
                     },
                     {
                         "name": "createdAt",
@@ -555,11 +555,6 @@ export const JobContract = [
             },
             {
                 "name": "ipfs",
-                "type": "string",
-                "internalType": "string"
-            },
-            {
-                "name": "ipfsProof",
                 "type": "string",
                 "internalType": "string"
             },
@@ -1666,6 +1661,11 @@ export const JobContract = [
     },
     {
         "type": "error",
+        "name": "OnlyInProgressOrSubmittedJobs",
+        "inputs": []
+    },
+    {
+        "type": "error",
         "name": "OnlyOpenJobs",
         "inputs": []
     },
@@ -1714,11 +1714,6 @@ export const JobContract = [
                 "internalType": "address"
             }
         ]
-    },
-    {
-        "type": "error",
-        "name": "WorkAlreadySubmitted",
-        "inputs": []
     },
     {
         "type": "error",

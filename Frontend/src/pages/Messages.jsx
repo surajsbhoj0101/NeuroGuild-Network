@@ -60,20 +60,13 @@ const getInitial = (value = "") => {
 };
 
 function Messages() {
-  // Router + auth/socket dependencies.
   const navigate = useNavigate();
   const { recipientId } = useParams();
   const { socket, isSocketConnected } = useSocket();
   const { userId } = useAuth();
   const { markConversationRead, setActiveConversationId } = useNotifications();
 
-  // Core page state:
-  // conversations -> left sidebar source of truth.
-  // selectedConversationId -> active chat id for right panel.
-  // messageInput/searchQuery -> controlled input states.
-  // messages -> currently opened conversation stream.
-  // loading flags -> local request status indicators.
-  // notice/redNotice -> toast text + severity.
+  
   const [conversations, setConversations] = useState([]);
   const [selectedConversationId, setSelectedConversationId] = useState(null);
   const [messageInput, setMessageInput] = useState("");

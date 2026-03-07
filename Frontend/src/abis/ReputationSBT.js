@@ -3,153 +3,16 @@ export const ReputationSBT = [
         "type": "constructor",
         "inputs": [
             {
-                "name": "_registryAddress",
-                "type": "address",
-                "internalType": "address"
-            },
-            {
-                "name": "token",
-                "type": "address",
-                "internalType": "address"
-            },
-            {
-                "name": "initialReviewPeriod",
-                "type": "uint8",
-                "internalType": "uint8"
-            },
-            {
                 "name": "_timelock",
                 "type": "address",
                 "internalType": "address"
-            },
-            {
-                "name": "initialReward",
-                "type": "uint8",
-                "internalType": "uint8"
-            },
-            {
-                "name": "initialPenalty",
-                "type": "uint8",
-                "internalType": "uint8"
-            },
-            {
-                "name": "initialRepAddress",
-                "type": "address",
-                "internalType": "address"
-            },
-            {
-                "name": "_treasury",
-                "type": "address",
-                "internalType": "address"
             }
         ],
         "stateMutability": "nonpayable"
     },
     {
         "type": "function",
-        "name": "USDC",
-        "inputs": [],
-        "outputs": [
-            {
-                "name": "",
-                "type": "address",
-                "internalType": "contract IERC20"
-            }
-        ],
-        "stateMutability": "view"
-    },
-    {
-        "type": "function",
-        "name": "acceptBid",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "internalType": "bytes32"
-            },
-            {
-                "name": "bidIndex",
-                "type": "uint256",
-                "internalType": "uint256"
-            }
-        ],
-        "outputs": [],
-        "stateMutability": "nonpayable"
-    },
-    {
-        "type": "function",
-        "name": "acceptWork",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "internalType": "bytes32"
-            }
-        ],
-        "outputs": [],
-        "stateMutability": "nonpayable"
-    },
-    {
-        "type": "function",
-        "name": "allJobIds",
-        "inputs": [
-            {
-                "name": "",
-                "type": "uint256",
-                "internalType": "uint256"
-            }
-        ],
-        "outputs": [
-            {
-                "name": "",
-                "type": "bytes32",
-                "internalType": "bytes32"
-            }
-        ],
-        "stateMutability": "view"
-    },
-    {
-        "type": "function",
-        "name": "cancelJob",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "internalType": "bytes32"
-            }
-        ],
-        "outputs": [],
-        "stateMutability": "nonpayable"
-    },
-    {
-        "type": "function",
-        "name": "claimAfterExpiredDeadline",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "internalType": "bytes32"
-            }
-        ],
-        "outputs": [],
-        "stateMutability": "nonpayable"
-    },
-    {
-        "type": "function",
-        "name": "claimAfterReviewPeriod",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "internalType": "bytes32"
-            }
-        ],
-        "outputs": [],
-        "stateMutability": "nonpayable"
-    },
-    {
-        "type": "function",
-        "name": "clientFeeBps",
+        "name": "MAX_REPUTATION",
         "inputs": [],
         "outputs": [
             {
@@ -162,419 +25,133 @@ export const ReputationSBT = [
     },
     {
         "type": "function",
-        "name": "clientRatedFreelancer",
+        "name": "approve",
         "inputs": [
             {
                 "name": "",
-                "type": "bytes32",
-                "internalType": "bytes32"
-            }
-        ],
-        "outputs": [
+                "type": "address",
+                "internalType": "address"
+            },
             {
                 "name": "",
-                "type": "bool",
-                "internalType": "bool"
-            }
-        ],
-        "stateMutability": "view"
-    },
-    {
-        "type": "function",
-        "name": "createJob",
-        "inputs": [
-            {
-                "name": "ipfsLink",
-                "type": "string",
-                "internalType": "string"
-            },
-            {
-                "name": "budget",
-                "type": "uint256",
-                "internalType": "uint256"
-            },
-            {
-                "name": "bidDeadline",
-                "type": "uint256",
-                "internalType": "uint256"
-            },
-            {
-                "name": "expireDeadline",
                 "type": "uint256",
                 "internalType": "uint256"
             }
         ],
         "outputs": [],
-        "stateMutability": "nonpayable"
+        "stateMutability": "pure"
     },
     {
         "type": "function",
-        "name": "escrows",
+        "name": "balanceOf",
         "inputs": [
             {
-                "name": "",
-                "type": "bytes32",
-                "internalType": "bytes32"
-            }
-        ],
-        "outputs": [
-            {
-                "name": "client",
-                "type": "address",
-                "internalType": "address"
-            },
-            {
-                "name": "freelancer",
-                "type": "address",
-                "internalType": "address"
-            },
-            {
-                "name": "bidAmount",
-                "type": "uint256",
-                "internalType": "uint256"
-            },
-            {
-                "name": "amountLocked",
-                "type": "uint256",
-                "internalType": "uint256"
-            },
-            {
-                "name": "funded",
-                "type": "bool",
-                "internalType": "bool"
-            },
-            {
-                "name": "released",
-                "type": "bool",
-                "internalType": "bool"
-            }
-        ],
-        "stateMutability": "view"
-    },
-    {
-        "type": "function",
-        "name": "freelancerRatedClient",
-        "inputs": [
-            {
-                "name": "",
-                "type": "bytes32",
-                "internalType": "bytes32"
-            }
-        ],
-        "outputs": [
-            {
-                "name": "",
-                "type": "bool",
-                "internalType": "bool"
-            }
-        ],
-        "stateMutability": "view"
-    },
-    {
-        "type": "function",
-        "name": "getAllJobIds",
-        "inputs": [],
-        "outputs": [
-            {
-                "name": "",
-                "type": "bytes32[]",
-                "internalType": "bytes32[]"
-            }
-        ],
-        "stateMutability": "view"
-    },
-    {
-        "type": "function",
-        "name": "getBids",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "internalType": "bytes32"
-            }
-        ],
-        "outputs": [
-            {
-                "name": "",
-                "type": "tuple[]",
-                "internalType": "struct JobContract.Bid[]",
-                "components": [
-                    {
-                        "name": "jobId",
-                        "type": "bytes32",
-                        "internalType": "bytes32"
-                    },
-                    {
-                        "name": "freelancer",
-                        "type": "address",
-                        "internalType": "address"
-                    },
-                    {
-                        "name": "amount",
-                        "type": "uint256",
-                        "internalType": "uint256"
-                    },
-                    {
-                        "name": "createdAt",
-                        "type": "uint256",
-                        "internalType": "uint256"
-                    },
-                    {
-                        "name": "proposalIpfs",
-                        "type": "string",
-                        "internalType": "string"
-                    },
-                    {
-                        "name": "status",
-                        "type": "uint8",
-                        "internalType": "enum JobContract.BidStatus"
-                    }
-                ]
-            }
-        ],
-        "stateMutability": "view"
-    },
-    {
-        "type": "function",
-        "name": "getJob",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "internalType": "bytes32"
-            }
-        ],
-        "outputs": [
-            {
-                "name": "",
-                "type": "tuple",
-                "internalType": "struct JobContract.Job",
-                "components": [
-                    {
-                        "name": "jobId",
-                        "type": "bytes32",
-                        "internalType": "bytes32"
-                    },
-                    {
-                        "name": "client",
-                        "type": "address",
-                        "internalType": "address"
-                    },
-                    {
-                        "name": "freelancer",
-                        "type": "address",
-                        "internalType": "address"
-                    },
-                    {
-                        "name": "budget",
-                        "type": "uint256",
-                        "internalType": "uint256"
-                    },
-                    {
-                        "name": "bidDeadline",
-                        "type": "uint256",
-                        "internalType": "uint256"
-                    },
-                    {
-                        "name": "expireDeadline",
-                        "type": "uint256",
-                        "internalType": "uint256"
-                    },
-                    {
-                        "name": "status",
-                        "type": "uint8",
-                        "internalType": "enum JobContract.JobStatus"
-                    },
-                    {
-                        "name": "ipfs",
-                        "type": "string",
-                        "internalType": "string"
-                    },
-                    {
-                        "name": "ipfsProof",
-                        "type": "string",
-                        "internalType": "string"
-                    },
-                    {
-                        "name": "createdAt",
-                        "type": "uint256",
-                        "internalType": "uint256"
-                    },
-                    {
-                        "name": "submittedAt",
-                        "type": "uint256",
-                        "internalType": "uint256"
-                    },
-                    {
-                        "name": "disputed",
-                        "type": "bool",
-                        "internalType": "bool"
-                    }
-                ]
-            }
-        ],
-        "stateMutability": "view"
-    },
-    {
-        "type": "function",
-        "name": "getJobStatus",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "internalType": "bytes32"
-            }
-        ],
-        "outputs": [
-            {
-                "name": "",
-                "type": "uint8",
-                "internalType": "enum JobContract.JobStatus"
-            }
-        ],
-        "stateMutability": "view"
-    },
-    {
-        "type": "function",
-        "name": "hasBid",
-        "inputs": [
-            {
-                "name": "",
-                "type": "bytes32",
-                "internalType": "bytes32"
-            },
-            {
-                "name": "",
+                "name": "owner",
                 "type": "address",
                 "internalType": "address"
             }
         ],
         "outputs": [
-            {
-                "name": "",
-                "type": "bool",
-                "internalType": "bool"
-            }
-        ],
-        "stateMutability": "view"
-    },
-    {
-        "type": "function",
-        "name": "jobBids",
-        "inputs": [
-            {
-                "name": "",
-                "type": "bytes32",
-                "internalType": "bytes32"
-            },
             {
                 "name": "",
                 "type": "uint256",
                 "internalType": "uint256"
             }
         ],
-        "outputs": [
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "decreaseScoreFromSystem",
+        "inputs": [
             {
-                "name": "jobId",
-                "type": "bytes32",
-                "internalType": "bytes32"
-            },
-            {
-                "name": "freelancer",
-                "type": "address",
-                "internalType": "address"
+                "name": "tokenId",
+                "type": "uint256",
+                "internalType": "uint256"
             },
             {
                 "name": "amount",
                 "type": "uint256",
                 "internalType": "uint256"
-            },
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "getApproved",
+        "inputs": [
             {
-                "name": "createdAt",
+                "name": "tokenId",
                 "type": "uint256",
                 "internalType": "uint256"
-            },
+            }
+        ],
+        "outputs": [
             {
-                "name": "proposalIpfs",
-                "type": "string",
-                "internalType": "string"
-            },
-            {
-                "name": "status",
-                "type": "uint8",
-                "internalType": "enum JobContract.BidStatus"
+                "name": "",
+                "type": "address",
+                "internalType": "address"
             }
         ],
         "stateMutability": "view"
     },
     {
         "type": "function",
-        "name": "jobs",
+        "name": "getTokenId",
         "inputs": [
             {
-                "name": "",
-                "type": "bytes32",
-                "internalType": "bytes32"
+                "name": "user",
+                "type": "address",
+                "internalType": "address"
             }
         ],
         "outputs": [
             {
-                "name": "jobId",
-                "type": "bytes32",
-                "internalType": "bytes32"
+                "name": "",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "increaseScoreFromSystem",
+        "inputs": [
+            {
+                "name": "tokenId",
+                "type": "uint256",
+                "internalType": "uint256"
             },
             {
-                "name": "client",
+                "name": "amount",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "isApprovedForAll",
+        "inputs": [
+            {
+                "name": "owner",
                 "type": "address",
                 "internalType": "address"
             },
             {
-                "name": "freelancer",
+                "name": "operator",
                 "type": "address",
                 "internalType": "address"
-            },
+            }
+        ],
+        "outputs": [
             {
-                "name": "budget",
-                "type": "uint256",
-                "internalType": "uint256"
-            },
-            {
-                "name": "bidDeadline",
-                "type": "uint256",
-                "internalType": "uint256"
-            },
-            {
-                "name": "expireDeadline",
-                "type": "uint256",
-                "internalType": "uint256"
-            },
-            {
-                "name": "status",
-                "type": "uint8",
-                "internalType": "enum JobContract.JobStatus"
-            },
-            {
-                "name": "ipfs",
-                "type": "string",
-                "internalType": "string"
-            },
-            {
-                "name": "ipfsProof",
-                "type": "string",
-                "internalType": "string"
-            },
-            {
-                "name": "createdAt",
-                "type": "uint256",
-                "internalType": "uint256"
-            },
-            {
-                "name": "submittedAt",
-                "type": "uint256",
-                "internalType": "uint256"
-            },
-            {
-                "name": "disputed",
+                "name": "",
                 "type": "bool",
                 "internalType": "bool"
             }
@@ -583,7 +160,26 @@ export const ReputationSBT = [
     },
     {
         "type": "function",
-        "name": "owner",
+        "name": "isRevoked",
+        "inputs": [
+            {
+                "name": "user",
+                "type": "address",
+                "internalType": "address"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool",
+                "internalType": "bool"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "jobContract",
         "inputs": [],
         "outputs": [
             {
@@ -596,8 +192,19 @@ export const ReputationSBT = [
     },
     {
         "type": "function",
-        "name": "protocolFeeBps",
-        "inputs": [],
+        "name": "mintReputation",
+        "inputs": [
+            {
+                "name": "user",
+                "type": "address",
+                "internalType": "address"
+            },
+            {
+                "name": "metadataURI",
+                "type": "string",
+                "internalType": "string"
+            }
+        ],
         "outputs": [
             {
                 "name": "",
@@ -605,19 +212,167 @@ export const ReputationSBT = [
                 "internalType": "uint256"
             }
         ],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "name",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "string",
+                "internalType": "string"
+            }
+        ],
         "stateMutability": "view"
     },
     {
         "type": "function",
-        "name": "raiseDispute",
+        "name": "ownerOf",
         "inputs": [
             {
-                "name": "jobId",
-                "type": "bytes32",
-                "internalType": "bytes32"
+                "name": "tokenId",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "address",
+                "internalType": "address"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "recordDispute",
+        "inputs": [
+            {
+                "name": "tokenId",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "recordJobCompleted",
+        "inputs": [
+            {
+                "name": "tokenId",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "recordJobFailed",
+        "inputs": [
+            {
+                "name": "tokenId",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "recordRating",
+        "inputs": [
+            {
+                "name": "tokenId",
+                "type": "uint256",
+                "internalType": "uint256"
             },
             {
-                "name": "reasonIpfs",
+                "name": "rating",
+                "type": "uint8",
+                "internalType": "uint8"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "repData",
+        "inputs": [
+            {
+                "name": "",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "completedJobs",
+                "type": "uint32",
+                "internalType": "uint32"
+            },
+            {
+                "name": "failedJobs",
+                "type": "uint32",
+                "internalType": "uint32"
+            },
+            {
+                "name": "disputeCount",
+                "type": "uint32",
+                "internalType": "uint32"
+            },
+            {
+                "name": "ratingAverage",
+                "type": "uint16",
+                "internalType": "uint16"
+            },
+            {
+                "name": "reliabilityScore",
+                "type": "uint16",
+                "internalType": "uint16"
+            },
+            {
+                "name": "totalScore",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "lastUpdated",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "metadataURI",
+                "type": "string",
+                "internalType": "string"
+            },
+            {
+                "name": "revoked",
+                "type": "bool",
+                "internalType": "bool"
+            }
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "type": "function",
+        "name": "revokeReputation",
+        "inputs": [
+            {
+                "name": "tokenId",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "reason",
                 "type": "string",
                 "internalType": "string"
             }
@@ -627,64 +382,20 @@ export const ReputationSBT = [
     },
     {
         "type": "function",
-        "name": "rateClient",
+        "name": "safeTransferFrom",
         "inputs": [
             {
-                "name": "jobId",
-                "type": "bytes32",
-                "internalType": "bytes32"
-            },
-            {
-                "name": "rating",
-                "type": "uint8",
-                "internalType": "uint8"
-            }
-        ],
-        "outputs": [],
-        "stateMutability": "nonpayable"
-    },
-    {
-        "type": "function",
-        "name": "rateFreelancer",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "internalType": "bytes32"
-            },
-            {
-                "name": "rating",
-                "type": "uint8",
-                "internalType": "uint8"
-            }
-        ],
-        "outputs": [],
-        "stateMutability": "nonpayable"
-    },
-    {
-        "type": "function",
-        "name": "registry",
-        "inputs": [],
-        "outputs": [
-            {
-                "name": "",
+                "name": "from",
                 "type": "address",
-                "internalType": "contract UserRegistry"
-            }
-        ],
-        "stateMutability": "view"
-    },
-    {
-        "type": "function",
-        "name": "rejectBid",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "internalType": "bytes32"
+                "internalType": "address"
             },
             {
-                "name": "bidIndex",
+                "name": "to",
+                "type": "address",
+                "internalType": "address"
+            },
+            {
+                "name": "tokenId",
                 "type": "uint256",
                 "internalType": "uint256"
             }
@@ -694,54 +405,56 @@ export const ReputationSBT = [
     },
     {
         "type": "function",
-        "name": "reputation",
-        "inputs": [],
-        "outputs": [
+        "name": "safeTransferFrom",
+        "inputs": [
+            {
+                "name": "from",
+                "type": "address",
+                "internalType": "address"
+            },
+            {
+                "name": "to",
+                "type": "address",
+                "internalType": "address"
+            },
+            {
+                "name": "tokenId",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "data",
+                "type": "bytes",
+                "internalType": "bytes"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+    },
+    {
+        "type": "function",
+        "name": "setApprovalForAll",
+        "inputs": [
             {
                 "name": "",
                 "type": "address",
-                "internalType": "contract IReputationSBT"
-            }
-        ],
-        "stateMutability": "view"
-    },
-    {
-        "type": "function",
-        "name": "reputationPenalty",
-        "inputs": [],
-        "outputs": [
-            {
-                "name": "",
-                "type": "uint8",
-                "internalType": "uint8"
-            }
-        ],
-        "stateMutability": "view"
-    },
-    {
-        "type": "function",
-        "name": "reputationReward",
-        "inputs": [],
-        "outputs": [
-            {
-                "name": "",
-                "type": "uint8",
-                "internalType": "uint8"
-            }
-        ],
-        "stateMutability": "view"
-    },
-    {
-        "type": "function",
-        "name": "resolveDispute",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "internalType": "bytes32"
+                "internalType": "address"
             },
             {
-                "name": "winner",
+                "name": "",
+                "type": "bool",
+                "internalType": "bool"
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "pure"
+    },
+    {
+        "type": "function",
+        "name": "setJobContract",
+        "inputs": [
+            {
+                "name": "_jobContract",
                 "type": "address",
                 "internalType": "address"
             }
@@ -751,82 +464,17 @@ export const ReputationSBT = [
     },
     {
         "type": "function",
-        "name": "reviewPeriod",
-        "inputs": [],
-        "outputs": [
-            {
-                "name": "",
-                "type": "uint256",
-                "internalType": "uint256"
-            }
-        ],
-        "stateMutability": "view"
-    },
-    {
-        "type": "function",
-        "name": "setFee",
+        "name": "setMetadataUri",
         "inputs": [
             {
-                "name": "_clientFeeBps",
+                "name": "tokenId",
                 "type": "uint256",
                 "internalType": "uint256"
             },
             {
-                "name": "_protocolFeeBps",
-                "type": "uint256",
-                "internalType": "uint256"
-            }
-        ],
-        "outputs": [],
-        "stateMutability": "nonpayable"
-    },
-    {
-        "type": "function",
-        "name": "setRepPenalty",
-        "inputs": [
-            {
-                "name": "penalty",
-                "type": "uint8",
-                "internalType": "uint8"
-            }
-        ],
-        "outputs": [],
-        "stateMutability": "nonpayable"
-    },
-    {
-        "type": "function",
-        "name": "setRepReward",
-        "inputs": [
-            {
-                "name": "reward",
-                "type": "uint8",
-                "internalType": "uint8"
-            }
-        ],
-        "outputs": [],
-        "stateMutability": "nonpayable"
-    },
-    {
-        "type": "function",
-        "name": "setReputationAddress",
-        "inputs": [
-            {
-                "name": "_rep",
-                "type": "address",
-                "internalType": "address"
-            }
-        ],
-        "outputs": [],
-        "stateMutability": "nonpayable"
-    },
-    {
-        "type": "function",
-        "name": "setReviewPeriod",
-        "inputs": [
-            {
-                "name": "_reviewPeriod",
-                "type": "uint8",
-                "internalType": "uint8"
+                "name": "newUri",
+                "type": "string",
+                "internalType": "string"
             }
         ],
         "outputs": [],
@@ -847,57 +495,35 @@ export const ReputationSBT = [
     },
     {
         "type": "function",
-        "name": "setTreasury",
+        "name": "supportsInterface",
         "inputs": [
             {
-                "name": "_treasury",
-                "type": "address",
-                "internalType": "address"
+                "name": "interfaceId",
+                "type": "bytes4",
+                "internalType": "bytes4"
             }
         ],
-        "outputs": [],
-        "stateMutability": "nonpayable"
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool",
+                "internalType": "bool"
+            }
+        ],
+        "stateMutability": "view"
     },
     {
         "type": "function",
-        "name": "submitBid",
-        "inputs": [
+        "name": "symbol",
+        "inputs": [],
+        "outputs": [
             {
-                "name": "jobId",
-                "type": "bytes32",
-                "internalType": "bytes32"
-            },
-            {
-                "name": "bidAmount",
-                "type": "uint256",
-                "internalType": "uint256"
-            },
-            {
-                "name": "proposalIpfs",
+                "name": "",
                 "type": "string",
                 "internalType": "string"
             }
         ],
-        "outputs": [],
-        "stateMutability": "nonpayable"
-    },
-    {
-        "type": "function",
-        "name": "submitWork",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "internalType": "bytes32"
-            },
-            {
-                "name": "ipfsProof",
-                "type": "string",
-                "internalType": "string"
-            }
-        ],
-        "outputs": [],
-        "stateMutability": "nonpayable"
+        "stateMutability": "view"
     },
     {
         "type": "function",
@@ -914,87 +540,127 @@ export const ReputationSBT = [
     },
     {
         "type": "function",
-        "name": "totalJobs",
-        "inputs": [],
+        "name": "tokenURI",
+        "inputs": [
+            {
+                "name": "tokenId",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
         "outputs": [
             {
                 "name": "",
-                "type": "uint256",
-                "internalType": "uint256"
+                "type": "string",
+                "internalType": "string"
             }
         ],
         "stateMutability": "view"
     },
     {
         "type": "function",
-        "name": "treasury",
-        "inputs": [],
-        "outputs": [
+        "name": "transferFrom",
+        "inputs": [
             {
                 "name": "",
                 "type": "address",
                 "internalType": "address"
-            }
-        ],
-        "stateMutability": "view"
-    },
-    {
-        "type": "function",
-        "name": "updateJobDetails",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "internalType": "bytes32"
             },
             {
-                "name": "newIpfsLink",
-                "type": "string",
-                "internalType": "string"
+                "name": "",
+                "type": "address",
+                "internalType": "address"
             },
             {
-                "name": "newBudget",
-                "type": "uint256",
-                "internalType": "uint256"
-            },
-            {
-                "name": "newBidDeadline",
-                "type": "uint256",
-                "internalType": "uint256"
-            },
-            {
-                "name": "newExpireDeadline",
+                "name": "",
                 "type": "uint256",
                 "internalType": "uint256"
             }
         ],
         "outputs": [],
-        "stateMutability": "nonpayable"
+        "stateMutability": "pure"
+    },
+    {
+        "type": "function",
+        "name": "userToToken",
+        "inputs": [
+            {
+                "name": "",
+                "type": "address",
+                "internalType": "address"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ],
+        "stateMutability": "view"
     },
     {
         "type": "event",
-        "name": "BidAccepted",
+        "name": "Approval",
         "inputs": [
             {
-                "name": "jobId",
-                "type": "bytes32",
-                "indexed": true,
-                "internalType": "bytes32"
-            },
-            {
-                "name": "freelancer",
+                "name": "owner",
                 "type": "address",
                 "indexed": true,
                 "internalType": "address"
             },
             {
-                "name": "amount",
+                "name": "approved",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            },
+            {
+                "name": "tokenId",
+                "type": "uint256",
+                "indexed": true,
+                "internalType": "uint256"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "ApprovalForAll",
+        "inputs": [
+            {
+                "name": "owner",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            },
+            {
+                "name": "operator",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            },
+            {
+                "name": "approved",
+                "type": "bool",
+                "indexed": false,
+                "internalType": "bool"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "BatchMetadataUpdate",
+        "inputs": [
+            {
+                "name": "_fromTokenId",
                 "type": "uint256",
                 "indexed": false,
                 "internalType": "uint256"
             },
             {
-                "name": "bidIndex",
+                "name": "_toTokenId",
                 "type": "uint256",
                 "indexed": false,
                 "internalType": "uint256"
@@ -1004,324 +670,25 @@ export const ReputationSBT = [
     },
     {
         "type": "event",
-        "name": "BidRejected",
+        "name": "DisputeRecorded",
         "inputs": [
             {
-                "name": "jobId",
-                "type": "bytes32",
-                "indexed": true,
-                "internalType": "bytes32"
-            },
-            {
-                "name": "freelancer",
-                "type": "address",
-                "indexed": true,
-                "internalType": "address"
-            },
-            {
-                "name": "amount",
+                "name": "tokenId",
                 "type": "uint256",
-                "indexed": false,
+                "indexed": true,
                 "internalType": "uint256"
             },
             {
-                "name": "bidIndex",
-                "type": "uint256",
+                "name": "disputeCount",
+                "type": "uint32",
                 "indexed": false,
-                "internalType": "uint256"
-            }
-        ],
-        "anonymous": false
-    },
-    {
-        "type": "event",
-        "name": "BidSubmitted",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "indexed": true,
-                "internalType": "bytes32"
+                "internalType": "uint32"
             },
             {
-                "name": "freelancer",
-                "type": "address",
-                "indexed": true,
-                "internalType": "address"
-            },
-            {
-                "name": "amount",
-                "type": "uint256",
+                "name": "reliabilityScore",
+                "type": "uint16",
                 "indexed": false,
-                "internalType": "uint256"
-            },
-            {
-                "name": "bidIndex",
-                "type": "uint256",
-                "indexed": false,
-                "internalType": "uint256"
-            },
-            {
-                "name": "proposalIpfs",
-                "type": "string",
-                "indexed": false,
-                "internalType": "string"
-            }
-        ],
-        "anonymous": false
-    },
-    {
-        "type": "event",
-        "name": "ClaimAfterExpiredDeadlineSuccessful",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "indexed": true,
-                "internalType": "bytes32"
-            }
-        ],
-        "anonymous": false
-    },
-    {
-        "type": "event",
-        "name": "ClientRated",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "indexed": true,
-                "internalType": "bytes32"
-            },
-            {
-                "name": "freelancer",
-                "type": "address",
-                "indexed": true,
-                "internalType": "address"
-            },
-            {
-                "name": "client",
-                "type": "address",
-                "indexed": true,
-                "internalType": "address"
-            },
-            {
-                "name": "rating",
-                "type": "uint8",
-                "indexed": false,
-                "internalType": "uint8"
-            }
-        ],
-        "anonymous": false
-    },
-    {
-        "type": "event",
-        "name": "DisputeRaised",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "indexed": true,
-                "internalType": "bytes32"
-            },
-            {
-                "name": "by",
-                "type": "address",
-                "indexed": true,
-                "internalType": "address"
-            },
-            {
-                "name": "reasonIpfs",
-                "type": "string",
-                "indexed": false,
-                "internalType": "string"
-            }
-        ],
-        "anonymous": false
-    },
-    {
-        "type": "event",
-        "name": "DisputeResolved",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "indexed": true,
-                "internalType": "bytes32"
-            },
-            {
-                "name": "winner",
-                "type": "address",
-                "indexed": false,
-                "internalType": "address"
-            }
-        ],
-        "anonymous": false
-    },
-    {
-        "type": "event",
-        "name": "FeeUpdated",
-        "inputs": [
-            {
-                "name": "oldClientFeeBps",
-                "type": "uint256",
-                "indexed": false,
-                "internalType": "uint256"
-            },
-            {
-                "name": "newClientFeeBps",
-                "type": "uint256",
-                "indexed": false,
-                "internalType": "uint256"
-            },
-            {
-                "name": "oldProtocolFeeBps",
-                "type": "uint256",
-                "indexed": false,
-                "internalType": "uint256"
-            },
-            {
-                "name": "newProtocolFeeBps",
-                "type": "uint256",
-                "indexed": false,
-                "internalType": "uint256"
-            }
-        ],
-        "anonymous": false
-    },
-    {
-        "type": "event",
-        "name": "FreelancerRated",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "indexed": true,
-                "internalType": "bytes32"
-            },
-            {
-                "name": "client",
-                "type": "address",
-                "indexed": true,
-                "internalType": "address"
-            },
-            {
-                "name": "freelancer",
-                "type": "address",
-                "indexed": true,
-                "internalType": "address"
-            },
-            {
-                "name": "rating",
-                "type": "uint8",
-                "indexed": false,
-                "internalType": "uint8"
-            }
-        ],
-        "anonymous": false
-    },
-    {
-        "type": "event",
-        "name": "FundLocked",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "indexed": true,
-                "internalType": "bytes32"
-            },
-            {
-                "name": "amountLocked",
-                "type": "uint256",
-                "indexed": false,
-                "internalType": "uint256"
-            },
-            {
-                "name": "bidAmount",
-                "type": "uint256",
-                "indexed": false,
-                "internalType": "uint256"
-            },
-            {
-                "name": "client",
-                "type": "address",
-                "indexed": true,
-                "internalType": "address"
-            },
-            {
-                "name": "freelancer",
-                "type": "address",
-                "indexed": true,
-                "internalType": "address"
-            }
-        ],
-        "anonymous": false
-    },
-    {
-        "type": "event",
-        "name": "FundRefunded",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "indexed": true,
-                "internalType": "bytes32"
-            },
-            {
-                "name": "amountRefunded",
-                "type": "uint256",
-                "indexed": false,
-                "internalType": "uint256"
-            },
-            {
-                "name": "client",
-                "type": "address",
-                "indexed": true,
-                "internalType": "address"
-            }
-        ],
-        "anonymous": false
-    },
-    {
-        "type": "event",
-        "name": "FundReleased",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "indexed": true,
-                "internalType": "bytes32"
-            },
-            {
-                "name": "amountToFreelancer",
-                "type": "uint256",
-                "indexed": false,
-                "internalType": "uint256"
-            },
-            {
-                "name": "feeToTreasury",
-                "type": "uint256",
-                "indexed": false,
-                "internalType": "uint256"
-            }
-        ],
-        "anonymous": false
-    },
-    {
-        "type": "event",
-        "name": "JobCancelled",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "indexed": true,
-                "internalType": "bytes32"
-            },
-            {
-                "name": "client",
-                "type": "address",
-                "indexed": true,
-                "internalType": "address"
+                "internalType": "uint16"
             }
         ],
         "anonymous": false
@@ -1331,13 +698,38 @@ export const ReputationSBT = [
         "name": "JobCompleted",
         "inputs": [
             {
-                "name": "jobId",
-                "type": "bytes32",
+                "name": "tokenId",
+                "type": "uint256",
                 "indexed": true,
-                "internalType": "bytes32"
+                "internalType": "uint256"
             },
             {
-                "name": "freelancer",
+                "name": "completedJobs",
+                "type": "uint32",
+                "indexed": false,
+                "internalType": "uint32"
+            },
+            {
+                "name": "reliabilityScore",
+                "type": "uint16",
+                "indexed": false,
+                "internalType": "uint16"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "JobContractUpdated",
+        "inputs": [
+            {
+                "name": "oldJobContract",
+                "type": "address",
+                "indexed": true,
+                "internalType": "address"
+            },
+            {
+                "name": "newJobContract",
                 "type": "address",
                 "indexed": true,
                 "internalType": "address"
@@ -1347,40 +739,54 @@ export const ReputationSBT = [
     },
     {
         "type": "event",
-        "name": "JobCreated",
+        "name": "JobFailed",
         "inputs": [
             {
-                "name": "jobId",
-                "type": "bytes32",
+                "name": "tokenId",
+                "type": "uint256",
                 "indexed": true,
-                "internalType": "bytes32"
+                "internalType": "uint256"
             },
             {
-                "name": "client",
-                "type": "address",
+                "name": "failedJobs",
+                "type": "uint32",
+                "indexed": false,
+                "internalType": "uint32"
+            },
+            {
+                "name": "reliabilityScore",
+                "type": "uint16",
+                "indexed": false,
+                "internalType": "uint16"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "MetadataUpdate",
+        "inputs": [
+            {
+                "name": "_tokenId",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "MetadataUpdated",
+        "inputs": [
+            {
+                "name": "tokenId",
+                "type": "uint256",
                 "indexed": true,
-                "internalType": "address"
-            },
-            {
-                "name": "budget",
-                "type": "uint256",
-                "indexed": false,
                 "internalType": "uint256"
             },
             {
-                "name": "bidDeadline",
-                "type": "uint256",
-                "indexed": false,
-                "internalType": "uint256"
-            },
-            {
-                "name": "expireDeadline",
-                "type": "uint256",
-                "indexed": false,
-                "internalType": "uint256"
-            },
-            {
-                "name": "ipfs",
+                "name": "newURI",
                 "type": "string",
                 "indexed": false,
                 "internalType": "string"
@@ -1390,40 +796,60 @@ export const ReputationSBT = [
     },
     {
         "type": "event",
-        "name": "JobDetailsUpdated",
+        "name": "RatingRecorded",
         "inputs": [
             {
-                "name": "jobId",
-                "type": "bytes32",
+                "name": "tokenId",
+                "type": "uint256",
                 "indexed": true,
-                "internalType": "bytes32"
+                "internalType": "uint256"
             },
             {
-                "name": "client",
+                "name": "newAverageRating",
+                "type": "uint16",
+                "indexed": false,
+                "internalType": "uint16"
+            },
+            {
+                "name": "rating",
+                "type": "uint8",
+                "indexed": false,
+                "internalType": "uint8"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "ReputationMinted",
+        "inputs": [
+            {
+                "name": "user",
                 "type": "address",
                 "indexed": true,
                 "internalType": "address"
             },
             {
-                "name": "budget",
+                "name": "tokenId",
                 "type": "uint256",
                 "indexed": false,
                 "internalType": "uint256"
-            },
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "ReputationRevoked",
+        "inputs": [
             {
-                "name": "bidDeadline",
+                "name": "tokenId",
                 "type": "uint256",
-                "indexed": false,
+                "indexed": true,
                 "internalType": "uint256"
             },
             {
-                "name": "expireDeadline",
-                "type": "uint256",
-                "indexed": false,
-                "internalType": "uint256"
-            },
-            {
-                "name": "ipfs",
+                "name": "reason",
                 "type": "string",
                 "indexed": false,
                 "internalType": "string"
@@ -1433,92 +859,35 @@ export const ReputationSBT = [
     },
     {
         "type": "event",
-        "name": "JobStarted",
+        "name": "ReputationSlashed",
         "inputs": [
             {
-                "name": "jobId",
-                "type": "bytes32",
-                "indexed": true,
-                "internalType": "bytes32"
-            },
-            {
-                "name": "freelancer",
-                "type": "address",
-                "indexed": true,
-                "internalType": "address"
-            }
-        ],
-        "anonymous": false
-    },
-    {
-        "type": "event",
-        "name": "ReputationAddressUpdated",
-        "inputs": [
-            {
-                "name": "oldReputation",
-                "type": "address",
-                "indexed": true,
-                "internalType": "address"
-            },
-            {
-                "name": "newReputation",
-                "type": "address",
-                "indexed": true,
-                "internalType": "address"
-            }
-        ],
-        "anonymous": false
-    },
-    {
-        "type": "event",
-        "name": "ReputationPenaltyUpdated",
-        "inputs": [
-            {
-                "name": "oldPenalty",
-                "type": "uint8",
-                "indexed": false,
-                "internalType": "uint8"
-            },
-            {
-                "name": "newPenalty",
-                "type": "uint8",
-                "indexed": false,
-                "internalType": "uint8"
-            }
-        ],
-        "anonymous": false
-    },
-    {
-        "type": "event",
-        "name": "ReputationRewardUpdated",
-        "inputs": [
-            {
-                "name": "oldReward",
-                "type": "uint8",
-                "indexed": false,
-                "internalType": "uint8"
-            },
-            {
-                "name": "newReward",
-                "type": "uint8",
-                "indexed": false,
-                "internalType": "uint8"
-            }
-        ],
-        "anonymous": false
-    },
-    {
-        "type": "event",
-        "name": "ReviewPeriodUpdated",
-        "inputs": [
-            {
-                "name": "oldReviewPeriod",
+                "name": "tokenId",
                 "type": "uint256",
-                "indexed": false,
+                "indexed": true,
                 "internalType": "uint256"
             },
             {
-                "name": "newReviewPeriod",
+                "name": "newScore",
+                "type": "uint256",
+                "indexed": false,
+                "internalType": "uint256"
+            }
+        ],
+        "anonymous": false
+    },
+    {
+        "type": "event",
+        "name": "ReputationUpdated",
+        "inputs": [
+            {
+                "name": "tokenId",
+                "type": "uint256",
+                "indexed": true,
+                "internalType": "uint256"
+            },
+            {
+                "name": "newScore",
                 "type": "uint256",
                 "indexed": false,
                 "internalType": "uint256"
@@ -1547,169 +916,45 @@ export const ReputationSBT = [
     },
     {
         "type": "event",
-        "name": "TreasuryUpdated",
+        "name": "Transfer",
         "inputs": [
             {
-                "name": "oldTreasury",
+                "name": "from",
                 "type": "address",
                 "indexed": true,
                 "internalType": "address"
             },
             {
-                "name": "newTreasury",
-                "type": "address",
-                "indexed": true,
-                "internalType": "address"
-            }
-        ],
-        "anonymous": false
-    },
-    {
-        "type": "event",
-        "name": "WorkSubmitted",
-        "inputs": [
-            {
-                "name": "jobId",
-                "type": "bytes32",
-                "indexed": true,
-                "internalType": "bytes32"
-            },
-            {
-                "name": "freelancer",
+                "name": "to",
                 "type": "address",
                 "indexed": true,
                 "internalType": "address"
             },
             {
-                "name": "ipfsProof",
-                "type": "string",
-                "indexed": false,
-                "internalType": "string"
+                "name": "tokenId",
+                "type": "uint256",
+                "indexed": true,
+                "internalType": "uint256"
             }
         ],
         "anonymous": false
     },
     {
         "type": "error",
-        "name": "AmountShouldBeGreaterThanOffer",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "DeadlineMustBeInFuture",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "DisputeAlreadyRaised",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "DisputePeriodOver",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "ExpireDeadlineMustBeGreaterThanBid",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "InvalidBidIndex",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "InvalidFeeBps",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "InvalidState",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "NotAssignedFreelancer",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "NotJobClient",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "NotJobParticipant",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "OnlyBidOnce",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "OnlyClientAllowed",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "OnlyFreelancerAllowed",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "OnlyInProgressJobs",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "OnlyOpenJobs",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "OnlyPendingBid",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "OnlySubmittedJobs",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "OnlySubmittedOrInProgressJobs",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "OnlyTimelock",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "ReentrancyGuardReentrantCall",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "ReviewPeriodMustBeGreaterThanOne",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "ReviewPeriodStillActive",
-        "inputs": []
-    },
-    {
-        "type": "error",
-        "name": "SafeERC20FailedOperation",
+        "name": "ERC721IncorrectOwner",
         "inputs": [
             {
-                "name": "token",
+                "name": "sender",
+                "type": "address",
+                "internalType": "address"
+            },
+            {
+                "name": "tokenId",
+                "type": "uint256",
+                "internalType": "uint256"
+            },
+            {
+                "name": "owner",
                 "type": "address",
                 "internalType": "address"
             }
@@ -1717,33 +962,85 @@ export const ReputationSBT = [
     },
     {
         "type": "error",
-        "name": "WorkAlreadySubmitted",
-        "inputs": []
+        "name": "ERC721InsufficientApproval",
+        "inputs": [
+            {
+                "name": "operator",
+                "type": "address",
+                "internalType": "address"
+            },
+            {
+                "name": "tokenId",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ]
     },
     {
         "type": "error",
-        "name": "cannotAcceptBidDeadlineExceed",
-        "inputs": []
+        "name": "ERC721InvalidApprover",
+        "inputs": [
+            {
+                "name": "approver",
+                "type": "address",
+                "internalType": "address"
+            }
+        ]
     },
     {
         "type": "error",
-        "name": "cannotLockedTwice",
-        "inputs": []
+        "name": "ERC721InvalidOperator",
+        "inputs": [
+            {
+                "name": "operator",
+                "type": "address",
+                "internalType": "address"
+            }
+        ]
     },
     {
         "type": "error",
-        "name": "cannotRejectBidDeadlineExceed",
-        "inputs": []
+        "name": "ERC721InvalidOwner",
+        "inputs": [
+            {
+                "name": "owner",
+                "type": "address",
+                "internalType": "address"
+            }
+        ]
     },
     {
         "type": "error",
-        "name": "cannotSubmitBidDeadlineExceed",
-        "inputs": []
+        "name": "ERC721InvalidReceiver",
+        "inputs": [
+            {
+                "name": "receiver",
+                "type": "address",
+                "internalType": "address"
+            }
+        ]
     },
     {
         "type": "error",
-        "name": "cannotSubmitWorkDeadlineExceeded",
-        "inputs": []
+        "name": "ERC721InvalidSender",
+        "inputs": [
+            {
+                "name": "sender",
+                "type": "address",
+                "internalType": "address"
+            }
+        ]
+    },
+    {
+        "type": "error",
+        "name": "ERC721NonexistentToken",
+        "inputs": [
+            {
+                "name": "tokenId",
+                "type": "uint256",
+                "internalType": "uint256"
+            }
+        ]
     }
 ];
 export default ReputationSBT;

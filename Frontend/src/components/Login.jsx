@@ -68,9 +68,9 @@ export default function Login({ setLoadingUser, setNotice, setRedNotice }) {
       );
 
       const message = new SiweMessage({
-        domain: window.location.host,
-        address,
-        statement: "Sign in with Ethereum",
+        domain: window.location.host, //My site to prevent Man in the Middle
+        address, //Address which trying to sign
+        statement: "Welcome to Neuroguild. Sign in to access your profile and secure your data.",
         uri: window.location.origin,
         version: "1",
         chainId,

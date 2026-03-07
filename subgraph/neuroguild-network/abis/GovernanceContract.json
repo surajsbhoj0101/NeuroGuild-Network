@@ -11,6 +11,11 @@
                 "name": "_timelock",
                 "type": "address",
                 "internalType": "contract TimelockController"
+            },
+            {
+                "name": "_reputation",
+                "type": "address",
+                "internalType": "address"
             }
         ],
         "stateMutability": "nonpayable"
