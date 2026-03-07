@@ -11,9 +11,9 @@ dataSources:
     name: Box
     network: base-sepolia
     source:
-      address: "0xa25698a328f6b0dac84a9e937f77c050e4587ec2"
+      address: "0x42CC38bAc988CDcb0fd7D710cd843b0030f05150"
       abi: Box
-      startBlock: 38387731
+      startBlock: 38547098
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -34,9 +34,9 @@ dataSources:
     name: CouncilRegistry
     network: base-sepolia
     source:
-      address: "0xdb238fe68b3f30887ec77d37caf5fed5802a7ea5"
+      address: "0xDF26d46a4dEDf628b02a170AEf6ad251931CE630"
       abi: CouncilRegistry
-      startBlock: 38387731
+      startBlock: 38547098
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -60,9 +60,9 @@ dataSources:
     name: GovernanceContract
     network: base-sepolia
     source:
-      address: "0x659973b6a5cc7859f3fbb81ec5ec1fff43cd5f80"
+      address: "0x0176e8d4a87Ce0EED9aeb4813d998E75E31e5d3c"
       abi: GovernanceContract
-      startBlock: 38387731
+      startBlock: 38547098
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -85,7 +85,7 @@ dataSources:
           handler: handleProposalQueued
         - event: QuorumNumeratorUpdated(uint256,uint256)
           handler: handleQuorumNumeratorUpdated
-        - event: ReputationContractUpdated(indexed address,indexed address)
+        - event: ReputationContractUpdated(indexed address)
           handler: handleReputationContractUpdated
         - event: TimelockChange(address,address)
           handler: handleTimelockChange
@@ -99,9 +99,9 @@ dataSources:
     name: GovernanceToken
     network: base-sepolia
     source:
-      address: "0x57a1386ae8042bf786c22002c438f68108673a9b"
+      address: "0x90b82c3ab1Ce5db11A028E696Dff4c0F11d09549"
       abi: GovernanceToken
-      startBlock: 38387731
+      startBlock: 38547098
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -128,9 +128,9 @@ dataSources:
     name: JobContract
     network: base-sepolia
     source:
-      address: "0xf7f5c2169894ed703f1e29bb030fbb818d2c6b0b"
+      address: "0xEb92E7ccBF2FC2B2578096709862Ecd39C1f2D31"
       abi: JobContract
-      startBlock: 38387731
+      startBlock: 38547098
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -209,9 +209,9 @@ dataSources:
     name: Timelock
     network: base-sepolia
     source:
-      address: "0xd1ea9975cfa0faff3e0a530fd764f5f3a3c060b1"
+      address: "0xBBbDB407e8cDE61B0dc907FECc9Ad09DB43dC9E5"
       abi: Timelock
-      startBlock: 38387731
+      startBlock: 38547098
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -252,9 +252,9 @@ dataSources:
     name: SkillSBT
     network: base-sepolia
     source:
-      address: "0xd9086d6dcfe3906be7a3799ceae5bcbaa3870eda"
+      address: "0xDbAAaB3530D65E2eFfb684B38349922A4ca000F6"
       abi: SkillSBT
-      startBlock: 38387731
+      startBlock: 38547098
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -288,9 +288,9 @@ dataSources:
     name: Treasury
     network: base-sepolia
     source:
-      address: "0x40cc546602a460c4047152da8b74ba9946d094c6"
+      address: "0xEd2Dc27114eE6D585DF95D1cDB5FbE06f8aB6e0F"
       abi: Treasury
-      startBlock: 38387731
+      startBlock: 38547098
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -330,9 +330,9 @@ dataSources:
     name: UserRegistry
     network: base-sepolia
     source:
-      address: "0x5281f3e78fc4985f66d860c65bd99717ab36c183"
+      address: "0x5aca866E18cc46c48ae02995e41A01b85D6a59da"
       abi: UserRegistry
-      startBlock: 38387731
+      startBlock: 38547098
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9

@@ -1,11 +1,44 @@
 {
   "base-sepolia": {
+    "Box": {
+      "address": "0x42CC38bAc988CDcb0fd7D710cd843b0030f05150",
+      "startBlock": 38547098
+    },
+    "CouncilRegistry": {
+      "address": "0xDF26d46a4dEDf628b02a170AEf6ad251931CE630",
+      "startBlock": 38547098
+    },
+    "GovernanceContract": {
+      "address": "0x0176e8d4a87Ce0EED9aeb4813d998E75E31e5d3c",
+      "startBlock": 38547098
+    },
+    "GovernanceToken": {
+      "address": "0x90b82c3ab1Ce5db11A028E696Dff4c0F11d09549",
+      "startBlock": 38547098
+    },
     "JobContract": {
-      "address": "0xf7f5c2169894ed703f1e29bb030fbb818d2c6b0b",
-      "startBlock": 38387731
+      "address": "0xEb92E7ccBF2FC2B2578096709862Ecd39C1f2D31",
+      "startBlock": 38547098
+    },
+    "ReputationSBT": {
+      "address": "0xDFce0c2BC54AC8E24662B97B69631eF3D6f5178e",
+      "startBlock": 38547098
+    },
+    "SkillSBT": {
+      "address": "0xDbAAaB3530D65E2eFfb684B38349922A4ca000F6",
+      "startBlock": 38547098
+    },
+    "Timelock": {
+      "address": "0xBBbDB407e8cDE61B0dc907FECc9Ad09DB43dC9E5",
+      "startBlock": 38547098
+    },
+    "Treasury": {
+      "address": "0xEd2Dc27114eE6D585DF95D1cDB5FbE06f8aB6e0F",
+      "startBlock": 38547098
     },
     "UserRegistry": {
-      "address": "0x5281f3e78fc4985f66d860c65bd99717ab36c183"
+      "address": "0x5aca866E18cc46c48ae02995e41A01b85D6a59da",
+      "startBlock": 38547098
     }
   }
 }

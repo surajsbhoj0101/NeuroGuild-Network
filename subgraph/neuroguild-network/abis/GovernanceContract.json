@@ -1265,12 +1265,6 @@
         "name": "ReputationContractUpdated",
         "inputs": [
             {
-                "name": "oldReputation",
-                "type": "address",
-                "indexed": true,
-                "internalType": "address"
-            },
-            {
                 "name": "newReputation",
                 "type": "address",
                 "indexed": true,
