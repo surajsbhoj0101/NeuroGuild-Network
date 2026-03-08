@@ -1,5 +1,6 @@
 import { Contract, Interface } from "ethers";
 import GovernanceContract from "../abis/GovernanceContract.js";
+import { call } from "viem/actions";
 
 const contractAddress = import.meta.env.VITE_GOVER_CONTRACT_ADDRESS;
 
@@ -10,6 +11,7 @@ const parseActionArgs = (rawArgs) => {
   }
 
   const parsed = JSON.parse(trimmed);
+  console.log("Parsed",parsed)
   return Array.isArray(parsed) ? parsed : [parsed];
 };
 
@@ -48,7 +50,7 @@ export const createProposal = async (signer, { description, actions }) => {
     const targets = normalizedActions.map((action) => action.target);
     const values = normalizedActions.map((action) => action.value);
     const calldatas = normalizedActions.map((action) => action.calldata);
-
+    console.log(targets+ values+ calldatas)
     const tx = await contract.propose(targets, values, calldatas, description.trim());
     const receipt = await tx.wait();
 

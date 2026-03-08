@@ -66,8 +66,6 @@ export function AuthProvider({ children }) {
   const value = useMemo(
     () => ({
       isAuthentication,
-      // Compatibility alias for existing consumers.
-      isAuthenticated: isAuthentication,
       role,
       userId,
       setAuthState,

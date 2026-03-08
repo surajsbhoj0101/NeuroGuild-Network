@@ -1,5 +1,4 @@
 import React from "react";
-import { Interface } from "ethers";
 import {
   AlertCircle,
   CheckCircle2,
@@ -11,26 +10,6 @@ import {
 } from "lucide-react";
 
 const robotoStyle = { fontFamily: "Roboto, sans-serif" };
-
-function getEncodedCalldata(action) {
-  const target = action?.target?.trim?.() || "";
-  const signature = action?.functionSignature?.trim?.() || "";
-
-  if (!target || !signature) {
-    return "";
-  }
-
-  try {
-    const iface = new Interface([`function ${signature}`]);
-    const fragment = iface.fragments[0];
-    const rawArgs = action?.args?.trim?.() || "";
-    const parsed = !rawArgs ? [] : JSON.parse(rawArgs);
-    const args = Array.isArray(parsed) ? parsed : [parsed];
-    return iface.encodeFunctionData(fragment.name, args);
-  } catch {
-    return "";
-  }
-}
 
 function CreateProposalModal({
   isOpen,
@@ -50,7 +29,7 @@ function CreateProposalModal({
   const descriptionLength = proposalForm.description?.length;
   const rationaleLength = proposalForm.rationale?.length;
   const readyActions = proposalForm.actions.filter(
-    (action) => action.target.trim() && getEncodedCalldata(action)
+    (action) => action.target.trim() && action.functionSignature.trim()
   )?.length;
 
   return (
@@ -162,10 +141,6 @@ function CreateProposalModal({
                       key={action.id}
                       className="rounded-2xl border border-white/10 bg-white/5 p-4"
                     >
-                      {(() => {
-                        const encodedCalldata = getEncodedCalldata(action);
-                        return (
-                          <>
                       <div className="flex items-center justify-between gap-3 mb-3">
                         <p className="text-sm font-semibold text-white">Action {index + 1}</p>
                         {proposalForm.actions?.length > 1 ? (
@@ -247,28 +222,6 @@ function CreateProposalModal({
                           Example: `changeValue(string)` with `["Hello DAO"]`
                         </p>
                       </label>
-
-                      <label className="block mt-3">
-                        <span className="text-xs uppercase tracking-wide text-gray-400 mb-2 block">
-                          Encoded Calldata Preview
-                        </span>
-                        <textarea
-                          rows={4}
-                          value={encodedCalldata}
-                          readOnly
-                          placeholder="Encoded calldata will appear here"
-                          className="w-full bg-[#0d152b] text-cyan-100 px-4 py-3 rounded-xl border border-white/10 outline-none placeholder:text-gray-500 resize-none"
-                          style={robotoStyle}
-                        />
-                        {!encodedCalldata ? (
-                          <p className="mt-2 text-xs text-amber-300" style={robotoStyle}>
-                            Enter a valid signature and JSON args to generate calldata.
-                          </p>
-                        ) : null}
-                      </label>
-                          </>
-                        );
-                      })()}
                     </div>
                   ))}
                 </div>

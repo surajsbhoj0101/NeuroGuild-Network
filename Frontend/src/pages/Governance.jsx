@@ -18,6 +18,10 @@ import { useAuth } from "../contexts/AuthContext.jsx";
 import { useNotifications } from "../contexts/NotificationContext.jsx";
 import NoticeToast from "../components/NoticeToast.jsx";
 import { createProposal } from "../utils/create_proposal.js";
+import {
+  checkHasReputationSbt,
+  emptyReputationSbtStatus,
+} from "../utils/checkReputationSbt.js";
 
 
 const robotoStyle = { fontFamily: "Roboto, sans-serif" };
@@ -154,12 +158,45 @@ export default function Governance() {
   const [notice, setNotice] = useState(null);
   const [redNotice, setRedNotice] = useState(false);
   const [submittingProposal, setSubmittingProposal] = useState(false);
+  const [reputationStatus, setReputationStatus] = useState(emptyReputationSbtStatus);
+  const [loadingReputationStatus, setLoadingReputationStatus] = useState(false);
 
   useEffect(() => {
     if (!isAuthentication) {
       window.location.href = "/";
     }
   }, [isAuthentication]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadReputationStatus = async () => {
+      if (!address) {
+        if (!cancelled) {
+          setReputationStatus(emptyReputationSbtStatus);
+          setLoadingReputationStatus(false);
+        }
+        return;
+      }
+
+      if (!cancelled) {
+        setLoadingReputationStatus(true);
+      }
+
+      const nextStatus = await checkHasReputationSbt(address);
+
+      if (!cancelled) {
+        setReputationStatus(nextStatus);
+        setLoadingReputationStatus(false);
+      }
+    };
+
+    loadReputationStatus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [address]);
 
   const getSigner = async () => {
     if (!walletClient || !window.ethereum) {
@@ -191,6 +228,12 @@ export default function Governance() {
   }
 
   const handleSubmitProposal = async () => {
+    if (!reputationStatus.hasReputationSbt) {
+      setRedNotice(true);
+      setNotice("Reputation SBT required to create governance proposals.");
+      return;
+    }
+
     const signer = await getSigner();
     if (!signer) {
       setRedNotice(true);
@@ -320,6 +363,32 @@ export default function Governance() {
     setOpenCreateProposal(false);
   };
 
+  const votingStatusTone = loadingReputationStatus
+    ? "border-[#14a19f]/30 bg-[#14a19f]/10 text-[#8ff6f3]"
+    : reputationStatus.hasReputationSbt
+      ? "border-green-500/30 bg-green-500/10 text-green-300"
+      : "border-amber-500/30 bg-amber-500/10 text-amber-300";
+
+  const votingStatusIcon = loadingReputationStatus
+    ? ShieldCheck
+    : reputationStatus.hasReputationSbt
+      ? CheckCircle2
+      : AlertCircle;
+
+  const votingStatusLabel = loadingReputationStatus
+    ? "Checking eligibility"
+    : reputationStatus.hasReputationSbt
+      ? "Eligible to Vote"
+      : "Reputation SBT Required";
+
+  const votingStatusDescription = loadingReputationStatus
+    ? "Fetching your reputation SBT status from Base Sepolia."
+    : reputationStatus.hasReputationSbt
+      ? `Verified profile and ${reputationStatus.balance} reputation SBT${reputationStatus.balance === 1 ? "" : "s"} found.`
+      : "This wallet does not currently hold a reputation SBT, so governance access is limited.";
+
+  const VotingStatusIcon = votingStatusIcon;
+
   return (
     <>
       <CreateProposalModal
@@ -362,16 +431,16 @@ export default function Governance() {
                 </p>
               </div>
 
-              <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-4 min-w-[250px]">
+              <div className={`rounded-xl p-4 min-w-[250px] ${votingStatusTone}`}>
                 <p className="text-xs uppercase tracking-wide text-gray-300 mb-2">
                   Your Voting Status
                 </p>
-                <div className="inline-flex items-center gap-2 text-green-300 text-sm font-semibold">
-                  <CheckCircle2 size={16} />
-                  Eligible to Vote
+                <div className="inline-flex items-center gap-2 text-sm font-semibold">
+                  <VotingStatusIcon size={16} />
+                  {votingStatusLabel}
                 </div>
                 <p className="text-xs text-gray-400 mt-2" style={robotoStyle}>
-                  Verified profile and SBT ownership confirmed.
+                  {votingStatusDescription}
                 </p>
               </div>
             </div>
@@ -440,9 +509,18 @@ export default function Governance() {
                   Quick Actions
                 </h3>
                 <div className="space-y-2">
-                  <button onClick={() => setOpenCreateProposal(true)} className="w-full px-4 py-2.5 bg-[#14a19f] hover:bg-[#1ecac7] text-white rounded-lg transition-colors text-sm font-semibold">
+                  <button
+                    onClick={() => setOpenCreateProposal(true)}
+                    disabled={!reputationStatus.hasReputationSbt}
+                    className="w-full px-4 py-2.5 bg-[#14a19f] hover:bg-[#1ecac7] disabled:bg-[#1d3742] disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm font-semibold"
+                  >
                     Create Proposal
                   </button>
+                  {!reputationStatus.hasReputationSbt && (
+                    <p className="text-xs text-amber-300" style={robotoStyle}>
+                      You need a reputation SBT in this wallet before creating proposals.
+                    </p>
+                  )}
                   <button className="w-full px-4 py-2.5 bg-[#1c2744] hover:bg-[#25345a] text-gray-200 rounded-lg transition-colors text-sm font-semibold border border-white/10">
                     Explore Governance Docs
                   </button>

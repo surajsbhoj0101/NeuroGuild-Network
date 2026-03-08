@@ -1,23 +1,22 @@
-import React, { useState } from "react";
-import darkLogo from "../assets/images/darkLogo.png";
-import lightLogo from "../assets/images/lightLogo.png";
-import { IoSearch } from "react-icons/io5";
+import React, { useEffect, useState } from "react";
 import { MdOutlineDarkMode, MdOutlineLightMode } from "react-icons/md";
 import { HiOutlineMenuAlt3, HiX } from "react-icons/hi";
-import { Bell, MessageCircle, Sparkles } from "lucide-react";
+import { Bell, CircleDollarSign, MessageCircle, Shield, Sparkles } from "lucide-react";
 import Snowfall from "react-snowfall";
 import { useTheme } from "../contexts/ThemeContext";
 import { useNotifications } from "../contexts/NotificationContext";
 import CustomConnectButton from "./CustomConnectButton";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/images/logo.png";
+import { useAccount } from "wagmi";
+import { emptyTokenBalances, getTokenBalances } from "../utils/getTokenBalances";
 
 function Navbar() {
   const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
   const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
   const { isDarkMode, toggleDark } = useTheme();
+  const { address, isConnected } = useAccount();
   const {
-    totalUnreadCount,
     notificationItems,
     appNotificationItems,
     totalNotificationCount,
@@ -28,6 +27,7 @@ function Navbar() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [balances, setBalances] = useState(emptyTokenBalances);
 
   const formatRelative = (value) => {
     if (!value) return "";
@@ -64,6 +64,47 @@ function Navbar() {
     }
   };
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchBalances = async () => {
+      if (!isConnected || !address) {
+        if (!cancelled) {
+          setBalances(emptyTokenBalances);
+        }
+        return;
+      }
+
+      const nextBalances = await getTokenBalances(address);
+      if (!cancelled) {
+        setBalances(nextBalances);
+      }
+    };
+
+    fetchBalances();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [address, isConnected]);
+
+  const balanceItems = [
+    {
+      label: "USD",
+      value: balances.usdc,
+      icon: CircleDollarSign,
+      accent: "text-emerald-300",
+      iconBg: "bg-emerald-400/15",
+    },
+    {
+      label: "Governance",
+      value: balances.governance,
+      icon: Shield,
+      accent: "text-cyan-300",
+      iconBg: "bg-cyan-400/15",
+    },
+  ];
+
   return (
     <nav className="relative z-40">
       <div className="dark:bg-[#0f121e] bg-[#161c32] px-4 md:px-6 py-3 shadow-md border-b border-white/8 backdrop-blur-sm">
@@ -87,27 +128,31 @@ function Navbar() {
             </Link>
           </div>
 
-          <div className="hidden md:flex flex-1 items-center justify-center px-6">
-            <div className="w-full max-w-2xl">
-              <div className="flex items-center bg-[#0c1422]/60 dark:bg-[#07101a]/60 border border-[#2a3847] rounded-2xl px-3 py-2 hover:shadow-[0_6px_24px_rgba(20,161,159,0.06)] transition">
-                <div className="text-[#1be4e0] dark:text-blue-400 text-xl p-1">
-                  <IoSearch />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Find AI-powered gigs, skills or freelancers..."
-                  style={robotoStyle}
-                  className="bg-transparent flex-1 outline-none text-sm md:text-base text-gray-100 placeholder-gray-400 px-3"
-                />
-                <button className="ml-2 px-3 py-1.5 bg-gradient-to-r from-[#14a19f] to-[#0fb6b3] hover:opacity-95 rounded-lg text-sm font-medium text-white shadow-sm">
-                  Search
-                </button>
-              </div>
-            </div>
-          </div>
-
           <div className="flex items-center gap-3">
             <div className="hidden z-10 md:flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                {balanceItems.map(({ label, value, icon: Icon, accent, iconBg }) => (
+                  <div
+                    key={label}
+                    className="min-w-[120px] rounded-xl border border-[#2a3847] bg-[#0c1422]/70 px-3 py-2 backdrop-blur-sm"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${iconBg}`}>
+                        <Icon className={`h-4 w-4 ${accent}`} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] uppercase tracking-[0.22em] text-gray-400">
+                          {label}
+                        </p>
+                        <p style={orbitronStyle} className="truncate text-sm text-white">
+                          {value}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               <div className="relative">
                 <button
                   onClick={() => setNotificationOpen((prev) => !prev)}
@@ -267,14 +312,25 @@ function Navbar() {
       {menuOpen && (
         <div className="md:hidden fixed inset-x-4 top-[72px] bg-[#0b1724]/95 backdrop-blur-sm border border-white/6 rounded-xl p-4 shadow-2xl z-50">
           <div className="flex flex-col gap-3">
-            <div className="flex items-center border border-[#1f3240] rounded-lg px-3 py-2">
-              <IoSearch className="text-[#1be4e0] text-xl mr-2" />
-              <input
-                type="text"
-                placeholder="Find AI-powered gigs..."
-                className="bg-transparent flex-1 outline-none text-sm text-white placeholder-gray-400"
-              />
-              <button className="ml-2 px-3 py-1.5 bg-[#14a19f] rounded-lg text-sm text-white">Search</button>
+            <div className="grid grid-cols-2 gap-2">
+              {balanceItems.map(({ label, value, icon: Icon, accent, iconBg }) => (
+                <div
+                  key={label}
+                  className="rounded-lg border border-[#1f3240] bg-white/4 px-3 py-2"
+                >
+                  <div className="mb-2 flex items-center gap-2">
+                    <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${iconBg}`}>
+                      <Icon className={`h-4 w-4 ${accent}`} />
+                    </div>
+                    <span className="text-[11px] uppercase tracking-[0.18em] text-gray-400">
+                      {label}
+                    </span>
+                  </div>
+                  <div style={orbitronStyle} className="text-sm text-white">
+                    {value}
+                  </div>
+                </div>
+              ))}
             </div>
 
             <div className="flex flex-col gap-2">
