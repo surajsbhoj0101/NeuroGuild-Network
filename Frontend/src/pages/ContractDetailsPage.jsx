@@ -77,7 +77,7 @@ function normalizeContract(raw, jobIdParam, viewerRole) {
     freelancerAddress: pickFirstDefined(raw.freelancerAddress, bidInfo?.freelancerAddress, raw.bidder),
     contractValue: pickFirstDefined(raw.contractValue, raw.budget, raw.bidAmount, bidInfo?.bidAmount, raw.JobDetails?.budget),
     deadline: pickFirstDefined(raw.deadline, raw.JobDetails?.completion, raw.JobDetails?.deadline),
-    status: pickFirstDefined(raw.status, raw.JobDetails?.status, "N/A"),
+    status: pickFirstDefined( raw.JobDetails?.status, "N/A"),
     skills: Array.isArray(raw.skills)
       ? raw.skills
       : Array.isArray(raw.JobDetails?.skills)

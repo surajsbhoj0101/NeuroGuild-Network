@@ -350,7 +350,7 @@ export const fetchJob = async (req, res) => {
         error: "Failed to fetch job metadata from IPFS",
       });
     }
-
+    console.log(ipfsData)
     const jobDetails = {
       ...clientPlain,
       ...ipfsData,

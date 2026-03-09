@@ -25,6 +25,7 @@ import {
 } from "../utils/checkReputationSbt.js";
 import { useTokenBalance } from "../contexts/TokenBalanceContext.jsx";
 import { delegateOther, delegateSelf } from "../utils/delegate_gov.js";
+import api from "../utils/api.js";
 
 
 const robotoStyle = { fontFamily: "Roboto, sans-serif" };
@@ -158,7 +159,7 @@ export default function Governance() {
   const { addSystemNotification } = useNotifications();
   const [openCreateProposal, setOpenCreateProposal] = useState(false);
   const [proposalForm, setProposalForm] = useState(createInitialProposalForm);
-  const [activeProposals, setActiveProposals] = useState(initialActiveProposals);
+  const [activeProposals, setActiveProposals] = useState([]);
   const [notice, setNotice] = useState(null);
   const [redNotice, setRedNotice] = useState(false);
   const [submittingProposal, setSubmittingProposal] = useState(false);
@@ -170,6 +171,29 @@ export default function Governance() {
       window.location.href = "/";
     }
   }, [isAuthentication]);
+
+  const fetchAllProposals = async () => {
+    try {
+      const proposals = await api.get('/api/governance/fetch-proposals');
+      console.log(proposals)
+      const openProposals = proposals.data.proposals.map(p => ({
+
+        id: p?.id,
+        title: p?.tiltle || "No title",
+        summary:
+          "Refine benchmark thresholds for beginner, intermediate, and advanced certifications.",
+        votes: 234,
+        quorum: 500,
+        endsAt: "Feb 15, 2026",
+        status: p?.status,
+
+      }))
+
+      setActiveProposals(openProposals)
+    } catch (error) {
+
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -196,6 +220,7 @@ export default function Governance() {
     };
 
     loadReputationStatus();
+    fetchAllProposals();
 
     return () => {
       cancelled = true;
@@ -393,7 +418,7 @@ export default function Governance() {
 
   const VotingStatusIcon = votingStatusIcon;
 
-  
+
 
   const handlehandleDelegateGovToken = async (...args) => {
     const signer = await getSigner();

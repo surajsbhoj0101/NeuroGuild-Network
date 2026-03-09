@@ -179,6 +179,7 @@ const router = createBrowserRouter([
     path: "/governance",
     element: (
       <>
+        {/* <Snowfall snowflakeCount={60} /> */}
         <Navbar />
         <Governance />
       </>
@@ -187,7 +188,7 @@ const router = createBrowserRouter([
     path: "/messages/:recipientId",
     element: (
       <>
-        <Snowfall snowflakeCount={60} />
+        {/* <Snowfall snowflakeCount={60} /> */}
         <Messages />
       </>
     )
