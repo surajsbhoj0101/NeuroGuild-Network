@@ -24,6 +24,7 @@ import {
   emptyReputationSbtStatus,
 } from "../utils/checkReputationSbt.js";
 import { useTokenBalance } from "../contexts/TokenBalanceContext.jsx";
+import { delegateOther, delegateSelf } from "../utils/delegate_gov.js";
 
 
 const robotoStyle = { fontFamily: "Roboto, sans-serif" };
@@ -392,6 +393,47 @@ export default function Governance() {
 
   const VotingStatusIcon = votingStatusIcon;
 
+  
+
+  const handlehandleDelegateGovToken = async (...args) => {
+    const signer = await getSigner();
+    if (!signer) {
+      setRedNotice(true);
+      setNotice("Please connect your wallet first.");
+      return;
+    }
+
+    if (!address) {
+      setRedNotice(true);
+      setNotice("Wallet address missing.");
+      return;
+    }
+    console.log(args[0])
+    try {
+      if (args[0]?.mode === 'self') {
+        const res = await delegateSelf(signer);
+        if (res.isSuccess) {
+          setRedNotice(false);
+          setNotice("Delegation successfull")
+        }
+      } else if (args[0]?.mode === 'other') {
+        const res = await delegateOther(signer, args?.address);
+        if (res.isSuccess) {
+          setRedNotice(false);
+          setNotice("Delegation successfull")
+        }
+      } else {
+        setRedNotice(true);
+        setNotice("Choose a valid delegation mode");
+      }
+    } catch (error) {
+      console.log("Error occured while delegating", error)
+      setRedNotice(true);
+      setNotice(error)
+    }
+  }
+
+
   return (
     <>
       <CreateProposalModal
@@ -491,10 +533,10 @@ export default function Governance() {
 
             <div className="space-y-5">
               <DelegatedTokenCard
-                delegatedAmount="0"
+                delegatedAmount={balances.votes}
                 availableAmount={balances.governance}
                 delegateeLabel="Choose a delegate to activate voting power."
-                onDelegate={() => setNotice("Delegation flow UI is not connected yet.")}
+                onDelegate={handlehandleDelegateGovToken}
               />
 
               <div className="backdrop-blur-md border border-[#14a19f]/20 bg-[#0d1224]/50 rounded-xl p-5">

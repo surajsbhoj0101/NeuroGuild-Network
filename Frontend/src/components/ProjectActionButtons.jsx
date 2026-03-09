@@ -14,7 +14,7 @@ function ProjectActionButtons({
   return (
     <div className="flex gap-2 pt-2">
       {projectStatus === 'Open' ? ("") : (
-        <div className="flex gap-2 pt-2">
+        <div className="flex w-full gap-2 pt-2">
           <button
             onClick={onShowContract}
             className="group flex-1 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 text-cyan-300 border border-cyan-400/40 text-sm font-semibold py-2 rounded-lg flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5"

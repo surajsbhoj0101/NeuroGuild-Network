@@ -56,16 +56,19 @@ export const getTokenBalances = async (address) => {
       usdcDecimals,
       governanceBalance,
       governanceDecimals,
+      delegatedBalance
     ] = await Promise.all([
       usdcContract.balanceOf(address),
       usdcContract.decimals(),
       governanceContract.balanceOf(address),
       governanceContract.decimals(),
+      governanceContract.getVotes(address)
     ]);
-
+    
     return {
       usdc: formatTokenBalance(usdcBalance, usdcDecimals),
       governance: formatTokenBalance(governanceBalance, governanceDecimals),
+      votes:formatTokenBalance(delegatedBalance, governanceDecimals),
     };
   } catch (error) {
     console.error("Failed to fetch token balances:", error);
