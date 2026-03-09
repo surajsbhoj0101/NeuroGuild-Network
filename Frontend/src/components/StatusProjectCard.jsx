@@ -83,6 +83,7 @@ function StatusProjectCard({
 
       {showActions ? (
         <ProjectActionButtons
+          projectStatus={status}
           onShowContract={onShowContract}
           onMessage={onMessage}
           onArchive={onArchive}

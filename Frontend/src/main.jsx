@@ -33,6 +33,7 @@ import Messages from './pages/Messages.jsx';
 import SideBar from './components/SideBar.jsx';
 import { Snowflake } from 'lucide-react';
 import ContractDetailsPage from './pages/ContractDetailsPage.jsx';
+import { TokenBalanceProvider } from './contexts/TokenBalanceContext.jsx';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
@@ -103,14 +104,16 @@ const router = createBrowserRouter([
         <Setting />
       </>
     )
-  }, {    path: "/mint-rules",
+  }, {
+    path: "/mint-rules",
     element: (
       <>
         <Navbar />
         <MintRules />
       </>
     )
-  }, {    path: "/verify-skill/:skill",
+  }, {
+    path: "/verify-skill/:skill",
     element: (
       <>
         <Navbar />
@@ -188,7 +191,7 @@ const router = createBrowserRouter([
         <Messages />
       </>
     )
-  },{
+  }, {
     path: "/messages",
     element: (
       <>
@@ -201,18 +204,20 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById("root")).render(
   // <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AppProviders>
-          <AuthProvider>
-            <SocketProvider>
-              <NotificationProvider>
+  <QueryClientProvider client={queryClient}>
+    <ThemeProvider>
+      <AppProviders>
+        <AuthProvider>
+          <SocketProvider>
+            <NotificationProvider>
+              <TokenBalanceProvider>
                 <RouterProvider router={router} />
-              </NotificationProvider>
-            </SocketProvider>
-          </AuthProvider>
-        </AppProviders>
-      </ThemeProvider>
-    </QueryClientProvider>
+              </TokenBalanceProvider>
+            </NotificationProvider>
+          </SocketProvider>
+        </AuthProvider>
+      </AppProviders>
+    </ThemeProvider>
+  </QueryClientProvider>
   // </StrictMode>
 );

@@ -9,13 +9,14 @@ import CustomConnectButton from "./CustomConnectButton";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/images/logo.png";
 import { useAccount } from "wagmi";
-import { emptyTokenBalances, getTokenBalances } from "../utils/getTokenBalances";
+import { useTokenBalance } from "../contexts/TokenBalanceContext";
 
 function Navbar() {
   const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
   const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
   const { isDarkMode, toggleDark } = useTheme();
   const { address, isConnected } = useAccount();
+  const balances  = useTokenBalance();
   const {
     notificationItems,
     appNotificationItems,
@@ -27,7 +28,6 @@ function Navbar() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
-  const [balances, setBalances] = useState(emptyTokenBalances);
 
   const formatRelative = (value) => {
     if (!value) return "";
@@ -64,29 +64,7 @@ function Navbar() {
     }
   };
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchBalances = async () => {
-      if (!isConnected || !address) {
-        if (!cancelled) {
-          setBalances(emptyTokenBalances);
-        }
-        return;
-      }
-
-      const nextBalances = await getTokenBalances(address);
-      if (!cancelled) {
-        setBalances(nextBalances);
-      }
-    };
-
-    fetchBalances();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [address, isConnected]);
+  
 
   const balanceItems = [
     {

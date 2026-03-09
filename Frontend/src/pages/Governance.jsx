@@ -17,11 +17,13 @@ import SideBar from "../components/SideBar";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { useNotifications } from "../contexts/NotificationContext.jsx";
 import NoticeToast from "../components/NoticeToast.jsx";
+import DelegatedTokenCard from "../components/DelegatedTokenCard.jsx";
 import { createProposal } from "../utils/create_proposal.js";
 import {
   checkHasReputationSbt,
   emptyReputationSbtStatus,
 } from "../utils/checkReputationSbt.js";
+import { useTokenBalance } from "../contexts/TokenBalanceContext.jsx";
 
 
 const robotoStyle = { fontFamily: "Roboto, sans-serif" };
@@ -150,6 +152,7 @@ function ProposalCard({ proposal }) {
 export default function Governance() {
   const { isAuthentication } = useAuth();
   const { address } = useAccount();
+  const balances = useTokenBalance();
   const { data: walletClient } = useWalletClient();
   const { addSystemNotification } = useNotifications();
   const [openCreateProposal, setOpenCreateProposal] = useState(false);
@@ -487,6 +490,13 @@ export default function Governance() {
             </div>
 
             <div className="space-y-5">
+              <DelegatedTokenCard
+                delegatedAmount="0"
+                availableAmount={balances.governance}
+                delegateeLabel="Choose a delegate to activate voting power."
+                onDelegate={() => setNotice("Delegation flow UI is not connected yet.")}
+              />
+
               <div className="backdrop-blur-md border border-[#14a19f]/20 bg-[#0d1224]/50 rounded-xl p-5">
                 <h3 className="text-white text-lg font-semibold mb-3" style={robotoStyle}>
                   Your Activity
