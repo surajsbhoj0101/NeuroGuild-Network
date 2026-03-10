@@ -5,8 +5,9 @@ import SideBar from "../../components/SideBar";
 import api from "../../utils/api.js"
 import { useAuth } from "../../contexts/AuthContext.jsx";
 import NoticeToast from "../../components/NoticeToast";
+import { fetchReputationProfile, emptyReputationProfile } from "../../utils/fetch_reputation_profile.js";
+import ReputationSbtCard from "../../components/ReputationSbtCard.jsx";
 import {
-  Award,
   Plus,
   X,
   Check,
@@ -31,6 +32,7 @@ function ClientProfile() {
   const [redNotice, setRedNotice] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [reputationProfile, setReputationProfile] = useState(emptyReputationProfile);
 
   const [profile, setProfile] = useState({
     companyName: "",
@@ -68,6 +70,25 @@ function ClientProfile() {
       if (timer) clearTimeout(timer);
     };
   }, [isAuthentication, address, navigate]);
+
+  useEffect(() => {
+    if (!address) return;
+
+    let cancelled = false;
+
+    const loadReputationProfile = async () => {
+      const nextProfile = await fetchReputationProfile(address);
+      if (!cancelled) {
+        setReputationProfile(nextProfile);
+      }
+    };
+
+    loadReputationProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [address]);
 
   const loadProfileData = async () => {
     if (!address) return;
@@ -168,7 +189,7 @@ function ClientProfile() {
         onClose={() => setNotice(null)}
       />
 
-      <div className="dark:bg-[#0f111d] pt-6 flex bg-[#161c32] w-full min-h-screen  ">
+      <div className="dark:bg-[#0f111d] pt-6 flex bg-[#161c32] w-full min-h-screen min-w-screen ">
         <div className="pointer-events-none absolute right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
         <div className="pointer-events-none absolute left-[20%] top-[1%] w-[120px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
         <div className="hidden md:block">
@@ -410,6 +431,15 @@ function ClientProfile() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="backdrop-blur-sm rounded-lg p-6 border border-[#14a19f]/20">
+                <ReputationSbtCard
+                  reputationProfile={reputationProfile}
+                  orbitronStyle={orbitronStyle}
+                />
               </div>
             </div>
           </div>

@@ -5,6 +5,8 @@ import SideBar from '../../components/SideBar';
 import api from "../../utils/api.js"
 import NoticeToast from "../../components/NoticeToast";
 import { useAuth } from "../../contexts/AuthContext.jsx";
+import { fetchReputationProfile, emptyReputationProfile } from "../../utils/fetch_reputation_profile.js";
+import ReputationSbtCard from "../../components/ReputationSbtCard.jsx";
 
 import { Lock, Award, Check, User, Mail, MapPin, Github, Linkedin, Twitter, Globe, Brain, Code, Palette, Database, Globe as GlobeIcon, Zap } from 'lucide-react';
 
@@ -21,6 +23,7 @@ export default function MyProfile() {
   const [isLoading, setIsLoading] = useState(false);
   const [minted, setMinted] = useState([])
   const [skillTokenizable, setSkillTokenizable] = useState([])
+  const [reputationProfile, setReputationProfile] = useState(emptyReputationProfile);
 
 
   const [profile, setProfile] = useState({
@@ -224,6 +227,25 @@ export default function MyProfile() {
     }
 
     getSbt();
+  }, [address]);
+
+  useEffect(() => {
+    if (!address) return;
+
+    let cancelled = false;
+
+    const loadReputationProfile = async () => {
+      const nextProfile = await fetchReputationProfile(address);
+      if (!cancelled) {
+        setReputationProfile(nextProfile);
+      }
+    };
+
+    loadReputationProfile();
+
+    return () => {
+      cancelled = true;
+    };
   }, [address]);
 
 
@@ -622,6 +644,11 @@ export default function MyProfile() {
                 </div>
 
                 <div className="space-y-4">
+                  <ReputationSbtCard
+                    reputationProfile={reputationProfile}
+                    orbitronStyle={orbitronStyle}
+                  />
+
                   {isLoading ? (
                     <div className="text-center py-8 text-gray-400 text-sm">Loading your SBT...</div>
                   ) : sbts.length > 0 ? (

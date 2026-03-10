@@ -718,7 +718,11 @@ function jobPage() {
 
                 <button
                   onClick={() => {
-                    setShowClientProfile(true);
+                    const profileTarget =
+                      jobDetails?.clientId || jobDetails?.user || jobDetails?._id;
+                    if (profileTarget) {
+                      navigate(`/profile/${profileTarget}`);
+                    }
                   }}
                   className="w-full bg-transparent text-[#14a19f] dark:text-white border border-[#14a19f] dark:border-[#0a184b] font-semibold py-2 rounded-lg hover:bg-[#14a19f]/10 dark:hover:bg-[#0d1c4e] transition-colors"
                 >

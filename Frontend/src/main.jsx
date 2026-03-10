@@ -20,7 +20,7 @@ import FreelancerDashboard from './pages/FreelancerPages/Dashboard.jsx';
 import FreelancerManageJobs from './pages/FreelancerPages/ManageJobs.jsx';
 import BrowseJobs from './pages/FreelancerPages/BrowseJobs.jsx';
 import MyProfile from './pages/FreelancerPages/MyProfile.jsx';
-import Setting from './pages/FreelancerPages/Setting.jsx';
+import SettingsPage from './pages/SettingsPage.jsx';
 import VerifySkillPage from './pages/FreelancerPages/VerifySkillPage.jsx';
 import MintRules from './pages/FreelancerPages/MintRules.jsx';
 import ClientProfile from './pages/ClientPages/ClientProfile.jsx';
@@ -34,6 +34,8 @@ import SideBar from './components/SideBar.jsx';
 import { Snowflake } from 'lucide-react';
 import ContractDetailsPage from './pages/ContractDetailsPage.jsx';
 import { TokenBalanceProvider } from './contexts/TokenBalanceContext.jsx';
+import Proposal from './pages/Proposal.jsx';
+import PublicProfile from './pages/PublicProfile.jsx';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
@@ -101,7 +103,15 @@ const router = createBrowserRouter([
       <>
         {/* <Snowfall snowflakeCount={60} /> */}
         <Navbar />
-        <Setting />
+        <SettingsPage />
+      </>
+    )
+  }, {
+    path: "/client/settings",
+    element: (
+      <>
+        <Navbar />
+        <SettingsPage />
       </>
     )
   }, {
@@ -198,6 +208,22 @@ const router = createBrowserRouter([
       <>
         <Snowfall snowflakeCount={60} />
         <Messages />
+      </>
+    )
+  },{
+    path: "/proposal/:id",
+    element:(
+      <>
+        <Navbar />
+        <Proposal />
+      </>
+    )
+  },{
+    path: "/profile/:userId",
+    element:(
+      <>
+        {/* <Navbar /> */}
+        <PublicProfile />
       </>
     )
   }

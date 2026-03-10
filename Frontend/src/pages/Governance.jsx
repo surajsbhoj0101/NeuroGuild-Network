@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { BrowserProvider } from "ethers";
+import { BrowserProvider, JsonRpcProvider } from "ethers";
+import { useNavigate } from "react-router-dom";
 import {
   AlertCircle,
   ArrowUpRight,
   Award,
   CalendarClock,
   CheckCircle2,
+  ChevronRight,
   ShieldCheck,
   TrendingUp,
-  Users,
   Vote,
 } from "lucide-react";
 import { useAccount, useWalletClient } from "wagmi";
@@ -26,9 +27,9 @@ import {
 import { useTokenBalance } from "../contexts/TokenBalanceContext.jsx";
 import { delegateOther, delegateSelf } from "../utils/delegate_gov.js";
 import api from "../utils/api.js";
-
-
+import { fetchProposalQuorum } from "../utils/governance_actions.js";
 const robotoStyle = { fontFamily: "Roboto, sans-serif" };
+const rpcUrl = import.meta.env.VITE_RPC_URL;
 const createInitialAction = () => ({
   id: Date.now() + Math.random(),
   target: "",
@@ -36,6 +37,7 @@ const createInitialAction = () => ({
   functionSignature: "",
   args: "",
 });
+
 const createInitialProposalForm = () => ({
   title: "",
   description: "",
@@ -43,53 +45,106 @@ const createInitialProposalForm = () => ({
   actions: [createInitialAction()],
 });
 
-const initialActiveProposals = [
-  {
-    id: "001",
-    title: "Update Skill Assessment Criteria",
-    summary:
-      "Refine benchmark thresholds for beginner, intermediate, and advanced certifications.",
-    votes: 234,
-    quorum: 500,
-    endsAt: "Feb 15, 2026",
-    status: "Active",
-  },
-  {
-    id: "002",
-    title: "Modify Council Voting Power",
-    summary:
-      "Rebalance council influence between domain experts and elected community delegates.",
-    votes: 189,
-    quorum: 500,
-    endsAt: "Feb 20, 2026",
-    status: "Active",
-  },
-  {
-    id: "003",
-    title: "Treasury Allocation For Mentor Grants",
-    summary:
-      "Allocate 4% of quarterly treasury rewards to mentorship grants and apprenticeship bounties.",
-    votes: 312,
-    quorum: 500,
-    endsAt: "Feb 26, 2026",
-    status: "Active",
-  },
-];
+const truncateText = (value, maxLength) => {
+  const normalized = value?.trim?.() || "";
+  if (!normalized) {
+    return "";
+  }
 
-const statCards = [
-  { label: "Active Proposals", value: "12", icon: Vote },
-  { label: "Total Voters", value: "1,247", icon: Users },
-  { label: "SBTs Issued", value: "3,492", icon: Award },
-  { label: "Participation Rate", value: "67%", icon: TrendingUp },
-];
+  return normalized.length > maxLength
+    ? `${normalized.slice(0, maxLength).trimEnd()}...`
+    : normalized;
+};
 
-const recentActivity = [
-  { item: "Proposal #001", outcome: "Approved", color: "text-green-400" },
-  { item: "Proposal #002", outcome: "Rejected", color: "text-red-400" },
-  { item: "Proposal #019", outcome: "Approved", color: "text-green-400" },
-];
+const formatProposalStatus = (status) => {
+  const normalized = status?.trim?.();
+  if (!normalized) {
+    return "Unknown";
+  }
 
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase();
+};
 
+const toSafeNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const aggregateProposalVotes = (votes = []) => {
+  return votes.reduce(
+    (totals, vote) => {
+      const weight = toSafeNumber(vote?.weight);
+      const support = toSafeNumber(vote?.support);
+
+      totals.total += weight;
+
+      if (support === 0) {
+        totals.against += weight;
+      } else if (support === 1) {
+        totals.for += weight;
+      } else if (support === 2) {
+        totals.abstain += weight;
+      }
+
+      return totals;
+    },
+    { total: 0, for: 0, against: 0, abstain: 0 }
+  );
+};
+
+const mapBackendProposalToCard = (proposal) => {
+  const description = proposal?.description?.trim?.() || "";
+  const descriptionLines = description
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const titleSource = descriptionLines[0] || description || `Proposal #${proposal?.id || "--"}`;
+  const summarySource =
+    descriptionLines.slice(1).join(" ") || description || "No proposal description provided.";
+  const voteTotals = aggregateProposalVotes(proposal?.votes || []);
+
+  return {
+    id: proposal?.id || `proposal-${Date.now()}`,
+    voteStart: proposal?.voteStart || "",
+    title: truncateText(titleSource, 72),
+    summary: truncateText(summarySource, 180),
+    votes: voteTotals.total,
+    quorum: null,
+    quorumLabel: `Votes: ${voteTotals.total} | For: ${voteTotals.for} | Against: ${voteTotals.against} | Abstain: ${voteTotals.abstain}`,
+    endsAt: proposal?.voteEnd ? `Block ${proposal.voteEnd}` : "Vote end unavailable",
+    status: formatProposalStatus(proposal?.status),
+  };
+};
+
+const ACTIVE_STATUSES = new Set(["Active", "Pending"]);
+const REVIEW_STATUSES = new Set(["Succeeded", "Queued"]);
+const PAST_STATUSES = new Set(["Defeated", "Executed", "Canceled", "Cancelled", "Expired"]);
+
+const getProposalTone = (status) => {
+  const normalized = status?.toLowerCase?.() || "";
+
+  if (normalized === "executed" || normalized === "succeeded") {
+    return "border-emerald-500/35 bg-emerald-500/10 text-emerald-300";
+  }
+
+  if (normalized === "defeated" || normalized === "expired" || normalized === "canceled" || normalized === "cancelled") {
+    return "border-red-500/35 bg-red-500/10 text-red-300";
+  }
+
+  if (normalized === "queued" || normalized === "pending") {
+    return "border-amber-500/35 bg-amber-500/10 text-amber-300";
+  }
+
+  return "border-cyan-500/35 bg-cyan-500/20 text-cyan-300";
+};
+
+const formatProposalDateLabel = (proposal) => {
+  if (proposal?.status === "Active" || proposal?.status === "Pending") {
+    return proposal?.endsAt ? `Ends ${proposal.endsAt}` : "Vote timing unavailable";
+  }
+
+  return proposal?.endsAt ? `Closed at ${proposal.endsAt}` : "Past proposal";
+};
 
 function ProposalCard({ proposal }) {
   const hasNumericQuorum =
@@ -97,38 +152,40 @@ function ProposalCard({ proposal }) {
   const progress = hasNumericQuorum
     ? Math.min(100, Math.round((proposal.votes / proposal.quorum) * 100))
     : 0;
+  const votesNeeded = hasNumericQuorum
+    ? Math.max(proposal.quorum - proposal.votes, 0)
+    : null;
 
-
+  const navigate = useNavigate();
 
   return (
-    <div className="rounded-2xl border border-[#14a19f]/25 bg-[#0f1730]/70 p-5 hover:border-[#14a19f]/45 transition-colors">
-
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs text-[#7df3f0] tracking-wide uppercase">
+    <div className="min-w-0 rounded-2xl border border-[#14a19f]/25 bg-[#0f1730]/70 p-4 sm:p-5 hover:border-[#14a19f]/45 transition-colors">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-xs text-[#7df3f0] tracking-tight uppercase">
             Proposal #{proposal.id}
           </p>
-          <h3 className="text-white text-lg font-semibold mt-1" style={robotoStyle}>
+          <h3 className="mt-1 text-white text-lg font-semibold break-words" style={robotoStyle}>
             {proposal.title}
           </h3>
         </div>
-        <span className="px-2.5 py-1 rounded-full text-xs font-semibold border bg-cyan-500/20 text-cyan-300 border-cyan-500/35">
+        <span className={`w-fit px-2.5 py-1 rounded-full text-xs font-semibold border ${getProposalTone(proposal.status)}`}>
           {proposal.status}
         </span>
       </div>
 
-      <p className="text-gray-300 text-sm mt-3 leading-relaxed" style={robotoStyle}>
+      <p className="mt-3 break-words text-sm leading-relaxed text-gray-300" style={robotoStyle}>
         {proposal.summary}
       </p>
 
       <div className="mt-4">
-        <div className="flex items-center justify-between text-xs text-gray-400 mb-1.5">
-          <span>
+        <div className="mb-1.5 flex flex-col gap-1 text-xs text-gray-400 sm:flex-row sm:items-center sm:justify-between">
+          <span className="break-words">
             {hasNumericQuorum
               ? `Votes: ${proposal.votes}/${proposal.quorum}`
               : proposal.quorumLabel || `Votes: ${proposal.votes}`}
           </span>
-          <span>{hasNumericQuorum ? `${progress}% to quorum` : "Quorum set by governor"}</span>
+          <span className="shrink-0">{hasNumericQuorum ? `${progress}% to quorum` : "Quorum set by governor"}</span>
         </div>
         <div className="h-2 rounded-full bg-[#1b2747] overflow-hidden">
           <div
@@ -136,18 +193,58 @@ function ProposalCard({ proposal }) {
             style={{ width: `${progress}%` }}
           />
         </div>
+        {hasNumericQuorum ? (
+          <div className="mt-2 flex flex-col gap-1 text-[11px] text-gray-500 sm:flex-row sm:items-center sm:justify-between">
+            <span>Quorum progress</span>
+            <span>{votesNeeded} votes needed</span>
+          </div>
+        ) : null}
       </div>
 
-      <div className="mt-4 flex items-center justify-between text-xs text-gray-400">
-        <span className="inline-flex items-center gap-1.5">
+      <div className="mt-4 flex flex-col gap-2 text-xs text-gray-400 sm:flex-row sm:items-center sm:justify-between">
+        <span className="inline-flex min-w-0 items-center gap-1.5 break-words">
           <CalendarClock size={13} />
-          Ends: {proposal.endsAt}
+          {formatProposalDateLabel(proposal)}
         </span>
-        <button className="inline-flex items-center gap-1 text-[#7df3f0] hover:text-white transition-colors">
+        <button onClick={()=> {navigate(`/proposal/${proposal.id}`)}} className="inline-flex w-fit items-center gap-1 text-[#7df3f0] hover:text-white transition-colors">
           Details <ArrowUpRight size={13} />
         </button>
       </div>
     </div>
+  );
+}
+
+function PastProposalRow({ proposal }) {
+  const navigate = useNavigate();
+
+  return (
+    <button
+      type="button"
+      onClick={() => navigate(`/proposal/${proposal.id}`)}
+      className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left transition-colors hover:border-[#14a19f]/30 hover:bg-[#14a19f]/8"
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-[11px] uppercase tracking-[0.14em] text-[#7df3f0]">
+            Proposal #{proposal.id}
+          </p>
+          <p className="mt-1 text-sm font-semibold text-white">{proposal.title}</p>
+          <p className="mt-1 line-clamp-2 text-xs text-gray-400" style={robotoStyle}>
+            {proposal.summary}
+          </p>
+        </div>
+        <div className="flex w-fit shrink-0 items-center gap-2 self-start sm:self-auto">
+          <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${getProposalTone(proposal.status)}`}>
+            {proposal.status}
+          </span>
+          <ChevronRight size={16} className="text-gray-500" />
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-3 break-words text-[11px] text-gray-500">
+        <span>{proposal.quorumLabel || `Votes: ${proposal.votes}`}</span>
+        <span>{formatProposalDateLabel(proposal)}</span>
+      </div>
+    </button>
   );
 }
 
@@ -159,12 +256,13 @@ export default function Governance() {
   const { addSystemNotification } = useNotifications();
   const [openCreateProposal, setOpenCreateProposal] = useState(false);
   const [proposalForm, setProposalForm] = useState(createInitialProposalForm);
-  const [activeProposals, setActiveProposals] = useState([]);
+  const [proposals, setProposals] = useState([]);
   const [notice, setNotice] = useState(null);
   const [redNotice, setRedNotice] = useState(false);
   const [submittingProposal, setSubmittingProposal] = useState(false);
   const [reputationStatus, setReputationStatus] = useState(emptyReputationSbtStatus);
   const [loadingReputationStatus, setLoadingReputationStatus] = useState(false);
+  const [loadingProposals, setLoadingProposals] = useState(false);
 
   useEffect(() => {
     if (!isAuthentication) {
@@ -174,26 +272,46 @@ export default function Governance() {
 
   const fetchAllProposals = async () => {
     try {
+      setLoadingProposals(true);
       const proposals = await api.get('/api/governance/fetch-proposals');
-      console.log(proposals)
-      const openProposals = proposals.data.proposals.map(p => ({
+      const mappedProposals = (proposals?.data?.proposals || []).map(mapBackendProposalToCard);
 
-        id: p?.id,
-        title: p?.tiltle || "No title",
-        summary:
-          "Refine benchmark thresholds for beginner, intermediate, and advanced certifications.",
-        votes: 234,
-        quorum: 500,
-        endsAt: "Feb 15, 2026",
-        status: p?.status,
+      let provider = null;
+      if (window.ethereum) {
+        provider = new BrowserProvider(window.ethereum);
+      } else if (rpcUrl) {
+        provider = new JsonRpcProvider(rpcUrl);
+      }
 
-      }))
+      const hydratedProposals = await Promise.all(
+        mappedProposals.map(async (proposalCard) => {
+          if (!provider || !proposalCard.voteStart) {
+            return proposalCard;
+          }
 
-      setActiveProposals(openProposals)
+          const quorumResult = await fetchProposalQuorum(provider, proposalCard.voteStart);
+          const quorumValue = Number(quorumResult?.quorum);
+
+          return {
+            ...proposalCard,
+            quorum:
+              quorumResult?.success && Number.isFinite(quorumValue) && quorumValue > 0
+                ? quorumValue
+                : null,
+          };
+        })
+      );
+
+      setProposals(hydratedProposals);
     } catch (error) {
-
+      console.error("Failed to fetch governance proposals:", error);
+      setProposals([]);
+      setRedNotice(true);
+      setNotice("Failed to fetch governance proposals.");
+    } finally {
+      setLoadingProposals(false);
     }
-  }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -238,14 +356,16 @@ export default function Governance() {
 
   if (!isAuthentication) {
     return (
-      <div className="dark:bg-[#0f111d] py-4 md:py-8 flex flex-col md:flex-row gap-4 bg-[#161c32] w-full min-h-screen">
+      <div className="dark:bg-[#0f111d] py-4 md:py-8 flex min-h-screen w-full flex-col gap-4 overflow-x-hidden bg-[#161c32]">
         <div className="pointer-events-none fixed right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-20 blur-3xl mix-blend-screen" />
         <div className="pointer-events-none fixed left-[5%] bottom-[1%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-20 blur-3xl mix-blend-screen" />
 
-        <SideBar />
+        <div className="hidden md:block">
+          <SideBar />
+        </div>
 
-        <div className="flex-1 px-4 md:px-8 pb-8">
-          <div className="backdrop-blur-md border border-[#14a19f]/20 bg-[#0d1224]/50 rounded-2xl p-10 text-center mt-2">
+        <div className="min-w-0 flex-1 px-4 md:px-8 pb-8">
+          <div className="mx-auto w-full max-w-7xl backdrop-blur-md border border-[#14a19f]/20 bg-[#0d1224]/50 rounded-2xl p-10 text-center mt-2">
             <AlertCircle className="w-14 h-14 text-[#14a19f] mx-auto mb-4" />
             <p className="text-white text-lg" style={robotoStyle}>
               Please connect your wallet to access Governance.
@@ -326,7 +446,7 @@ export default function Governance() {
         txHash: tx.txHash,
       };
 
-      setActiveProposals((current) => [nextProposal, ...current]);
+      setProposals((current) => [nextProposal, ...current]);
 
       try {
         await addSystemNotification({
@@ -418,6 +538,46 @@ export default function Governance() {
 
   const VotingStatusIcon = votingStatusIcon;
 
+  const activeProposals = proposals.filter((proposal) => ACTIVE_STATUSES.has(proposal.status));
+  const reviewProposals = proposals.filter((proposal) => REVIEW_STATUSES.has(proposal.status));
+  const pastProposals = proposals.filter(
+    (proposal) =>
+      PAST_STATUSES.has(proposal.status) ||
+      (!ACTIVE_STATUSES.has(proposal.status) && !REVIEW_STATUSES.has(proposal.status))
+  );
+  const totalVoters = proposals.reduce(
+    (sum, proposal) => sum + proposal.votes,
+    0
+  );
+  const totalPast = pastProposals.length;
+  const executedCount = pastProposals.filter((proposal) => proposal.status === "Executed").length;
+  const participationRate = proposals.length
+    ? Math.round(
+        proposals.reduce((sum, proposal) => {
+          if (typeof proposal.quorum === "number" && proposal.quorum > 0) {
+            return sum + Math.min(100, Math.round((proposal.votes / proposal.quorum) * 100));
+          }
+          return sum;
+        }, 0) / proposals.length
+      )
+    : 0;
+  const statCards = [
+    { label: "Active Proposals", value: `${activeProposals.length}`, icon: Vote },
+    { label: "Awaiting Action", value: `${reviewProposals.length}`, icon: CalendarClock },
+    { label: "Executed", value: `${executedCount}`, icon: Award },
+    { label: "Quorum Avg", value: `${participationRate}%`, icon: TrendingUp },
+  ];
+  const recentActivity = [...reviewProposals, ...pastProposals].slice(0, 4).map((proposal) => ({
+    item: `Proposal #${proposal.id}`,
+    outcome: proposal.status,
+    color:
+      proposal.status === "Executed" || proposal.status === "Succeeded"
+        ? "text-green-400"
+        : proposal.status === "Defeated" || proposal.status === "Cancelled" || proposal.status === "Canceled"
+          ? "text-red-400"
+          : "text-amber-300",
+  }));
+
 
 
   const handlehandleDelegateGovToken = async (...args) => {
@@ -473,17 +633,20 @@ export default function Governance() {
         onRemoveAction={handleRemoveProposalAction}
       />
 
-      <div className="dark:bg-[#0f111d] py-4 md:py-8 flex flex-col md:flex-row gap-4 bg-[#161c32] w-full min-h-screen">
+      <div className="dark:bg-[#0f111d] py-4 flex flex-col md:flex-row gap-4 bg-[#161c32] min-w-screen min-h-screen ">
         <div className="pointer-events-none fixed right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-20 blur-3xl mix-blend-screen" />
         <div className="pointer-events-none fixed left-[5%] bottom-[1%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-20 blur-3xl mix-blend-screen" />
 
-        <SideBar />
+        <div className="hidden md:block">
+          <SideBar />
+        </div>
 
         <NoticeToast message={notice} isError={redNotice} onClose={() => setNotice(null)} />
 
-        <div className="flex-1 px-4 md:px-8 pb-8 relative z-10">
-          <section className="mb-6 md:mb-8 backdrop-blur-md border border-[#14a19f]/20 bg-[#0d1224]/50 rounded-2xl p-5 md:p-7">
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+        <div className="relative z-10 min-w-0 flex-1 px-4 pb-8 md:px-8">
+          <div className="mx-auto w-full max-w-7xl">
+          <section className="mb-6 md:mb-8 rounded-2xl border border-[#14a19f]/20 bg-[#0d1224]/50 p-4 backdrop-blur-md sm:p-5 md:p-7">
+            <div className="flex flex-col gap-5">
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#14a19f]/35 bg-[#14a19f]/10 text-[#8ff6f3] text-xs tracking-wide uppercase mb-3">
                   <ShieldCheck size={14} />
@@ -499,9 +662,23 @@ export default function Governance() {
                   that shape treasury policy, reputation rules, and platform
                   upgrades.
                 </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300">
+                    {activeProposals.length} active now
+                  </span>
+                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300">
+                    {reviewProposals.length} awaiting queue/execute
+                  </span>
+                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300">
+                    {pastProposals.length} archived decisions
+                  </span>
+                  <span className="rounded-full border border-[#14a19f]/25 bg-[#14a19f]/10 px-3 py-1 text-xs text-[#8ff6f3]">
+                    {totalVoters} weighted votes indexed
+                  </span>
+                </div>
               </div>
 
-              <div className={`rounded-xl p-4 min-w-[250px] ${votingStatusTone}`}>
+              <div className={`rounded-xl p-4 ${votingStatusTone}`}>
                 <p className="text-xs uppercase tracking-wide text-gray-300 mb-2">
                   Your Voting Status
                 </p>
@@ -516,7 +693,7 @@ export default function Governance() {
             </div>
           </section>
 
-          <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
+          <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 md:gap-4">
             {statCards.map((item) => {
               const Icon = item.icon;
               return (
@@ -538,73 +715,145 @@ export default function Governance() {
             })}
           </section>
 
-          <section className="grid grid-cols-1 xl:grid-cols-[1.6fr_1fr] gap-6">
-            <div className="backdrop-blur-md border border-[#14a19f]/20 bg-[#0d1224]/50 rounded-xl p-5 md:p-6">
-              <div className="flex items-center justify-between gap-3 mb-5">
+          <section className="space-y-6">
+            <div className="rounded-xl border border-[#14a19f]/20 bg-[#0d1224]/50 p-4 backdrop-blur-md sm:p-5 md:p-6">
+              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-white text-xl font-bold tracking-wide">
                   Active Proposals
                 </h2>
-                <button className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#14a19f]/35 text-[#8ff6f3] bg-[#14a19f]/10 hover:bg-[#14a19f]/20 transition-colors">
-                  View All
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                {activeProposals.map((proposal) => (
-                  <ProposalCard key={proposal.id} proposal={proposal} />
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-5">
-              <DelegatedTokenCard
-                delegatedAmount={balances.votes}
-                availableAmount={balances.governance}
-                delegateeLabel="Choose a delegate to activate voting power."
-                onDelegate={handlehandleDelegateGovToken}
-              />
-
-              <div className="backdrop-blur-md border border-[#14a19f]/20 bg-[#0d1224]/50 rounded-xl p-5">
-                <h3 className="text-white text-lg font-semibold mb-3" style={robotoStyle}>
-                  Your Activity
-                </h3>
-                <div className="space-y-2.5">
-                  {recentActivity.map((entry) => (
-                    <div
-                      key={`${entry.item}-${entry.outcome}`}
-                      className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm"
-                    >
-                      <span className="text-gray-300">{entry.item}</span>
-                      <span className={entry.color}>{entry.outcome}</span>
-                    </div>
-                  ))}
+                <div className="w-fit rounded-lg border border-[#14a19f]/35 bg-[#14a19f]/10 px-3 py-1.5 text-xs font-semibold text-[#8ff6f3]">
+                  {activeProposals.length} live
                 </div>
               </div>
 
-              <div className="backdrop-blur-md border border-[#14a19f]/20 bg-[#0d1224]/50 rounded-xl p-5">
-                <h3 className="text-white text-lg font-semibold mb-3" style={robotoStyle}>
-                  Quick Actions
-                </h3>
-                <div className="space-y-2">
-                  <button
-                    onClick={() => setOpenCreateProposal(true)}
-                    disabled={!reputationStatus.hasReputationSbt}
-                    className="w-full px-4 py-2.5 bg-[#14a19f] hover:bg-[#1ecac7] disabled:bg-[#1d3742] disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm font-semibold"
-                  >
-                    Create Proposal
-                  </button>
-                  {!reputationStatus.hasReputationSbt && (
-                    <p className="text-xs text-amber-300" style={robotoStyle}>
-                      You need a reputation SBT in this wallet before creating proposals.
-                    </p>
-                  )}
-                  <button className="w-full px-4 py-2.5 bg-[#1c2744] hover:bg-[#25345a] text-gray-200 rounded-lg transition-colors text-sm font-semibold border border-white/10">
-                    Explore Governance Docs
-                  </button>
+              <div className="space-y-4">
+                {loadingProposals ? (
+                  <>
+                    <div className="h-44 animate-pulse rounded-2xl border border-[#14a19f]/12 bg-[#0f1730]/55" />
+                    <div className="h-44 animate-pulse rounded-2xl border border-[#14a19f]/12 bg-[#0f1730]/55" />
+                  </>
+                ) : activeProposals.length > 0 ? (
+                  activeProposals.map((proposal) => (
+                    <ProposalCard key={proposal.id} proposal={proposal} />
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-sm text-gray-400" style={robotoStyle}>
+                    No active proposals right now. Past governance decisions are listed below.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="rounded-xl border border-[#14a19f]/20 bg-[#0d1224]/50 p-4 backdrop-blur-md sm:p-5 md:p-6">
+                <div className="mb-6">
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <h3 className="text-white text-lg font-semibold" style={robotoStyle}>
+                      Awaiting Governance Action
+                    </h3>
+                    <span className="w-fit rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-gray-300">
+                      {reviewProposals.length} review
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {reviewProposals.length > 0 ? (
+                      reviewProposals.map((proposal) => (
+                        <PastProposalRow key={proposal.id} proposal={proposal} />
+                      ))
+                    ) : (
+                      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-gray-400" style={robotoStyle}>
+                        Proposals that passed voting and still need queue or execution will appear here.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="border-t border-white/10 pt-6">
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <h3 className="text-white text-lg font-semibold" style={robotoStyle}>
+                      Past Proposals
+                    </h3>
+                    <span className="w-fit rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-gray-300">
+                      {pastProposals.length} closed
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {loadingProposals ? (
+                      <div className="h-28 animate-pulse rounded-2xl border border-white/10 bg-white/[0.03]" />
+                    ) : pastProposals.length > 0 ? (
+                      pastProposals.slice(0, 8).map((proposal) => (
+                        <PastProposalRow key={proposal.id} proposal={proposal} />
+                      ))
+                    ) : (
+                      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-gray-400" style={robotoStyle}>
+                        Closed proposals will appear here once governance history is indexed.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6">
+                <DelegatedTokenCard
+                  delegatedAmount={balances.votes}
+                  availableAmount={balances.governance}
+                  delegateeLabel="Choose a delegate to activate voting power."
+                  onDelegate={handlehandleDelegateGovToken}
+                />
+
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  <div className="rounded-xl border border-[#14a19f]/20 bg-[#0d1224]/50 p-5 backdrop-blur-md">
+                    <h3 className="text-white text-lg font-semibold mb-3" style={robotoStyle}>
+                      Your Activity
+                    </h3>
+                    <div className="space-y-2.5">
+                      {recentActivity.length > 0 ? (
+                        recentActivity.map((entry) => (
+                          <div
+                            key={`${entry.item}-${entry.outcome}`}
+                            className="flex flex-col gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between"
+                          >
+                            <span className="text-gray-300 break-words">{entry.item}</span>
+                            <span className={entry.color}>{entry.outcome}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-gray-400" style={robotoStyle}>
+                          Governance activity will appear here once proposal history is available.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-[#14a19f]/20 bg-[#0d1224]/50 p-5 backdrop-blur-md">
+                    <h3 className="text-white text-lg font-semibold mb-3" style={robotoStyle}>
+                      Quick Actions
+                    </h3>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => setOpenCreateProposal(true)}
+                        disabled={!reputationStatus.hasReputationSbt}
+                        className="w-full px-4 py-2.5 bg-[#14a19f] hover:bg-[#1ecac7] disabled:bg-[#1d3742] disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm font-semibold"
+                      >
+                        Create Proposal
+                      </button>
+                      {!reputationStatus.hasReputationSbt && (
+                        <p className="text-xs text-amber-300" style={robotoStyle}>
+                          You need a reputation SBT in this wallet before creating proposals.
+                        </p>
+                      )}
+                      <button className="w-full px-4 py-2.5 bg-[#1c2744] hover:bg-[#25345a] text-gray-200 rounded-lg transition-colors text-sm font-semibold border border-white/10">
+                        Explore Governance Docs
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </section>
+          </div>
         </div>
       </div>
     </>

@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { AlertCircle, ArrowLeft, BriefcaseBusiness, CalendarClock, UserRound } from "lucide-react";
+import { BrowserProvider } from "ethers";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { AlertCircle, ArrowLeft, BriefcaseBusiness, CalendarClock, Star, UserRound } from "lucide-react";
 import SideBar from "../components/SideBar";
 import NoticeToast from "../components/NoticeToast";
 import api from "../utils/api.js";
+import { submitJobRating } from "../utils/submit_job_rating.js";
 
 function formatDate(dateValue) {
   if (!dateValue) return "N/A";
@@ -67,6 +69,7 @@ function normalizeContract(raw, jobIdParam, viewerRole) {
       raw.JobDetails?.clientAddress,
       viewerRole === "client" ? "You" : "N/A"
     ),
+    clientId: pickFirstDefined(raw.clientId, raw.JobDetails?.clientId),
     clientAddress: pickFirstDefined(raw.clientAddress, raw.JobDetails?.clientAddress),
     freelancerName: pickFirstDefined(
       raw.freelancerName,
@@ -74,6 +77,7 @@ function normalizeContract(raw, jobIdParam, viewerRole) {
       raw.JobDetails?.freelancerDetails?.BasicInformation?.name,
       "N/A"
     ),
+    freelancerId: pickFirstDefined(raw.freelancerId, bidInfo?.freelancerId, raw.JobDetails?.freelancerId),
     freelancerAddress: pickFirstDefined(raw.freelancerAddress, bidInfo?.freelancerAddress, raw.bidder),
     contractValue: pickFirstDefined(raw.contractValue, raw.budget, raw.bidAmount, bidInfo?.bidAmount, raw.JobDetails?.budget),
     deadline: pickFirstDefined(raw.deadline, raw.JobDetails?.completion, raw.JobDetails?.deadline),
@@ -96,6 +100,10 @@ function ContractDetailsPage() {
   const [redNotice, setRedNotice] = useState(false);
   const [loading, setLoading] = useState(false);
   const [remoteContract, setRemoteContract] = useState(null);
+  const [selectedRating, setSelectedRating] = useState(0);
+  const [hoveredRating, setHoveredRating] = useState(0);
+  const [submittingRating, setSubmittingRating] = useState(false);
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
 
   const viewerRole = location.state?.viewerRole;
   const preloaded = useMemo(
@@ -103,6 +111,12 @@ function ContractDetailsPage() {
     [location.state, jobId, viewerRole]
   );
   const contract = preloaded || remoteContract;
+  const normalizedStatus = `${contract?.status || ""}`.toLowerCase().replaceAll("_", " ");
+  const isCompletedContract = normalizedStatus.includes("completed");
+  const ratingTargetLabel =
+    viewerRole === "client" ? "freelancer" : viewerRole === "freelancer" ? "client" : "counterparty";
+  const ratingHeading =
+    viewerRole === "client" ? "Rate Freelancer" : viewerRole === "freelancer" ? "Rate Client" : "Rate Counterparty";
 
   useEffect(() => {
     let cancelled = false;
@@ -134,6 +148,52 @@ function ContractDetailsPage() {
       cancelled = true;
     };
   }, [jobId, preloaded, viewerRole]);
+
+  const handleSubmitRating = async () => {
+    if (!isCompletedContract) {
+      setRedNotice(true);
+      setNotice("Ratings are available only after the job is completed.");
+      return;
+    }
+
+    if (!selectedRating) {
+      setRedNotice(true);
+      setNotice("Choose a rating before submitting.");
+      return;
+    }
+
+    if (!window.ethereum) {
+      setRedNotice(true);
+      setNotice("Connect your wallet to submit a rating.");
+      return;
+    }
+
+    try {
+      setSubmittingRating(true);
+      const provider = new BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const result = await submitJobRating({
+        jobId: contract?.jobId,
+        rating: selectedRating,
+        role: viewerRole,
+        signer,
+      });
+
+      if (!result?.success) {
+        throw new Error(result?.error || "Failed to submit rating.");
+      }
+
+      setRedNotice(false);
+      setNotice("Rating submitted successfully.");
+      setRatingSubmitted(true);
+    } catch (error) {
+      console.error("Failed to submit rating:", error);
+      setRedNotice(true);
+      setNotice(error?.message || "Failed to submit rating.");
+    } finally {
+      setSubmittingRating(false);
+    }
+  };
 
   return (
     <>
@@ -215,7 +275,16 @@ function ContractDetailsPage() {
                       <BriefcaseBusiness size={15} />
                       <p className="text-xs uppercase tracking-wide">Client</p>
                     </div>
-                    <p className="text-white font-medium">{contract.clientName || "N/A"}</p>
+                    {contract.clientId ? (
+                      <Link
+                        to={`/profile/${contract.clientId}`}
+                        className="font-medium text-cyan-300 underline underline-offset-4 hover:text-cyan-200"
+                      >
+                        {contract.clientName || "N/A"}
+                      </Link>
+                    ) : (
+                      <p className="text-white font-medium">{contract.clientName || "N/A"}</p>
+                    )}
                     <p className="text-xs text-gray-400 break-all mt-1">{contract.clientAddress || "N/A"}</p>
                   </div>
 
@@ -224,7 +293,16 @@ function ContractDetailsPage() {
                       <UserRound size={15} />
                       <p className="text-xs uppercase tracking-wide">Freelancer</p>
                     </div>
-                    <p className="text-white font-medium">{contract.freelancerName || "N/A"}</p>
+                    {contract.freelancerId ? (
+                      <Link
+                        to={`/profile/${contract.freelancerId}`}
+                        className="font-medium text-cyan-300 underline underline-offset-4 hover:text-cyan-200"
+                      >
+                        {contract.freelancerName || "N/A"}
+                      </Link>
+                    ) : (
+                      <p className="text-white font-medium">{contract.freelancerName || "N/A"}</p>
+                    )}
                     <p className="text-xs text-gray-400 break-all mt-1">{contract.freelancerAddress || "N/A"}</p>
                   </div>
                 </div>
@@ -270,6 +348,72 @@ function ContractDetailsPage() {
                           </p>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {isCompletedContract ? (
+                  <div className="rounded-xl border border-[#14a19f]/20 bg-[#161c32]/40 p-5">
+                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-[#7df3f0]">
+                          Completed Job Rating
+                        </p>
+                        <h3 className="mt-1 text-lg font-semibold text-white">{ratingHeading}</h3>
+                        <p className="mt-2 text-sm text-gray-400">
+                          Share a 1 to 5 star rating for the {ratingTargetLabel}. This will be submitted onchain.
+                        </p>
+                      </div>
+                      {ratingSubmitted ? (
+                        <span className="rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-xs font-semibold text-green-300">
+                          Rating Submitted
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="mt-5 flex flex-wrap items-center gap-2">
+                      {[1, 2, 3, 4, 5].map((starValue) => {
+                        const activeValue = hoveredRating || selectedRating;
+                        const isActive = starValue <= activeValue;
+
+                        return (
+                          <button
+                            key={starValue}
+                            type="button"
+                            onMouseEnter={() => setHoveredRating(starValue)}
+                            onMouseLeave={() => setHoveredRating(0)}
+                            onClick={() => setSelectedRating(starValue)}
+                            disabled={ratingSubmitted || submittingRating}
+                            className="rounded-full p-2 transition-transform hover:scale-110 disabled:cursor-not-allowed disabled:opacity-60"
+                            aria-label={`Rate ${starValue} star${starValue > 1 ? "s" : ""}`}
+                          >
+                            <Star
+                              size={28}
+                              className={
+                                isActive
+                                  ? "fill-amber-400 text-amber-400"
+                                  : "text-gray-500"
+                              }
+                            />
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <p className="text-sm text-gray-300">
+                        {selectedRating
+                          ? `Selected rating: ${selectedRating} / 5`
+                          : `Select a star rating for the ${ratingTargetLabel}.`}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleSubmitRating}
+                        disabled={!selectedRating || ratingSubmitted || submittingRating}
+                        className="inline-flex items-center justify-center rounded-lg bg-[#14a19f] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#1ecac7] disabled:cursor-not-allowed disabled:bg-[#1d3742] disabled:text-gray-400"
+                      >
+                        {submittingRating ? "Submitting..." : ratingSubmitted ? "Submitted" : "Submit Rating"}
+                      </button>
                     </div>
                   </div>
                 ) : null}

@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import ProjectActionButtons from "./ProjectActionButtons";
 
 const statusStyles = {
@@ -21,6 +22,10 @@ function StatusProjectCard({
   onMessage,
   onArchive,
 }) {
+  const clientLabel = project?.clientName || project?.clientAddress || "N/A";
+  const freelancerLabel =
+    project?.freelancerName || project?.freelancerAddress || "N/A";
+
   return (
     <div className="backdrop-blur-md border border-[#14a19f]/20 bg-[#0d1224]/50 rounded-xl p-5 hover:border-[#14a19f]/40 transition-all space-y-4">
       <div className="flex items-start justify-between gap-3">
@@ -58,15 +63,29 @@ function StatusProjectCard({
         </div>
         <div>
           <p className="text-gray-500 text-xs">Client</p>
-          <p className="text-gray-300 font-medium line-clamp-1">
-            {project?.clientName || project?.clientAddress || "N/A"}
-          </p>
+          {project?.clientId ? (
+            <Link
+              to={`/profile/${project.clientId}`}
+              className="font-medium line-clamp-1 text-cyan-300 hover:text-cyan-200 underline underline-offset-4"
+            >
+              {clientLabel}
+            </Link>
+          ) : (
+            <p className="text-gray-300 font-medium line-clamp-1">{clientLabel}</p>
+          )}
         </div>
         <div>
           <p className="text-gray-500 text-xs">Freelancer</p>
-          <p className="text-gray-300 font-medium line-clamp-1">
-            {project?.freelancerName || project?.freelancerAddress || "N/A"}
-          </p>
+          {project?.freelancerId ? (
+            <Link
+              to={`/profile/${project.freelancerId}`}
+              className="font-medium line-clamp-1 text-cyan-300 hover:text-cyan-200 underline underline-offset-4"
+            >
+              {freelancerLabel}
+            </Link>
+          ) : (
+            <p className="text-gray-300 font-medium line-clamp-1">{freelancerLabel}</p>
+          )}
         </div>
       </div>
 

@@ -10,6 +10,7 @@ import { checkSkillName } from "../controllers/auth.controller.js";
 import { gitHubAuthStart } from "../controllers/auth.controller.js";
 import { getGithubUserData } from "../controllers/auth.controller.js";
 import { githubAuthCallback } from "../controllers/auth.controller.js";
+import { getPublicProfileByUserId } from "../controllers/auth.controller.js";
 
 const authRoutes = express.Router();
 
@@ -23,5 +24,6 @@ authRoutes.get('/check-skill-data',checkSkillData);
 authRoutes.get('/github', gitHubAuthStart);
 authRoutes.get('/github-auth-callback',githubAuthCallback)
 authRoutes.get('/github-auth-user',getGithubUserData)
+authRoutes.get("/public-profile/:userId", getPublicProfileByUserId);
 
 export default authRoutes;

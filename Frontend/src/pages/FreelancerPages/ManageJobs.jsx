@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAccount, useWalletClient } from "wagmi";
 import { BrowserProvider } from "ethers";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Star } from "lucide-react";
 import SideBar from "../../components/SideBar";
 import api from "../../utils/api.js";
 import "../../index.css";
@@ -11,6 +11,8 @@ import NoticeToast from "../../components/NoticeToast";
 import StatusProjectCard from "../../components/StatusProjectCard";
 import { useAuth } from "../../contexts/AuthContext.jsx";
 import { submitWorkOnChain } from "../../utils/submit_work.js";
+import { raiseDisputeOnChain } from "../../utils/raise_dispute.js";
+import { submitJobRating } from "../../utils/submit_job_rating.js";
 
 function EmptyState({ title, description, ctaLabel, onCta }) {
   return (
@@ -45,6 +47,16 @@ function ManageJobs() {
   const [submittingWorkJobId, setSubmittingWorkJobId] = useState(null);
   const [selectedSubmitProject, setSelectedSubmitProject] = useState(null);
   const [submittedProofByJob, setSubmittedProofByJob] = useState({});
+  const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
+  const [selectedDisputeProject, setSelectedDisputeProject] = useState(null);
+  const [disputeReason, setDisputeReason] = useState("");
+  const [raisingDisputeJobId, setRaisingDisputeJobId] = useState(null);
+  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+  const [selectedRatingProject, setSelectedRatingProject] = useState(null);
+  const [selectedRating, setSelectedRating] = useState(0);
+  const [hoveredRating, setHoveredRating] = useState(0);
+  const [submittingRatingJobId, setSubmittingRatingJobId] = useState(null);
+  const [ratedJobIds, setRatedJobIds] = useState({});
 
   const [myBids, setMyBids] = useState([]);
   const [activeProjects, setActiveProjects] = useState([]);
@@ -226,6 +238,9 @@ function ManageJobs() {
             project.JobDetails?.completion || project.JobDetails?.deadline,
           status: "Disputed",
           skills: project.JobDetails?.skills || [],
+          workProofLinks: normalizeProofLinks(project.workProofLinks),
+          workProofLink: project.workProofLink || "",
+          submittedAt: project.submittedAt || null,
         }))
         : [];
 
@@ -451,9 +466,144 @@ function ManageJobs() {
     return "bg-amber-500/20 text-amber-300 border border-amber-500/40";
   };
 
-  const handleRaiseDisputeUIOnly = () => {
-    setRedNotice(false);
-    setNotice("Raise dispute flow will be available soon.");
+  const openDisputeModal = (project) => {
+    setSelectedDisputeProject(project);
+    setDisputeReason("");
+    setIsDisputeModalOpen(true);
+  };
+
+  const closeDisputeModal = () => {
+    if (raisingDisputeJobId) {
+      return;
+    }
+    setIsDisputeModalOpen(false);
+    setSelectedDisputeProject(null);
+    setDisputeReason("");
+  };
+
+  const handleRaiseDispute = async () => {
+    const signer = await getSigner();
+    if (!signer) {
+      setRedNotice(true);
+      setNotice("Please connect your wallet first.");
+      return;
+    }
+
+    if (!selectedDisputeProject?.jobId) {
+      setRedNotice(true);
+      setNotice("Job ID missing for this dispute.");
+      return;
+    }
+
+    if (!disputeReason.trim()) {
+      setRedNotice(true);
+      setNotice("Please describe the dispute reason.");
+      return;
+    }
+
+    try {
+      setRaisingDisputeJobId(selectedDisputeProject.jobId);
+      const result = await raiseDisputeOnChain({
+        jobId: selectedDisputeProject.jobId,
+        reason: disputeReason,
+        signer,
+        actorRole: "freelancer",
+        jobTitle: selectedDisputeProject.jobTitle,
+        disputeContext: selectedDisputeProject,
+      });
+
+      if (!result?.success) {
+        throw new Error(result?.error || "Unable to raise dispute.");
+      }
+
+      setRedNotice(false);
+      setNotice(
+        result?.governanceProposalCreated
+          ? `Dispute raised and governance proposal #${result.governanceProposalId} created.`
+          : result?.governanceError || "Dispute raised successfully."
+      );
+      setIsDisputeModalOpen(false);
+      setSelectedDisputeProject(null);
+      setDisputeReason("");
+      setActiveTab("Disputed");
+      await fetchDashboardData();
+    } catch (error) {
+      console.error("raise dispute error:", error);
+      setRedNotice(true);
+      setNotice(error?.message || "Unable to raise dispute.");
+    } finally {
+      setRaisingDisputeJobId(null);
+    }
+  };
+
+  const openRatingModal = (project) => {
+    setSelectedRatingProject(project);
+    setSelectedRating(0);
+    setHoveredRating(0);
+    setIsRatingModalOpen(true);
+  };
+
+  const closeRatingModal = () => {
+    if (submittingRatingJobId) {
+      return;
+    }
+
+    setIsRatingModalOpen(false);
+    setSelectedRatingProject(null);
+    setSelectedRating(0);
+    setHoveredRating(0);
+  };
+
+  const handleSubmitRating = async () => {
+    const signer = await getSigner();
+    if (!signer) {
+      setRedNotice(true);
+      setNotice("Please connect your wallet first.");
+      return;
+    }
+
+    if (!selectedRatingProject?.jobId) {
+      setRedNotice(true);
+      setNotice("Job ID missing for rating.");
+      return;
+    }
+
+    if (!selectedRating) {
+      setRedNotice(true);
+      setNotice("Choose a rating before submitting.");
+      return;
+    }
+
+    try {
+      setSubmittingRatingJobId(selectedRatingProject.jobId);
+      const result = await submitJobRating({
+        jobId: selectedRatingProject.jobId,
+        rating: selectedRating,
+        role: "freelancer",
+        signer,
+      });
+
+      if (!result?.success) {
+        throw new Error(result?.error || "Unable to submit rating.");
+      }
+
+      setRatedJobIds((current) => ({
+        ...current,
+        [selectedRatingProject.jobId]: selectedRating,
+      }));
+      setRedNotice(false);
+      setNotice("Rating submitted successfully.");
+      setIsRatingModalOpen(false);
+      setSelectedRatingProject(null);
+      setSelectedRating(0);
+      setHoveredRating(0);
+    } catch (error) {
+      console.error("submit rating error:", error);
+      setRedNotice(true);
+      setNotice(error?.message || "Unable to submit rating.");
+    } finally {
+      setSubmittingRatingJobId(null);
+    }
   };
 
   return (
@@ -506,6 +656,115 @@ function ManageJobs() {
                 className="px-4 py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {submittingWorkJobId ? "Submitting..." : "Submit Work"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isDisputeModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center px-4">
+          <div className="w-full max-w-lg rounded-2xl border border-red-500/30 bg-[#0d1224] p-6 shadow-2xl">
+            <h2 className="text-xl font-semibold text-white">Raise Dispute</h2>
+            <p className="text-sm text-gray-400 mt-2">
+              {selectedDisputeProject?.jobTitle || "Selected project"}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Job ID: {selectedDisputeProject?.jobId || "N/A"}
+            </p>
+
+            <div className="mt-5">
+              <label
+                htmlFor="dispute-reason-freelancer"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
+                Dispute Reason
+              </label>
+              <textarea
+                id="dispute-reason-freelancer"
+                value={disputeReason}
+                onChange={(e) => setDisputeReason(e.target.value)}
+                rows={5}
+                placeholder="Describe the issue with this submitted job..."
+                className="w-full rounded-lg border border-red-500/30 bg-[#161c32] px-4 py-3 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500/40"
+              />
+            </div>
+
+            <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+              <button
+                onClick={closeDisputeModal}
+                disabled={Boolean(raisingDisputeJobId)}
+                className="px-4 py-2 rounded-lg border border-gray-600 text-gray-300 hover:bg-gray-700/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRaiseDispute}
+                disabled={Boolean(raisingDisputeJobId)}
+                className="px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-300 font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {raisingDisputeJobId ? "Raising..." : "Raise Dispute"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isRatingModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center px-4">
+          <div className="w-full max-w-lg rounded-2xl border border-amber-400/30 bg-[#0d1224] p-6 shadow-2xl">
+            <h2 className="text-xl font-semibold text-white">Rate Client</h2>
+            <p className="text-sm text-gray-400 mt-2">
+              {selectedRatingProject?.jobTitle || "Completed project"}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Share a rating from 1 to 5 stars for the client.
+            </p>
+
+            <div className="mt-5 flex flex-wrap items-center gap-2">
+              {[1, 2, 3, 4, 5].map((starValue) => {
+                const activeValue = hoveredRating || selectedRating;
+                const isActive = starValue <= activeValue;
+
+                return (
+                  <button
+                    key={starValue}
+                    type="button"
+                    onMouseEnter={() => setHoveredRating(starValue)}
+                    onMouseLeave={() => setHoveredRating(0)}
+                    onClick={() => setSelectedRating(starValue)}
+                    disabled={Boolean(submittingRatingJobId)}
+                    className="rounded-full p-2 transition-transform hover:scale-110 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <Star
+                      size={30}
+                      className={isActive ? "fill-amber-400 text-amber-400" : "text-gray-500"}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="mt-3 text-sm text-gray-300">
+              {selectedRating
+                ? `Selected rating: ${selectedRating} / 5`
+                : "Select a rating to continue."}
+            </p>
+
+            <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+              <button
+                onClick={closeRatingModal}
+                disabled={Boolean(submittingRatingJobId)}
+                className="px-4 py-2 rounded-lg border border-gray-600 text-gray-300 hover:bg-gray-700/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitRating}
+                disabled={!selectedRating || Boolean(submittingRatingJobId)}
+                className="px-4 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {submittingRatingJobId ? "Submitting..." : "Submit Rating"}
               </button>
             </div>
           </div>
@@ -764,7 +1023,7 @@ function ManageJobs() {
                               </button>
 
                               <button
-                                onClick={handleRaiseDisputeUIOnly}
+                                onClick={() => openDisputeModal(project)}
                                 className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 text-sm font-semibold py-2 rounded transition-colors"
                               >
                                 Raise Dispute
@@ -795,6 +1054,20 @@ function ManageJobs() {
                           project={project}
                           status="Completed"
                           showActions={true}
+                          extraActions={
+                            ratedJobIds[project.jobId] ? (
+                              <div className="rounded-lg border border-amber-400/25 bg-amber-500/10 px-3 py-2 text-sm text-amber-300">
+                                You rated this client {ratedJobIds[project.jobId]}/5.
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => openRatingModal(project)}
+                                className="w-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 text-sm font-semibold py-2 rounded transition-colors"
+                              >
+                                Rate Client
+                              </button>
+                            )
+                          }
                           onShowContract={() => handleShowContract(project)}
                           onMessage={() => handleMessage(project)}
                         />

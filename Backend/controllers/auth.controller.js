@@ -88,6 +88,55 @@ const getUser = async (address) => {
   }
 };
 
+export const getPublicProfileByUserId = async (req, res) => {
+  const { userId } = req.params;
+
+  if (!userId) {
+    return res.status(400).json({ success: false, message: "User id is required" });
+  }
+
+  try {
+    const user = await User.findById(userId).select("_id role wallets");
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    if (user.role === "freelancer") {
+      const freelancer = await Freelancer.findOne({ user: userId });
+
+      if (!freelancer) {
+        return res.status(404).json({ success: false, message: "Freelancer profile not found" });
+      }
+
+      return res.status(200).json({
+        success: true,
+        role: "freelancer",
+        userId: user._id,
+        walletAddress: user.wallets || freelancer.walletAddress || "",
+        profile: freelancer,
+      });
+    }
+
+    const client = await Client.findOne({ user: userId });
+
+    if (!client) {
+      return res.status(404).json({ success: false, message: "Client profile not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      role: "client",
+      userId: user._id,
+      walletAddress: user.wallets || client.walletAddress || "",
+      profile: client,
+    });
+  } catch (error) {
+    console.error("Error fetching public profile:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 export const createUser = async (req, res) => {
   try {
     const { role } = req.body;
