@@ -128,11 +128,31 @@ const fetchCompletedJobsByWalletQuery = `
   }
 `;
 
+const fetchCompletedClientJobsByWalletQuery = `
+  query CompletedClientJobsByWallet($client: Bytes!) {
+    jobs(
+      where: { client: $client, status: COMPLETED }
+      orderBy: completedAt
+      orderDirection: desc
+    ) {
+      id
+      client
+      freelancer
+      status
+      budget
+      ipfsHash
+      createdAt
+      completedAt
+    }
+  }
+`;
+
 const fetchCompletedJobsMetadataQuery = `
   query CompletedJobsMetadata($jobIds: [ID!]) {
     jobs(where: { id_in: $jobIds }) {
       id
       client
+      freelancer
       status
       budget
       ipfsHash
@@ -205,6 +225,12 @@ const findClientByWallet = async (walletAddress) => {
   if (!walletAddress) return null;
   const pattern = new RegExp(`^${escapeRegex(walletAddress)}$`, "i");
   return Client.findOne({ walletAddress: pattern });
+};
+
+const findFreelancerByWallet = async (walletAddress) => {
+  if (!walletAddress) return null;
+  const pattern = new RegExp(`^${escapeRegex(walletAddress)}$`, "i");
+  return Freelancer.findOne({ walletAddress: pattern });
 };
 
 export const aiEnhanceJobDetails = async (req, res) => {
@@ -485,6 +511,12 @@ export const fetchJob = async (req, res) => {
     const jobDetails = {
       ...clientPlain,
       ...ipfsData,
+      status: job.status || "OPEN",
+      jobId: job.id,
+      budget: ipfsData?.budget ?? job.budget ?? null,
+      createdAt: ipfsData?.createdAt || job.createdAt || null,
+      deadline: ipfsData?.deadline || job.bidDeadline || null,
+      completion: ipfsData?.completion || job.expireDeadline || null,
       clientAddress: ipfsData?.client || job.client,
       clientId: clientPlain?.user || null,
       clientName:
@@ -875,28 +907,38 @@ export const fetchCompletedJobsForWallet = async (req, res) => {
   }
 
   try {
-    const completedHistoryResp = await querySubgraph(
-      fetchCompletedJobsByWalletQuery,
-      { freelancer: walletAddress }
-    );
+    const [completedHistoryResp, completedClientJobsResp] = await Promise.all([
+      querySubgraph(fetchCompletedJobsByWalletQuery, {
+        freelancer: walletAddress,
+      }),
+      querySubgraph(fetchCompletedClientJobsByWalletQuery, {
+        client: walletAddress,
+      }),
+    ]);
 
     const completedHistory = completedHistoryResp?.jobCompletedHistories || [];
+    const completedClientJobs = completedClientJobsResp?.jobs || [];
 
-    if (!completedHistory.length) {
+    if (!completedHistory.length && !completedClientJobs.length) {
       return res.status(200).json({
         success: true,
         jobs: [],
       });
     }
 
-    const uniqueJobIds = [...new Set(completedHistory.map((item) => item.jobId))];
+    const uniqueJobIds = [
+      ...new Set([
+        ...completedHistory.map((item) => item.jobId),
+        ...completedClientJobs.map((item) => item.id),
+      ]),
+    ];
     const jobsResp = await querySubgraph(fetchCompletedJobsMetadataQuery, {
       jobIds: uniqueJobIds,
     });
 
     const jobsById = new Map((jobsResp?.jobs || []).map((job) => [job.id.toLowerCase(), job]));
 
-    const jobs = await Promise.all(
+    const freelancerCompletedJobs = await Promise.all(
       completedHistory.map(async (item) => {
         const job = jobsById.get(item.jobId.toLowerCase());
         const metadata = job?.ipfsHash ? await getJsonFromIpfs(job.ipfsHash) : null;
@@ -905,12 +947,14 @@ export const fetchCompletedJobsForWallet = async (req, res) => {
         return {
           historyId: item.id,
           jobId: item.jobId,
+          completedAs: "freelancer",
           completedAt: item.timestamp,
           blockNumber: item.blockNumber,
           transactionHash: item.transactionHash,
           clientAddress: job?.client || "",
           clientName:
             clientDetails?.companyDetails?.companyName || shortAddress(job?.client || ""),
+          freelancerAddress: walletAddress,
           budget: metadata?.budget ?? job?.budget ?? null,
           title: metadata?.title || "Completed Job",
           description: metadata?.description || "",
@@ -921,6 +965,43 @@ export const fetchCompletedJobsForWallet = async (req, res) => {
         };
       })
     );
+
+    const clientCompletedJobs = await Promise.all(
+      completedClientJobs.map(async (job) => {
+        const metadataJob = jobsById.get(job.id.toLowerCase()) || job;
+        const metadata = metadataJob?.ipfsHash ? await getJsonFromIpfs(metadataJob.ipfsHash) : null;
+        const freelancerDetails = metadataJob?.freelancer
+          ? await findFreelancerByWallet(metadataJob.freelancer)
+          : null;
+
+        return {
+          historyId: `client-${job.id}`,
+          jobId: job.id,
+          completedAs: "client",
+          completedAt: metadataJob?.completedAt || null,
+          blockNumber: null,
+          transactionHash: "",
+          clientAddress: walletAddress,
+          clientName: "You",
+          freelancerAddress: metadataJob?.freelancer || "",
+          freelancerName:
+            freelancerDetails?.BasicInformation?.name || shortAddress(metadataJob?.freelancer || ""),
+          budget: metadata?.budget ?? metadataJob?.budget ?? null,
+          title: metadata?.title || "Completed Job",
+          description: metadata?.description || "",
+          skills: Array.isArray(metadata?.skills) ? metadata.skills : [],
+          deadline: metadata?.deadline || null,
+          completionDeadline: metadata?.completion || null,
+          createdAt: metadata?.createdAt || metadataJob?.createdAt || null,
+        };
+      })
+    );
+
+    const jobs = [...freelancerCompletedJobs, ...clientCompletedJobs].sort((a, b) => {
+      const aTime = Number(a?.completedAt || 0);
+      const bTime = Number(b?.completedAt || 0);
+      return bTime - aTime;
+    });
 
     return res.status(200).json({
       success: true,

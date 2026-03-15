@@ -1,6 +1,8 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import {
   Award,
+  ArrowUpRight,
   BriefcaseBusiness,
   CalendarDays,
   ShieldCheck,
@@ -37,6 +39,21 @@ export default function ReputationSbtCard({ reputationProfile, orbitronStyle }) 
   const completedJobsList = Array.isArray(reputationProfile?.completedJobsList)
     ? reputationProfile.completedJobsList
     : [];
+  const getJobRoleMeta = (job) => {
+    if (job?.completedAs === "client") {
+      return {
+        badge: "Completed as Client",
+        counterpartyLabel: "Freelancer",
+        counterpartyValue: job.freelancerName || "Unknown",
+      };
+    }
+
+    return {
+      badge: "Completed as Freelancer",
+      counterpartyLabel: "Client",
+      counterpartyValue: job.clientName || "Unknown",
+    };
+  };
 
   const formatDate = (value) => {
     if (!value) return "Unknown date";
@@ -164,48 +181,62 @@ export default function ReputationSbtCard({ reputationProfile, orbitronStyle }) 
 
               {completedJobsList.length ? (
                 <div className="mt-3 space-y-3">
-                  {completedJobsList.map((job) => (
-                    <div
-                      key={job.historyId || job.jobId}
-                      className="rounded-xl border border-white/10 bg-[#0f1729]/70 p-3"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-white" style={robotoStyle}>
-                            {job.title || "Completed Job"}
-                          </p>
-                          <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-gray-500">
-                            Job ID {job.jobId?.slice?.(0, 10)}...
-                          </p>
+                  {completedJobsList.map((job) => {
+                    const roleMeta = getJobRoleMeta(job);
+
+                    return (
+                      <Link
+                        key={job.historyId || job.jobId}
+                        to={job?.jobId ? `/job/${job.jobId}` : "#"}
+                        className="group block rounded-xl border border-white/10 bg-[#0f1729]/70 p-3 transition-colors hover:border-[#14a19f]/40 hover:bg-[#101b33]"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-white" style={robotoStyle}>
+                              {job.title || "Completed Job"}
+                            </p>
+                            <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-gray-500">
+                              Job ID {job.jobId?.slice?.(0, 10)}...
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-300">
+                              {roleMeta.badge}
+                            </span>
+                            <ArrowUpRight
+                              size={14}
+                              className="text-gray-500 transition-colors group-hover:text-[#8ff6f3]"
+                            />
+                          </div>
                         </div>
-                        <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-300">
-                          Completed
-                        </span>
-                      </div>
 
-                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-300" style={robotoStyle}>
-                        <span className="rounded-full bg-white/5 px-2 py-1">
-                          Client: {job.clientName || "Unknown"}
-                        </span>
-                        {job.budget ? (
+                        <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-300" style={robotoStyle}>
                           <span className="rounded-full bg-white/5 px-2 py-1">
-                            Budget: {Number(job.budget).toLocaleString()}
+                            {roleMeta.counterpartyLabel}: {roleMeta.counterpartyValue}
                           </span>
+                          {job.budget ? (
+                            <span className="rounded-full bg-white/5 px-2 py-1">
+                              Budget: {Number(job.budget).toLocaleString()}
+                            </span>
+                          ) : null}
+                        </div>
+
+                        <div className="mt-3 flex items-center gap-2 text-xs text-gray-400" style={robotoStyle}>
+                          <CalendarDays size={13} />
+                          <span>Completed on {formatDate(job.completedAt)}</span>
+                        </div>
+
+                        {job.description ? (
+                          <p className="mt-3 line-clamp-2 text-xs leading-5 text-gray-400" style={robotoStyle}>
+                            {job.description}
+                          </p>
                         ) : null}
-                      </div>
-
-                      <div className="mt-3 flex items-center gap-2 text-xs text-gray-400" style={robotoStyle}>
-                        <CalendarDays size={13} />
-                        <span>Completed on {formatDate(job.completedAt)}</span>
-                      </div>
-
-                      {job.description ? (
-                        <p className="mt-3 line-clamp-2 text-xs leading-5 text-gray-400" style={robotoStyle}>
-                          {job.description}
+                        <p className="mt-3 text-[11px] font-medium uppercase tracking-[0.14em] text-[#8ff6f3]" style={robotoStyle}>
+                          View full job description
                         </p>
-                      ) : null}
-                    </div>
-                  ))}
+                      </Link>
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="mt-3 text-xs leading-6 text-gray-400" style={robotoStyle}>

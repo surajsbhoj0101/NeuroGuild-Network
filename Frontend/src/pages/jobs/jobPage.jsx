@@ -62,6 +62,13 @@ function jobPage() {
   const bidAmountNumber = Number(bidData.amount || 0);
   const proposalLength = bidData.proposal.trim().length;
   const isBidFormValid = bidAmountNumber > 0 && proposalLength > 0;
+  const normalizedJobStatus = (jobDetails?.status || "OPEN").toUpperCase();
+  const isJobOpen = normalizedJobStatus === "OPEN";
+  const readableJobStatus = normalizedJobStatus
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 
   async function getSigner() {
     let signer;
@@ -123,6 +130,12 @@ function jobPage() {
   };
 
   async function saveJob(params) {
+    if (!isJobOpen) {
+      setRedNotice(true);
+      setNotice(`This job is currently ${readableJobStatus.toLowerCase()}.`);
+      return;
+    }
+
     if (!address) {
       setRedNotice(true);
       setNotice("Wallet not connected");
@@ -159,6 +172,12 @@ function jobPage() {
   }
 
   async function handleSubmitBid() {
+    if (!isJobOpen) {
+      setRedNotice(true);
+      setNotice(`This job is currently ${readableJobStatus.toLowerCase()}.`);
+      return;
+    }
+
     if (!address) {
       setRedNotice(true);
       setNotice("Wallet not connected");
@@ -581,106 +600,118 @@ function jobPage() {
           <div className="hidden lg:flex  flex-col w-[40%] items-center">
             <div className="sticky w-4/5 top-3 flex flex-col justify-center space-y-3">
               <div className=" ">
-                {isConnected ? (
-                  fetchingScore ? (
-                    <div className="flex flex-col items-center rounded-xl border border-[#14a19f]/10 px-6 py-6 space-y-4 animate-pulse">
-                      <div className="h-6 w-48 bg-white/10 rounded-md" />
-                      <div className="h-28 w-28 rounded-full bg-white/10" />
-                      <div className="w-full flex gap-4">
-                        <div className="w-1/2 h-12 bg-white/10 rounded-lg" />
-                        <div className="w-1/2 h-12 bg-white/10 rounded-lg" />
+                {isJobOpen ? (
+                  isConnected ? (
+                    fetchingScore ? (
+                      <div className="flex flex-col items-center rounded-xl border border-[#14a19f]/10 px-6 py-6 space-y-4 animate-pulse">
+                        <div className="h-6 w-48 bg-white/10 rounded-md" />
+                        <div className="h-28 w-28 rounded-full bg-white/10" />
+                        <div className="w-full flex gap-4">
+                          <div className="w-1/2 h-12 bg-white/10 rounded-lg" />
+                          <div className="w-1/2 h-12 bg-white/10 rounded-lg" />
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center rounded-xl border border-[#14a19f]/10 px-6 py-4 space-y-6">
-                      <h1 className="text-3xl font-semibold text-white mb-2">
-                        Apply for this Gig
-                      </h1>
-
-                      <div className="backdrop-blur-md border border-[#14a19f]/10 bg-[#161c32]/40 rounded-xl shadow-lg px-14 py-8 flex flex-col items-center">
-                        <MatchScore score={score} />
-                      </div>
-
-                      <div className="w-full flex gap-4">
-                        {jobInteraction.isApplied ? (
-                          <button className="w-1/2 bg-transparent border-white border text-white font-semibold py-3 rounded-lg transition-colors">
-                            Applied
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              setIsBidding(true);
-                            }}
-                            className="w-1/2 bg-transparent text-[#14a19f] dark:text-white border border-[#14a19f] dark:border-[#0a184b] font-semibold py-3 rounded-lg hover:bg-[#14a19f]/10 dark:hover:bg-[#0d1c4e] transition-colors"
-                          >
-                            Apply
-                          </button>
-                        )}
-
-                        {jobInteraction.isSaved ? (
-                          <button className="w-1/2 bg-transparent border-white border text-white font-semibold py-3 rounded-lg transition-colors">
-                            Saved
-                          </button>
-                        ) : (
-                          <button
-                            onClick={saveJob}
-                            className="w-1/2 dark:bg-[#0a184b] dark:hover:bg-[#0a184b]/80 bg-[#14a19f] text-white font-semibold py-3 rounded-lg hover:bg-[#14a19f]/70 transition-colors"
-                          >
-                            Save for later
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )
-                ) : (
-                  <div className="relative">
-                    <div
-                      aria-hidden="true"
-                      className="pointer-events-none select-none blur-md"
-                    >
-                      <div className="flex relative flex-col items-center rounded-2xl border border-[#14a19f]/10 px-6 py-4 space-y-6 bg-[#0b1022]/50">
+                    ) : (
+                      <div className="flex flex-col items-center rounded-xl border border-[#14a19f]/10 px-6 py-4 space-y-6">
                         <h1 className="text-3xl font-semibold text-white mb-2">
                           Apply for this Gig
                         </h1>
 
                         <div className="backdrop-blur-md border border-[#14a19f]/10 bg-[#161c32]/40 rounded-xl shadow-lg px-14 py-8 flex flex-col items-center">
-                          <MatchScore />
+                          <MatchScore score={score} />
                         </div>
 
                         <div className="w-full flex gap-4">
-                          <button className="w-1/2 dark:bg-[#0a184b] dark:hover:bg-[#0a184b]/80 bg-[#14a19f] text-white font-semibold py-3 rounded-lg hover:bg-[#14a19f]/70 transition-colors">
-                            Apply Now
-                          </button>
-                          <button className="w-1/2 bg-transparent text-[#14a19f] dark:text-white border border-[#14a19f] dark:border-[#0a184b] font-semibold py-3 rounded-lg hover:bg-[#14a19f]/10 dark:hover:bg-[#0d1c4e] transition-colors">
-                            Save for Later
-                          </button>
+                          {jobInteraction.isApplied ? (
+                            <button className="w-1/2 bg-transparent border-white border text-white font-semibold py-3 rounded-lg transition-colors">
+                              Applied
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => setIsBidding(true)}
+                              className="w-1/2 bg-transparent text-[#14a19f] dark:text-white border border-[#14a19f] dark:border-[#0a184b] font-semibold py-3 rounded-lg hover:bg-[#14a19f]/10 dark:hover:bg-[#0d1c4e] transition-colors"
+                            >
+                              Apply
+                            </button>
+                          )}
+
+                          {jobInteraction.isSaved ? (
+                            <button className="w-1/2 bg-transparent border-white border text-white font-semibold py-3 rounded-lg transition-colors">
+                              Saved
+                            </button>
+                          ) : (
+                            <button
+                              onClick={saveJob}
+                              className="w-1/2 dark:bg-[#0a184b] dark:hover:bg-[#0a184b]/80 bg-[#14a19f] text-white font-semibold py-3 rounded-lg hover:bg-[#14a19f]/70 transition-colors"
+                            >
+                              Save for later
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  ) : (
+                    <div className="relative">
+                      <div
+                        aria-hidden="true"
+                        className="pointer-events-none select-none blur-md"
+                      >
+                        <div className="flex relative flex-col items-center rounded-2xl border border-[#14a19f]/10 px-6 py-4 space-y-6 bg-[#0b1022]/50">
+                          <h1 className="text-3xl font-semibold text-white mb-2">
+                            Apply for this Gig
+                          </h1>
+
+                          <div className="backdrop-blur-md border border-[#14a19f]/10 bg-[#161c32]/40 rounded-xl shadow-lg px-14 py-8 flex flex-col items-center">
+                            <MatchScore />
+                          </div>
+
+                          <div className="w-full flex gap-4">
+                            <button className="w-1/2 dark:bg-[#0a184b] dark:hover:bg-[#0a184b]/80 bg-[#14a19f] text-white font-semibold py-3 rounded-lg hover:bg-[#14a19f]/70 transition-colors">
+                              Apply Now
+                            </button>
+                            <button className="w-1/2 bg-transparent text-[#14a19f] dark:text-white border border-[#14a19f] dark:border-[#0a184b] font-semibold py-3 rounded-lg hover:bg-[#14a19f]/10 dark:hover:bg-[#0d1c4e] transition-colors">
+                              Save for Later
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="absolute inset-0 z-10 flex items-center justify-center p-4">
+                        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0b132b]/70 backdrop-blur-xl shadow-2xl p-6 text-center">
+                          <div className="mx-auto mb-4 h-12 w-12 grid place-items-center rounded-full bg-white/10">
+                            <Lock className="h-6 w-6 text-white" />
+                          </div>
+
+                          <h2 className="text-white text-lg font-semibold">
+                            Create your profile to see this
+                          </h2>
+                          <p className="mt-1 text-sm text-gray-300">
+                            Unlock match score, apply instantly, and save gigs.
+                          </p>
+
+                          <div className="mt-5 flex items-center justify-center gap-3">
+                            <button
+                              onClick={sendToProfile}
+                              className="inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold text-white dark:bg-[#0a184b] bg-[#14a19f] hover:bg-[#14a19f]/90 hover:dark:bg-[#0a184b]/90 transition"
+                            >
+                              Create Profile
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
-
-                    <div className="absolute inset-0 z-10 flex items-center justify-center p-4">
-                      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0b132b]/70 backdrop-blur-xl shadow-2xl p-6 text-center">
-                        <div className="mx-auto mb-4 h-12 w-12 grid place-items-center rounded-full bg-white/10">
-                          <Lock className="h-6 w-6 text-white" />
-                        </div>
-
-                        <h2 className="text-white text-lg font-semibold">
-                          Create your profile to see this
-                        </h2>
-                        <p className="mt-1 text-sm text-gray-300">
-                          Unlock match score, apply instantly, and save gigs.
-                        </p>
-
-                        <div className="mt-5 flex items-center justify-center gap-3">
-                          <button
-                            onClick={sendToProfile}
-                            className="inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold text-white dark:bg-[#0a184b] bg-[#14a19f] hover:bg-[#14a19f]/90 hover:dark:bg-[#0a184b]/90 transition"
-                          >
-                            Create Profile
-                          </button>
-                        </div>
-                      </div>
+                  )
+                ) : (
+                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/8 px-6 py-6 text-center">
+                    <h1 className="text-3xl font-semibold text-white mb-4">
+                      Job Status
+                    </h1>
+                    <div className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/12 px-4 py-2 text-sm font-semibold uppercase tracking-[0.18em] text-amber-200">
+                      {readableJobStatus}
                     </div>
+                    <p className="mt-4 text-sm leading-6 text-gray-300">
+                      This job is no longer open, so applying and saving are unavailable.
+                    </p>
                   </div>
                 )}
               </div>

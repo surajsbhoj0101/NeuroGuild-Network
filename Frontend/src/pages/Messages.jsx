@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { Send, Search, MoreVertical, Phone, Video, Plus } from "lucide-react";
+import { Send, Search, MoreVertical, Phone, Video, Plus, UserRound } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSocket } from "../contexts/SocketContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -398,6 +398,16 @@ function Messages() {
     }
   };
 
+  const handleViewProfile = () => {
+    if (!selectedChat?.participant?._id) {
+      setRedNotice(true);
+      setNotice("Profile is not available for this conversation.");
+      return;
+    }
+
+    navigate(`/profile/${selectedChat.participant._id}`);
+  };
+
   return (
     // Layout: sidebar + conversation panel.
     <div className="dark:bg-[#0f111d] bg-[#161c32] w-full h-screen flex overflow-hidden">
@@ -506,7 +516,11 @@ function Messages() {
           <>
             {/* Chat header */}
             <div className="flex items-center justify-between p-4 border-b border-[#14a19f]/20 bg-[#0d1224]/80 backdrop-blur-sm">
-              <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleViewProfile}
+                className="flex items-center gap-3 rounded-xl px-2 py-1 text-left transition-colors hover:bg-[#14a19f]/10"
+              >
                 <div className="relative">
                   {selectedChat.avatar ? (
                     <img
@@ -529,9 +543,17 @@ function Messages() {
                     {selectedChat.participant?.role || "User"} • {selectedChat.walletLabel}
                   </p>
                 </div>
-              </div>
+              </button>
 
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleViewProfile}
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#14a19f]/20 px-3 py-2 text-sm text-gray-300 transition-colors hover:bg-[#14a19f]/20 hover:text-white"
+                >
+                  <UserRound className="h-4 w-4" />
+                  View Profile
+                </button>
                 <button className="p-2 hover:bg-[#14a19f]/20 rounded-lg transition-colors text-gray-400 hover:text-[#14a19f]">
                   <Phone className="h-5 w-5" />
                 </button>
