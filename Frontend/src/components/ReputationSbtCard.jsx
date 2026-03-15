@@ -1,5 +1,13 @@
 import React from "react";
-import { Award, ShieldCheck, Star, Target, TriangleAlert } from "lucide-react";
+import {
+  Award,
+  BriefcaseBusiness,
+  CalendarDays,
+  ShieldCheck,
+  Star,
+  Target,
+  TriangleAlert,
+} from "lucide-react";
 
 const robotoStyle = { fontFamily: "Roboto, sans-serif" };
 
@@ -26,6 +34,25 @@ export default function ReputationSbtCard({ reputationProfile, orbitronStyle }) 
   const starRating = onchainRating / 2;
   const ratingWidth = Math.min(100, (starRating / 5) * 100);
   const reliabilityWidth = Math.min(100, reliability);
+  const completedJobsList = Array.isArray(reputationProfile?.completedJobsList)
+    ? reputationProfile.completedJobsList
+    : [];
+
+  const formatDate = (value) => {
+    if (!value) return "Unknown date";
+    const numericValue = Number(value);
+    const date = numericValue > 0
+      ? new Date(numericValue * 1000)
+      : new Date(value);
+
+    if (Number.isNaN(date.getTime())) return "Unknown date";
+
+    return date.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-[#14a19f]/30 bg-[linear-gradient(180deg,rgba(20,161,159,0.16),rgba(15,24,43,0.92))] p-5 shadow-[0_16px_40px_rgba(7,14,28,0.32)]">
@@ -125,6 +152,66 @@ export default function ReputationSbtCard({ reputationProfile, orbitronStyle }) 
                 Expired jobs and dispute losses count toward this onchain failure total. Cancelled jobs are not recorded
                 as failures in the contract.
               </p>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="flex items-center gap-2 text-cyan-300">
+                <BriefcaseBusiness size={15} />
+                <p className="text-xs uppercase tracking-[0.14em]" style={robotoStyle}>
+                  Completed Jobs
+                </p>
+              </div>
+
+              {completedJobsList.length ? (
+                <div className="mt-3 space-y-3">
+                  {completedJobsList.map((job) => (
+                    <div
+                      key={job.historyId || job.jobId}
+                      className="rounded-xl border border-white/10 bg-[#0f1729]/70 p-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-white" style={robotoStyle}>
+                            {job.title || "Completed Job"}
+                          </p>
+                          <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-gray-500">
+                            Job ID {job.jobId?.slice?.(0, 10)}...
+                          </p>
+                        </div>
+                        <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-300">
+                          Completed
+                        </span>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-300" style={robotoStyle}>
+                        <span className="rounded-full bg-white/5 px-2 py-1">
+                          Client: {job.clientName || "Unknown"}
+                        </span>
+                        {job.budget ? (
+                          <span className="rounded-full bg-white/5 px-2 py-1">
+                            Budget: {Number(job.budget).toLocaleString()}
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <div className="mt-3 flex items-center gap-2 text-xs text-gray-400" style={robotoStyle}>
+                        <CalendarDays size={13} />
+                        <span>Completed on {formatDate(job.completedAt)}</span>
+                      </div>
+
+                      {job.description ? (
+                        <p className="mt-3 line-clamp-2 text-xs leading-5 text-gray-400" style={robotoStyle}>
+                          {job.description}
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-xs leading-6 text-gray-400" style={robotoStyle}>
+                  Completed jobs linked to this reputation token will appear here.
+                </p>
+              )}
             </div>
           </>
         ) : (

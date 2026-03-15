@@ -33,6 +33,7 @@ function EmptyState({ title, description, ctaLabel, onCta }) {
 }
 
 function ManageJobs() {
+  const DASHBOARD_REFRESH_DELAY_MS = 3000;
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
   const { isAuthentication } = useAuth();
@@ -84,6 +85,84 @@ function ManageJobs() {
     if (Array.isArray(proofs)) return proofs.filter(Boolean);
     if (proofs) return [proofs];
     return fallbackProof ? [fallbackProof] : [];
+  };
+
+  const scheduleDashboardRefresh = (proofOverrides = submittedProofByJob) => {
+    window.setTimeout(() => {
+      fetchDashboardData(proofOverrides);
+    }, DASHBOARD_REFRESH_DELAY_MS);
+  };
+
+  const applySubmittedWorkOptimistically = (project, ipfsProof) => {
+    const submittedProject = {
+      ...project,
+      status: "Submitted",
+      workProofLinks: normalizeProofLinks(project.workProofLinks, ipfsProof),
+      workProofLink: ipfsProof,
+      submittedAt: new Date().toISOString(),
+    };
+
+    setActiveProjects((prev) =>
+      prev.filter((entry) => entry.jobId !== project.jobId)
+    );
+    setSubmittedProjects((prev) => {
+      const withoutProject = prev.filter((entry) => entry.jobId !== project.jobId);
+      return [submittedProject, ...withoutProject];
+    });
+    setMyBids((prev) =>
+      prev.map((entry) =>
+        entry.jobId === project.jobId
+          ? { ...entry, jobStatus: "SUBMITTED", bidStatus: "accepted" }
+          : entry
+      )
+    );
+    setStats((prev) => ({
+      ...prev,
+      activeProjects: Math.max(0, prev.activeProjects - 1),
+      inProgressProjects: Math.max(0, prev.inProgressProjects - 1),
+      submittedProjects: prev.submittedProjects + 1,
+    }));
+  };
+
+  const applyFreelancerDisputeOptimistically = (project) => {
+    const disputedProject = {
+      ...project,
+      status: "Disputed",
+    };
+
+    setActiveProjects((prev) =>
+      prev.filter((entry) => entry.jobId !== project.jobId)
+    );
+    setSubmittedProjects((prev) =>
+      prev.filter((entry) => entry.jobId !== project.jobId)
+    );
+    setDisputedProjects((prev) => {
+      const withoutProject = prev.filter((entry) => entry.jobId !== project.jobId);
+      return [disputedProject, ...withoutProject];
+    });
+    setMyBids((prev) =>
+      prev.map((entry) =>
+        entry.jobId === project.jobId
+          ? { ...entry, jobStatus: "DISPUTED", bidStatus: "accepted" }
+          : entry
+      )
+    );
+    setStats((prev) => ({
+      ...prev,
+      activeProjects: Math.max(
+        0,
+        prev.activeProjects - (project?.workProofLinks?.length ? 0 : 1)
+      ),
+      inProgressProjects: Math.max(
+        0,
+        prev.inProgressProjects - (project?.workProofLinks?.length ? 0 : 1)
+      ),
+      submittedProjects: Math.max(
+        0,
+        prev.submittedProjects - (project?.workProofLinks?.length ? 1 : 0)
+      ),
+      disputedProjects: prev.disputedProjects + 1,
+    }));
   };
 
   useEffect(() => {
@@ -313,8 +392,13 @@ function ManageJobs() {
       setExpiredProjects(expiredProj);
       setCompletedProjects(completedProj);
 
+      const totalEarnings = completedProj.reduce(
+        (sum, project) => sum + Number(project.amountEarned || 0),
+        0
+      );
+
       setStats({
-        totalEarnings: 0,
+        totalEarnings,
         activeProjects: inProgressProjects.length,
         pendingBids: myBidProjects.filter((bid) => bid.bidStatus === "pending")
           .length,
@@ -444,9 +528,10 @@ function ManageJobs() {
         [selectedSubmitProject.jobId]: ipfsProof,
       };
       setSubmittedProofByJob(nextSubmittedProofByJob);
+      applySubmittedWorkOptimistically(selectedSubmitProject, ipfsProof);
       closeSubmitWorkModal();
       setActiveTab("Submitted");
-      await fetchDashboardData(nextSubmittedProofByJob);
+      scheduleDashboardRefresh(nextSubmittedProofByJob);
     } catch (error) {
       console.error("submit work error:", error);
       setRedNotice(true);
@@ -522,11 +607,12 @@ function ManageJobs() {
           ? `Dispute raised and governance proposal #${result.governanceProposalId} created.`
           : result?.governanceError || "Dispute raised successfully."
       );
+      applyFreelancerDisputeOptimistically(selectedDisputeProject);
       setIsDisputeModalOpen(false);
       setSelectedDisputeProject(null);
       setDisputeReason("");
       setActiveTab("Disputed");
-      await fetchDashboardData();
+      scheduleDashboardRefresh();
     } catch (error) {
       console.error("raise dispute error:", error);
       setRedNotice(true);

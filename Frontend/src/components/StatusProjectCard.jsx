@@ -50,9 +50,16 @@ function StatusProjectCard({
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
         <div>
-          <p className="text-gray-500 text-xs">Budget</p>
+          <p className="text-gray-500 text-xs">
+            {project?.amountEarned != null ? "Earned" : "Budget"}
+          </p>
           <p className="text-gray-300 font-medium">
-            ${project?.budget ?? project?.contractValue ?? project?.bidAmount ?? 0}
+            $
+            {project?.amountEarned ??
+              project?.budget ??
+              project?.contractValue ??
+              project?.bidAmount ??
+              0}
           </p>
         </div>
         <div>

@@ -22,8 +22,10 @@ import {
   BidAccepted as BidAcceptedEvent,
   BidRejected as BidRejectedEvent,
   BidSubmitted as BidSubmittedEvent,
+  ClaimAfterExpiredDeadlineSuccessful as ClaimAfterExpiredDeadlineSuccessfulEvent,
   ClientRated as ClientRatedEvent,
   DisputeRaised as DisputeRaisedEvent,
+  DisputeReRaised as DisputeReRaisedEvent,
   DisputeResolved as DisputeResolvedEvent,
   FeeUpdated as FeeUpdatedEvent,
   FreelancerRated as FreelancerRatedEvent,
@@ -289,6 +291,40 @@ export function handleDisputeRaised(event: DisputeRaisedEvent): void {
   h.save();
 }
 
+export function handleDisputeReRaised(event: DisputeReRaisedEvent): void {
+  let job = Job.load(event.params.jobId.toHex());
+  if (job != null) {
+    job.status = "DISPUTED";
+    job.updatedAt = event.block.timestamp;
+    job.save();
+  }
+
+  let dispute = JobDispute.load(event.params.jobId.toHex());
+  if (dispute == null) {
+    dispute = new JobDispute(event.params.jobId.toHex());
+    dispute.job = event.params.jobId.toHex();
+    dispute.createdAt = event.block.timestamp;
+  }
+  dispute.status = "OPEN";
+  dispute.raisedBy = event.params.by;
+  dispute.reasonIpfs = event.params.reasonIpfs;
+  dispute.winner = null;
+  dispute.resolvedAt = null;
+  dispute.updatedAt = event.block.timestamp;
+  dispute.save();
+
+  let h = new DisputeRaisedHistory(
+    historyId(event.transaction.hash.toHex(), event.logIndex.toString())
+  );
+  h.jobId = event.params.jobId;
+  h.by = event.params.by;
+  h.reasonIpfs = event.params.reasonIpfs;
+  h.blockNumber = event.block.number;
+  h.transactionHash = event.transaction.hash;
+  h.timestamp = event.block.timestamp;
+  h.save();
+}
+
 export function handleDisputeResolved(event: DisputeResolvedEvent): void {
   let dispute = JobDispute.load(event.params.jobId.toHex());
   if (dispute != null) {
@@ -373,6 +409,17 @@ export function handleFundRefunded(event: FundRefundedEvent): void {
   h.transactionHash = event.transaction.hash;
   h.timestamp = event.block.timestamp;
   h.save();
+}
+
+export function handleClaimAfterExpiredDeadlineSuccessful(
+  event: ClaimAfterExpiredDeadlineSuccessfulEvent
+): void {
+  let job = Job.load(event.params.jobId.toHex());
+  if (job == null) return;
+
+  job.status = "CANCELLED";
+  job.updatedAt = event.block.timestamp;
+  job.save();
 }
 
 export function handleClientRated(event: ClientRatedEvent): void {

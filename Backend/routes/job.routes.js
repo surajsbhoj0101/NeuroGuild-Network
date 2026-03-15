@@ -10,12 +10,15 @@ import { fetchClientsJobs } from "../controllers/jobs.controller.js";
 import { fetchJobBids } from "../controllers/jobs.controller.js";
 import { fetchProposalIpfs } from "../controllers/jobs.controller.js";
 import { fetchFreelancerJobs } from "../controllers/jobs.controller.js";
+import { fetchCompletedJobsForWallet } from "../controllers/jobs.controller.js";
+import { fetchHomepageSnapshot } from "../controllers/jobs.controller.js";
 import { requireAuth } from "../middleware/authHttp.middleware.js";
 
 const jobRoutes = express.Router();
 
 jobRoutes.post("/ai-enhancement", aiEnhanceJobDetails);
 jobRoutes.get("/fetch-jobs", fetchJobs);
+jobRoutes.get("/homepage-snapshot", fetchHomepageSnapshot);
 jobRoutes.get("/fetch-job/:jobId", requireAuth, fetchJob);
 jobRoutes.post(
   "/fetch-ai-score-and-job-interaction",
@@ -27,6 +30,7 @@ jobRoutes.put("/save-job", requireAuth, saveJob);
 jobRoutes.put("/submit-bid", requireAuth, saveBid);
 jobRoutes.get("/get-job-bids/:jobId", fetchJobBids);
 jobRoutes.post("/get-bid-proposal-ipfs", fetchProposalIpfs);
+jobRoutes.get("/completed-jobs/:wallet", fetchCompletedJobsForWallet);
 jobRoutes.get("/fetch-freelancer-jobs",requireAuth, fetchFreelancerJobs);
 jobRoutes.get("/fetch-client-jobs",requireAuth, fetchClientsJobs);
 

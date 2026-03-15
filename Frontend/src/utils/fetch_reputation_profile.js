@@ -1,5 +1,6 @@
 import { Contract, JsonRpcProvider } from "ethers";
 import { ReputationSBT } from "../abis/ReputationSBT.js";
+import api from "./api.js";
 
 const REPUTATION_ADDRESS = import.meta.env.VITE_REPUTATIONSBT_ADDRESS;
 const RPC_URL = import.meta.env.VITE_RPC_URL;
@@ -16,6 +17,7 @@ export const emptyReputationProfile = {
   lastUpdated: 0,
   metadataURI: "",
   revoked: false,
+  completedJobsList: [],
 };
 
 export const fetchReputationProfile = async (address) => {
@@ -35,6 +37,17 @@ export const fetchReputationProfile = async (address) => {
 
     const repData = await reputation.repData(tokenId);
 
+    let completedJobsList = [];
+
+    try {
+      const historyResponse = await api.get(`/api/jobs/completed-jobs/${address}`);
+      completedJobsList = Array.isArray(historyResponse?.data?.jobs)
+        ? historyResponse.data.jobs
+        : [];
+    } catch (historyError) {
+      console.error("Failed to fetch completed jobs list:", historyError);
+    }
+
     return {
       hasReputationSbt: true,
       tokenId: normalizedTokenId,
@@ -47,6 +60,7 @@ export const fetchReputationProfile = async (address) => {
       lastUpdated: Number(repData?.lastUpdated || 0),
       metadataURI: repData?.metadataURI || "",
       revoked: Boolean(repData?.revoked),
+      completedJobsList,
     };
   } catch (error) {
     console.error("Failed to fetch reputation profile:", error);

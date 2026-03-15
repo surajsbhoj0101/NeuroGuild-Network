@@ -111,6 +111,65 @@ const fetchMyJobs = `
 }
 `;
 
+const fetchCompletedJobsByWalletQuery = `
+  query CompletedJobsByWallet($freelancer: Bytes!) {
+    jobCompletedHistories(
+      where: { freelancer: $freelancer }
+      orderBy: timestamp
+      orderDirection: desc
+    ) {
+      id
+      jobId
+      freelancer
+      timestamp
+      blockNumber
+      transactionHash
+    }
+  }
+`;
+
+const fetchCompletedJobsMetadataQuery = `
+  query CompletedJobsMetadata($jobIds: [ID!]) {
+    jobs(where: { id_in: $jobIds }) {
+      id
+      client
+      status
+      budget
+      ipfsHash
+      createdAt
+      completedAt
+    }
+  }
+`;
+
+const homepageJobsSnapshotQuery = `
+  query HomepageJobsSnapshot {
+    open: jobs(where: { status: OPEN }, orderBy: createdAt, orderDirection: desc, first: 3) {
+      id
+      client
+      ipfsHash
+      status
+      budget
+      createdAt
+    }
+    inProgress: jobs(where: { status: IN_PROGRESS }) { id }
+    submitted: jobs(where: { status: SUBMITTED }) { id }
+    completed: jobs(where: { status: COMPLETED }) { id }
+    disputed: jobs(where: { status: DISPUTED }) { id }
+  }
+`;
+
+const homepageProposalsSnapshotQuery = `
+  query HomepageProposalsSnapshot {
+    proposals(orderBy: updatedAt, orderDirection: desc, first: 3) {
+      id
+      description
+      status
+      updatedAt
+    }
+  }
+`;
+
 const getAuthIdentity = async (req) => {
   const userId = req.user?.userId || req.userId || null;
   if (!userId) {
@@ -300,6 +359,78 @@ export const fetchJobs = async (req, res) => {
     res.status(200).json({ success: true, jobs: filteredJobs });
   } catch (error) {
     res.status(500).json({ success: false, message: "Job fetching failed" });
+  }
+};
+
+export const fetchHomepageSnapshot = async (req, res) => {
+  try {
+    const [jobsSnapshot, proposalsSnapshot, mintedSkillCountAgg] = await Promise.all([
+      querySubgraph(homepageJobsSnapshotQuery),
+      querySubgraph(homepageProposalsSnapshotQuery),
+      Freelancer.aggregate([
+        { $unwind: "$skills" },
+        { $match: { "skills.sbt.minted": true } },
+        { $count: "count" },
+      ]),
+    ]);
+
+    const openJobsRaw = jobsSnapshot?.open || [];
+    const openJobs = await Promise.all(
+      openJobsRaw.map(async (job) => {
+        const [metadata, clientDetails] = await Promise.all([
+          getJsonFromIpfs(job.ipfsHash),
+          findClientByWallet(job.client),
+        ]);
+
+        return {
+          id: job.id,
+          title: metadata?.title || "Untitled job",
+          subtitle:
+            metadata?.description?.slice?.(0, 90) ||
+            "Open job accepting bids on the marketplace.",
+          owner:
+            clientDetails?.companyDetails?.companyName || shortAddress(job.client),
+          status: job.status,
+        };
+      })
+    );
+
+    const proposals = (proposalsSnapshot?.proposals || []).map((proposal) => ({
+      id: proposal.id,
+      title: proposal.description?.split("\n")?.[0]?.slice(0, 64) || `Proposal #${proposal.id}`,
+      subtitle: proposal.status || "UNKNOWN",
+      owner: "DAO vote",
+      status: proposal.status || "PENDING",
+    }));
+
+    const mintedSkillCount = mintedSkillCountAgg?.[0]?.count || 0;
+
+    return res.status(200).json({
+      success: true,
+      stats: {
+        protectedContracts:
+          Number(jobsSnapshot?.inProgress?.length || 0) +
+          Number(jobsSnapshot?.submitted?.length || 0) +
+          Number(jobsSnapshot?.completed?.length || 0) +
+          Number(jobsSnapshot?.disputed?.length || 0),
+        skillCredentials: mintedSkillCount,
+        openHiringDemand: Number(openJobsRaw.length || 0),
+        governanceResolutions: Number(proposals.length || 0),
+        submittedReviews: Number(jobsSnapshot?.submitted?.length || 0),
+        disputes: Number(jobsSnapshot?.disputed?.length || 0),
+      },
+      surfaces: {
+        clientRows: openJobs,
+        governanceRows: proposals,
+      },
+    });
+  } catch (error) {
+    console.error("fetchHomepageSnapshot error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch homepage snapshot.",
+      error: error.message,
+    });
   }
 };
 
@@ -729,6 +860,77 @@ export const fetchFreelancerJobs = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch freelancer jobs",
+    });
+  }
+};
+
+export const fetchCompletedJobsForWallet = async (req, res) => {
+  const walletAddress = req.params.wallet?.toLowerCase?.();
+
+  if (!walletAddress) {
+    return res.status(400).json({
+      success: false,
+      message: "Wallet address is required",
+    });
+  }
+
+  try {
+    const completedHistoryResp = await querySubgraph(
+      fetchCompletedJobsByWalletQuery,
+      { freelancer: walletAddress }
+    );
+
+    const completedHistory = completedHistoryResp?.jobCompletedHistories || [];
+
+    if (!completedHistory.length) {
+      return res.status(200).json({
+        success: true,
+        jobs: [],
+      });
+    }
+
+    const uniqueJobIds = [...new Set(completedHistory.map((item) => item.jobId))];
+    const jobsResp = await querySubgraph(fetchCompletedJobsMetadataQuery, {
+      jobIds: uniqueJobIds,
+    });
+
+    const jobsById = new Map((jobsResp?.jobs || []).map((job) => [job.id.toLowerCase(), job]));
+
+    const jobs = await Promise.all(
+      completedHistory.map(async (item) => {
+        const job = jobsById.get(item.jobId.toLowerCase());
+        const metadata = job?.ipfsHash ? await getJsonFromIpfs(job.ipfsHash) : null;
+        const clientDetails = job?.client ? await findClientByWallet(job.client) : null;
+
+        return {
+          historyId: item.id,
+          jobId: item.jobId,
+          completedAt: item.timestamp,
+          blockNumber: item.blockNumber,
+          transactionHash: item.transactionHash,
+          clientAddress: job?.client || "",
+          clientName:
+            clientDetails?.companyDetails?.companyName || shortAddress(job?.client || ""),
+          budget: metadata?.budget ?? job?.budget ?? null,
+          title: metadata?.title || "Completed Job",
+          description: metadata?.description || "",
+          skills: Array.isArray(metadata?.skills) ? metadata.skills : [],
+          deadline: metadata?.deadline || null,
+          completionDeadline: metadata?.completion || null,
+          createdAt: metadata?.createdAt || job?.createdAt || null,
+        };
+      })
+    );
+
+    return res.status(200).json({
+      success: true,
+      jobs,
+    });
+  } catch (error) {
+    console.error("fetchCompletedJobsForWallet error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch completed jobs",
     });
   }
 };

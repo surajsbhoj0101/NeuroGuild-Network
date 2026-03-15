@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertCircle, CheckCircle2, ChevronRight, Loader2, MessageSquare, Star } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronRight, Loader2, MessageSquare, Star, UserRound } from "lucide-react";
 import { useWalletClient } from "wagmi";
-import { BrowserProvider } from "ethers";
+import { BrowserProvider, Contract } from "ethers";
 import SideBar from "../../components/SideBar";
 import ClientStats from "../../components/ClientStats";
 import api from "../../utils/api.js";
@@ -13,6 +13,13 @@ import { acceptBid } from "../../utils/accept_bid.js";
 import { acceptWorkOnChain } from "../../utils/accept_work.js";
 import { raiseDisputeOnChain } from "../../utils/raise_dispute.js";
 import { submitJobRating } from "../../utils/submit_job_rating.js";
+import { JobContract } from "../../abis/JobContract.js";
+
+const JOB_CONTRACT_ADDRESS = import.meta.env.VITE_JOB_CONTRACT_ADDRESS;
+const ACCEPTED_JOB_STATUS = 1;
+const SUBGRAPH_SYNC_RETRIES = 4;
+const SUBGRAPH_SYNC_DELAY_MS = 2000;
+const DASHBOARD_REFRESH_DELAY_MS = 3000;
 
 function EmptyState({ title, description, ctaLabel, onCta }) {
   return (
@@ -78,6 +85,115 @@ function ManageJobs() {
     if (proofs) return [proofs];
     return fallbackProof ? [fallbackProof] : [];
   };
+
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const scheduleDashboardRefresh = () => {
+    window.setTimeout(() => {
+      fetchDashboardData();
+    }, DASHBOARD_REFRESH_DELAY_MS);
+  };
+
+  const buildAcceptedInProgressJob = (job, bid) => ({
+    jobId: job.jobId,
+    jobTitle: job.jobTitle || "Untitled Job",
+    jobDescription: job.jobDescription || "",
+    budget: bid.bidAmount ?? job.budget,
+    deadline: job.deadline,
+    skills: job.skills || [],
+    jobType: job.jobType || "Fixed",
+    submittedAt: bid.createdAt || job.submittedAt || null,
+    bid: {
+      bidId: bid.bidId,
+      bidAmount: bid.bidAmount,
+      proposal: bid.proposal,
+      createdAt: bid.createdAt,
+      status: "ACCEPTED",
+      freelancerId: bid.freelancerId,
+      freelancerName: bid.freelancerName || "Unknown",
+      freelancerAddress: bid.freelancerAddress,
+      freelancerPfp: bid.freelancerPfp,
+    },
+  });
+
+  const applyAcceptedBidOptimistically = (job, bid) => {
+    const nextInProgressJob = buildAcceptedInProgressJob(job, bid);
+
+    setOpenJobs((prev) => prev.filter((entry) => entry.jobId !== job.jobId));
+    setInProgressJobs((prev) => {
+      const withoutJob = prev.filter((entry) => entry.jobId !== job.jobId);
+      return [nextInProgressJob, ...withoutJob];
+    });
+    setStats((prev) => ({
+      ...prev,
+      openJobs: Math.max(0, prev.openJobs - 1),
+      activeProjects: prev.activeProjects + 1,
+    }));
+  };
+
+  const applyAcceptedWorkOptimistically = (job) => {
+    const completedJob = {
+      ...job,
+      budget: job.budget,
+    };
+
+    setSubmittedJobs((prev) => prev.filter((entry) => entry.jobId !== job.jobId));
+    setCompletedJobs((prev) => {
+      const withoutJob = prev.filter((entry) => entry.jobId !== job.jobId);
+      return [completedJob, ...withoutJob];
+    });
+    setStats((prev) => ({
+      ...prev,
+      submittedProjects: Math.max(0, prev.submittedProjects - 1),
+      completedProjects: prev.completedProjects + 1,
+    }));
+  };
+
+  const applyDisputeOptimistically = (job) => {
+    const disputedJob = {
+      ...job,
+      status: "Disputed",
+    };
+
+    setSubmittedJobs((prev) => prev.filter((entry) => entry.jobId !== job.jobId));
+    setInProgressJobs((prev) => prev.filter((entry) => entry.jobId !== job.jobId));
+    setDisputedJobs((prev) => {
+      const withoutJob = prev.filter((entry) => entry.jobId !== job.jobId);
+      return [disputedJob, ...withoutJob];
+    });
+    setStats((prev) => ({
+      ...prev,
+      activeProjects: Math.max(
+        0,
+        prev.activeProjects - (job?.workProofLinks?.length ? 0 : 1)
+      ),
+      submittedProjects: Math.max(
+        0,
+        prev.submittedProjects - (job?.workProofLinks?.length ? 1 : 0)
+      ),
+      disputedProjects: prev.disputedProjects + 1,
+    }));
+  };
+
+  async function waitForAcceptedBidSync(jobId, signer) {
+    const jobContract = new Contract(JOB_CONTRACT_ADDRESS, JobContract, signer);
+
+    for (let attempt = 0; attempt < SUBGRAPH_SYNC_RETRIES; attempt += 1) {
+      try {
+        const status = Number(await jobContract.getJobStatus(jobId));
+        if (status !== ACCEPTED_JOB_STATUS) {
+          break;
+        }
+      } catch (error) {
+        console.error("getJobStatus failed during accept-bid sync:", error);
+        break;
+      }
+
+      await delay(SUBGRAPH_SYNC_DELAY_MS);
+    }
+
+    await fetchDashboardData();
+  }
 
   useEffect(() => {
     let timer;
@@ -400,11 +516,12 @@ function ManageJobs() {
         }
       }
 
+      applyAcceptedBidOptimistically(job, bid);
       setRedNotice(false);
       setNotice("Bid accepted successfully.");
       handleCloseBids();
       setActiveTab("InProgress");
-      await fetchDashboardData();
+      await waitForAcceptedBidSync(job.jobId, signer);
     } catch (error) {
       console.error("accept bid error:", error);
       setRedNotice(true);
@@ -464,11 +581,12 @@ function ManageJobs() {
         }
       }
 
+      applyAcceptedWorkOptimistically(confirmAcceptWorkJob);
       setRedNotice(false);
       setNotice("Work accepted successfully.");
       setConfirmAcceptWorkJob(null);
       setActiveTab("Completed");
-      await fetchDashboardData();
+      scheduleDashboardRefresh();
     } catch (error) {
       console.error("accept work error:", error);
       setRedNotice(true);
@@ -494,6 +612,16 @@ function ManageJobs() {
         recipient: project.freelancerId
       },
     });
+  };
+
+  const handleViewFreelancerProfile = (freelancerId) => {
+    if (!freelancerId) {
+      setRedNotice(true);
+      setNotice("Freelancer profile is unavailable for this bid.");
+      return;
+    }
+
+    navigate(`/profile/${freelancerId}`);
   };
 
   const openDisputeModal = (job) => {
@@ -550,11 +678,12 @@ function ManageJobs() {
           ? `Dispute raised and governance proposal #${result.governanceProposalId} created.`
           : result?.governanceError || "Dispute raised successfully."
       );
+      applyDisputeOptimistically(selectedDisputeJob);
       setIsDisputeModalOpen(false);
       setSelectedDisputeJob(null);
       setDisputeReason("");
       setActiveTab("Disputed");
-      await fetchDashboardData();
+      scheduleDashboardRefresh();
     } catch (error) {
       console.error("raise dispute error:", error);
       setRedNotice(true);
@@ -1170,6 +1299,15 @@ function ManageJobs() {
                             Accept Bid
                           </>
                         )}
+                      </button>
+
+                      <button
+                        onClick={() => handleViewFreelancerProfile(bid.freelancerId)}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-semibold transition-colors"
+                      >
+                        <UserRound size={16} />
+                        View Profile
+                        <ChevronRight size={14} />
                       </button>
 
                       <button

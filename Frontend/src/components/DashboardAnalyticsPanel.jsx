@@ -82,10 +82,10 @@ const barOptions = {
 
 function ChartShell({ title, subtitle, children }) {
   return (
-    <div className="rounded-2xl border border-[#14a19f]/18 bg-[#0d1224]/58 p-5 backdrop-blur-md">
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold text-white">{title}</h3>
-        <p className="mt-1 text-sm text-gray-400">{subtitle}</p>
+    <div className="border border-white/10 bg-[#101827] p-4">
+      <div className="mb-3 border-b border-white/8 pb-3">
+        <h3 className="text-sm font-semibold text-white">{title}</h3>
+        <p className="mt-1 text-xs leading-5 text-gray-400">{subtitle}</p>
       </div>
       {children}
     </div>
@@ -102,28 +102,42 @@ export default function DashboardAnalyticsPanel({
   insights = [],
 }) {
   return (
-    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.05fr_1.15fr]">
-      <div className="space-y-6">
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[0.95fr_1.2fr]">
+      <div className="space-y-4">
         <ChartShell title={doughnutTitle} subtitle={doughnutSubtitle}>
-          <div className="h-[280px]">
+          <div className="h-[250px]">
             <Doughnut data={doughnutData} options={doughnutOptions} />
           </div>
         </ChartShell>
 
-        <ChartShell title="Operational Notes" subtitle="Fast reads to decide what needs attention next.">
-          <div className="space-y-3">
-            {insights.map((insight) => (
+        <ChartShell
+          title="Operational Queue"
+          subtitle="Compact reads on what deserves attention next."
+        >
+          <div className="divide-y divide-white/8">
+            {insights.map((insight, index) => (
               <div
                 key={insight.label}
-                className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3"
+                className="grid grid-cols-[1fr_auto] gap-4 py-3 first:pt-0 last:pb-0"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-medium text-white">{insight.label}</p>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${insight.tone}`}>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-medium text-gray-500">
+                      0{index + 1}
+                    </span>
+                    <p className="text-sm font-medium text-white">{insight.label}</p>
+                  </div>
+                  <p className="mt-1 text-xs leading-6 text-gray-400">
+                    {insight.description}
+                  </p>
+                </div>
+                <div className="flex items-start">
+                  <span
+                    className={`rounded-md px-2.5 py-1 text-xs font-semibold ${insight.tone}`}
+                  >
                     {insight.value}
                   </span>
                 </div>
-                <p className="mt-2 text-xs leading-6 text-gray-400">{insight.description}</p>
               </div>
             ))}
           </div>
@@ -131,7 +145,7 @@ export default function DashboardAnalyticsPanel({
       </div>
 
       <ChartShell title={barTitle} subtitle={barSubtitle}>
-        <div className="h-[420px]">
+        <div className="h-[360px]">
           <Bar data={barData} options={barOptions} />
         </div>
       </ChartShell>

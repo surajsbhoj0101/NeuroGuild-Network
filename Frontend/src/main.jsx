@@ -23,6 +23,7 @@ import MyProfile from './pages/FreelancerPages/MyProfile.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
 import VerifySkillPage from './pages/FreelancerPages/VerifySkillPage.jsx';
 import MintRules from './pages/FreelancerPages/MintRules.jsx';
+import MintSkillSbtPage from './pages/FreelancerPages/MintSkillSbtPage.jsx';
 import ClientProfile from './pages/ClientPages/ClientProfile.jsx';
 import PostJobs from './pages/ClientPages/PostJobs.jsx';
 import JobPage from './pages/jobs/jobPage.jsx';
@@ -128,6 +129,14 @@ const router = createBrowserRouter([
       <>
         <Navbar />
         <VerifySkillPage /></>
+    )
+  }, {
+    path: "/mint-sbt/:skill",
+    element: (
+      <>
+        <Navbar />
+        <MintSkillSbtPage />
+      </>
     )
   },
   {

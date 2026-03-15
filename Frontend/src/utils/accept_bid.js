@@ -8,20 +8,21 @@ const USDC_ADDRESS = import.meta.env.VITE_USDC_ADDRESS;
 export const acceptBid = async (jobId, bidIndex, signer, bidAmount) => {
   if (!signer) throw new Error("Signer not found");
 
-  const amount = parseUnits(bidAmount.toString(), 18);
-
   const jobContract = new Contract(JOB_CONTRACT_ADDRESS, JobContract, signer);
-
   const usdc = new Contract(USDC_ADDRESS, UsdcAbi, signer);
+  const decimals = Number(await usdc.decimals());
+  const amount = parseUnits(bidAmount.toString(), decimals);
   const clientFeeBps = await jobContract.clientFeeBps();
+  const clientCouncilFeeBps = await jobContract.clientCouncilFeeBps();
 
   const BPS_DIVISOR = 10_000n;
   const clientFee = (amount * clientFeeBps) / BPS_DIVISOR;
+  const clientCouncilFee = (amount * clientCouncilFeeBps) / BPS_DIVISOR;
 
   const signerAddr = await signer.getAddress();
 
   const allowance = await usdc.allowance(signerAddr, JOB_CONTRACT_ADDRESS);
-  const total = amount+ clientFee;
+  const total = amount + clientFee + clientCouncilFee;
   if (allowance < total) {
     const approveTx = await usdc.approve(JOB_CONTRACT_ADDRESS, total);
     await approveTx.wait();

@@ -26,6 +26,9 @@ contract JobContract is Escrow, ReentrancyGuard {
     error NotJobParticipant();
     error DisputePeriodOver();
     error DisputeAlreadyRaised();
+    error JobNotDisputed();
+    error DisputeReraiseTooEarly();
+    error InvalidDisputeReraiseCooldown();
     error OnlySubmittedJobs();
     error ReviewPeriodStillActive();
     error ReviewPeriodMustBeGreaterThanOne();
@@ -39,6 +42,12 @@ contract JobContract is Escrow, ReentrancyGuard {
     event DisputeRaised(
         bytes32 indexed jobId,
         address indexed by,
+        string reasonIpfs
+    );
+    event DisputeReRaised(
+        bytes32 indexed jobId,
+        address indexed by,
+        uint32 indexed round,
         string reasonIpfs
     );
     event DisputeResolved(bytes32 indexed jobId, address winner);
@@ -98,6 +107,14 @@ contract JobContract is Escrow, ReentrancyGuard {
     );
     event ReputationRewardUpdated(uint8 oldReward, uint8 newReward);
     event ReputationPenaltyUpdated(uint8 oldPenalty, uint8 newPenalty);
+    event DisputeReraiseCooldownUpdated(
+        uint256 oldCooldown,
+        uint256 newCooldown
+    );
+    event DefaultReputationMetadataURIUpdated(
+        string oldMetadataURI,
+        string newMetadataURI
+    );
     event FreelancerRated(
         bytes32 indexed jobId,
         address indexed client,
@@ -159,10 +176,14 @@ contract JobContract is Escrow, ReentrancyGuard {
 
     uint256 public totalJobs;
     uint256 public reviewPeriod;
+    uint256 public disputeReraiseCooldown;
+    string public defaultReputationMetadataURI;
     mapping(bytes32 => Job) public jobs;
     mapping(bytes32 => Bid[]) public jobBids;
     mapping(bytes32 => mapping(address => bool)) public hasBid;
     bytes32[] public allJobIds;
+    mapping(bytes32 => uint256) public lastDisputeRaisedAt;
+    mapping(bytes32 => uint32) public disputeRaiseCount;
 
     mapping(bytes32 => bool) public clientRatedFreelancer;
     mapping(bytes32 => bool) public freelancerRatedClient;
@@ -195,17 +216,20 @@ contract JobContract is Escrow, ReentrancyGuard {
         uint8 initialReward,
         uint8 initialPenalty,
         address initialRepAddress,
-        address _treasury
-    ) Escrow(token, _treasury, _timelock) {
+        address _treasury,
+        address _councilRegistry
+    ) Escrow(token, _treasury, _timelock, _councilRegistry) {
         if (initialReviewPeriod <= 1)
             revert ReviewPeriodMustBeGreaterThanOne();
         registry = UserRegistry(_registryAddress);
         reviewPeriod = uint256(initialReviewPeriod) * 1 days; // store as seconds
+        disputeReraiseCooldown = 3 days;
         reputationReward = initialReward;
         reputationPenalty = initialPenalty;
         reputation = IReputationSBT(initialRepAddress);
 
         emit ReviewPeriodUpdated(0, reviewPeriod);
+        emit DisputeReraiseCooldownUpdated(0, disputeReraiseCooldown);
         emit ReputationAddressUpdated(address(0), initialRepAddress);
         emit ReputationRewardUpdated(0, initialReward);
         emit ReputationPenaltyUpdated(0, initialPenalty);
@@ -222,6 +246,24 @@ contract JobContract is Escrow, ReentrancyGuard {
         address oldReputation = address(reputation);
         reputation = IReputationSBT(_rep);
         emit ReputationAddressUpdated(oldReputation, _rep);
+    }
+
+    function setDisputeReraiseCooldown(uint256 cooldown) external onlyTimelock {
+        if (cooldown == 0) revert InvalidDisputeReraiseCooldown();
+        uint256 oldCooldown = disputeReraiseCooldown;
+        disputeReraiseCooldown = cooldown;
+        emit DisputeReraiseCooldownUpdated(oldCooldown, cooldown);
+    }
+
+    function setDefaultReputationMetadataURI(
+        string calldata metadataURI
+    ) external onlyTimelock {
+        string memory oldMetadataURI = defaultReputationMetadataURI;
+        defaultReputationMetadataURI = metadataURI;
+        emit DefaultReputationMetadataURIUpdated(
+            oldMetadataURI,
+            metadataURI
+        );
     }
 
     function setTimelock(address _timelock) external override onlyTimelock {
@@ -446,7 +488,28 @@ contract JobContract is Escrow, ReentrancyGuard {
 
         job.status = JobStatus.Disputed;
         job.disputed = true;
+        lastDisputeRaisedAt[jobId] = block.timestamp;
+        disputeRaiseCount[jobId] = 1;
         emit DisputeRaised(jobId, msg.sender, reasonIpfs);
+    }
+
+    function reRaiseDispute(bytes32 jobId, string memory reasonIpfs) external {
+        Job storage job = jobs[jobId];
+        if (job.status != JobStatus.Disputed) revert JobNotDisputed();
+
+        if (msg.sender != job.client && msg.sender != job.freelancer)
+            revert NotJobParticipant();
+
+        if (
+            block.timestamp <
+            lastDisputeRaisedAt[jobId] + disputeReraiseCooldown
+        ) revert DisputeReraiseTooEarly();
+
+        uint32 nextRound = disputeRaiseCount[jobId] + 1;
+        disputeRaiseCount[jobId] = nextRound;
+        lastDisputeRaisedAt[jobId] = block.timestamp;
+
+        emit DisputeReRaised(jobId, msg.sender, nextRound, reasonIpfs);
     }
 
     function cancelJob(bytes32 jobId) external {
@@ -549,7 +612,7 @@ contract JobContract is Escrow, ReentrancyGuard {
 
         tokenId = reputation.getTokenId(user);
         if (tokenId == 0) {
-            reputation.mintReputation(user, "");
+            reputation.mintReputation(user, defaultReputationMetadataURI);
             tokenId = reputation.getTokenId(user);
         }
 
@@ -589,6 +652,7 @@ contract JobContract is Escrow, ReentrancyGuard {
         }
 
         job.status = JobStatus.Completed;
+        job.disputed = false;
 
         emit DisputeResolved(jobId, winner);
     }

@@ -102,6 +102,15 @@ const freelancerSchema = new mongoose.Schema(
                     max: 3
                 },
 
+                quizPassed: {
+                    type: Boolean,
+                    default: false
+                },
+
+                quizPassedAt: {
+                    type: Date
+                },
+
                 sbt: {
                     minted: {
                         type: Boolean,

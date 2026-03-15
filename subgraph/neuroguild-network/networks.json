@@ -1,44 +1,44 @@
 {
   "base-sepolia": {
     "Box": {
-      "address": "0x42CC38bAc988CDcb0fd7D710cd843b0030f05150",
-      "startBlock": 38547098
+      "address": "0xc870f4d0c431de272854eaf2e3b3363280694253",
+      "startBlock": 38859133
     },
     "CouncilRegistry": {
-      "address": "0xDF26d46a4dEDf628b02a170AEf6ad251931CE630",
-      "startBlock": 38547098
+      "address": "0x0f4c2c82ad5a8ced9e9885d3ca6f14bc0ce9ea75",
+      "startBlock": 38859133
     },
     "GovernanceContract": {
-      "address": "0x0176e8d4a87Ce0EED9aeb4813d998E75E31e5d3c",
-      "startBlock": 38547098
+      "address": "0xfa11952275dcf9aa15017d4041ac4b11c149b9f4",
+      "startBlock": 38859133
     },
     "GovernanceToken": {
-      "address": "0x90b82c3ab1Ce5db11A028E696Dff4c0F11d09549",
-      "startBlock": 38547098
+      "address": "0xf19e7a8a092a2224fbc32e232755e7e3b726bb08",
+      "startBlock": 38859132
     },
     "JobContract": {
-      "address": "0xEb92E7ccBF2FC2B2578096709862Ecd39C1f2D31",
-      "startBlock": 38547098
+      "address": "0x36da95043dc9f1bb745d3ab148ee1575cd038250",
+      "startBlock": 38859133
     },
     "ReputationSBT": {
-      "address": "0xDFce0c2BC54AC8E24662B97B69631eF3D6f5178e",
-      "startBlock": 38547098
+      "address": "0x3bb3be2c698ad9df6498f6030931a7d9977a5e2c",
+      "startBlock": 38859133
     },
     "SkillSBT": {
-      "address": "0xDbAAaB3530D65E2eFfb684B38349922A4ca000F6",
-      "startBlock": 38547098
+      "address": "0xaef9cbc624223137405bbfdfdf5b51285c8f49a4",
+      "startBlock": 38859133
     },
     "Timelock": {
-      "address": "0xBBbDB407e8cDE61B0dc907FECc9Ad09DB43dC9E5",
-      "startBlock": 38547098
+      "address": "0xebad57d79c39b14b8f473e4081166d4ed2606d0e",
+      "startBlock": 38859133
     },
     "Treasury": {
-      "address": "0xEd2Dc27114eE6D585DF95D1cDB5FbE06f8aB6e0F",
-      "startBlock": 38547098
+      "address": "0x4bb2f7be53f294500de80b8df496648add92c897",
+      "startBlock": 38859133
     },
     "UserRegistry": {
-      "address": "0x5aca866E18cc46c48ae02995e41A01b85D6a59da",
-      "startBlock": 38547098
+      "address": "0xf20a1f72b7ef99b36b33f9093e378c59d7f1ee40",
+      "startBlock": 38859133
     }
   }
 }

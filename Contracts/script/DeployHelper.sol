@@ -73,7 +73,8 @@ library DeployHelper {
         d.governor = address(governor);
 
         CouncilRegistry councilRegistry = new CouncilRegistry(
-            address(timelock)
+            address(timelock),
+            address(usdc)
         );
         d.councilRegistry = address(councilRegistry);
 
@@ -101,7 +102,8 @@ library DeployHelper {
             repReward,
             repPenalty,
             address(reputationSBT),
-            address(treasury)
+            address(treasury),
+            address(councilRegistry)
         );
         d.jobContract = address(jobContract);
 

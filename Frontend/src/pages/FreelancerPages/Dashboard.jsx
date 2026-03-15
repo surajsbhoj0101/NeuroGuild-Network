@@ -7,7 +7,67 @@ import FreelancerStats from "../../components/FreelancerStats";
 import NoticeToast from "../../components/NoticeToast";
 import { useAuth } from "../../contexts/AuthContext.jsx";
 import DashboardAnalyticsPanel from "../../components/DashboardAnalyticsPanel.jsx";
-import { ArrowRight, BriefcaseBusiness, Gavel, Send } from "lucide-react";
+import {
+  ArrowRight,
+  BriefcaseBusiness,
+  Clock3,
+  Gavel,
+  Send,
+  WalletCards,
+} from "lucide-react";
+
+function ActionPanel({ title, detail, meta, icon, onClick, tone = "default" }) {
+  const IconComponent = icon;
+  const iconTone =
+    tone === "sky"
+      ? "bg-sky-500/12 text-sky-300"
+      : tone === "amber"
+        ? "bg-amber-500/12 text-amber-300"
+        : tone === "emerald"
+          ? "bg-emerald-500/12 text-emerald-300"
+          : "bg-white/8 text-white";
+
+  return (
+    <button
+      onClick={onClick}
+      className="border border-white/10 bg-[#101827] p-4 text-left transition-colors hover:border-white/20 hover:bg-[#131d30]"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className={`border border-white/10 p-2 ${iconTone}`}>
+          <IconComponent size={16} />
+        </div>
+        <span className="text-xs text-gray-500">{meta}</span>
+      </div>
+      <h2 className="mt-4 text-sm font-semibold text-white">{title}</h2>
+      <p className="mt-2 text-sm leading-6 text-gray-400">{detail}</p>
+      <div className="mt-4 inline-flex items-center gap-2 text-xs font-medium text-gray-200">
+        Open
+        <ArrowRight size={14} />
+      </div>
+    </button>
+  );
+}
+
+function LoadingDashboard() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      <div className="grid gap-3 xl:grid-cols-4">
+        {[...Array(4)].map((_, index) => (
+          <div key={index} className="h-24 border border-white/8 bg-white/5" />
+        ))}
+      </div>
+      <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="space-y-4">
+          <div className="h-96 border border-white/8 bg-white/5" />
+        </div>
+        <div className="space-y-4">
+          <div className="h-44 border border-white/8 bg-white/5" />
+          <div className="h-44 border border-white/8 bg-white/5" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function Dashboard() {
   const { isAuthentication } = useAuth();
@@ -79,7 +139,7 @@ function Dashboard() {
         expired: categorized?.expired?.length || 0,
       });
       setRedNotice(false);
-    } catch (error) {
+    } catch {
       setRedNotice(true);
       setNotice("Failed to load dashboard. Please try again.");
     } finally {
@@ -157,6 +217,54 @@ function Dashboard() {
     },
   ];
 
+  const actionItems = [
+    {
+      title: "Manage active contracts",
+      detail:
+        "Review submitted proofs, delivery deadlines, disputes, and completed work without switching context.",
+      meta: `${breakdown.inProgress} active`,
+      icon: BriefcaseBusiness,
+      tone: "emerald",
+      onClick: () => navigate("/freelancer/manage-jobs"),
+    },
+    {
+      title: "Browse new work",
+      detail:
+        "Open jobs and pending proposals move fastest when you keep the top of the funnel warm.",
+      meta: `${breakdown.open} open`,
+      icon: Send,
+      tone: "sky",
+      onClick: () => navigate("/browse-jobs"),
+    },
+    {
+      title: "Watch governance",
+      detail:
+        "Disputes and rule changes can affect payouts, review flow, and future credentialing.",
+      meta: `${breakdown.disputed} disputed`,
+      icon: Gavel,
+      tone: "amber",
+      onClick: () => navigate("/governance"),
+    },
+  ];
+
+  const queueItems = [
+    {
+      label: "Submitted work waiting on client",
+      value: breakdown.submitted,
+      note: "Contracts currently sitting in review.",
+    },
+    {
+      label: "Delivery workload",
+      value: breakdown.inProgress,
+      note: "Projects still in execution.",
+    },
+    {
+      label: "Pending bid pressure",
+      value: stats.pendingBids,
+      note: "Open proposals that still need outcomes.",
+    },
+  ];
+
   return (
     <>
       <NoticeToast
@@ -165,86 +273,110 @@ function Dashboard() {
         onClose={() => setNotice(null)}
       />
 
-      <div className="dark:bg-[#0f111d] py-4 md:py-8 flex flex-col md:flex-row gap-4 bg-[#161c32] w-full min-h-screen ">
+      <div className="dark:bg-[#0f111d] py-4 md:py-6 flex flex-col md:flex-row gap-4 bg-[#161c32] w-full min-h-screen ">
         <div className="hidden md:block">
           <SideBar />
         </div>
 
         <div className="min-w-0 flex-1 px-4 md:px-8 pb-8">
-          <div className="mb-6 md:mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-              Dashboard
-            </h1>
-            <p className="text-gray-400 text-sm md:text-base">
-              Track delivery health, review pressure, and job lifecycle momentum from one overview.
-            </p>
+          <div className="mb-4 border border-white/10 bg-[#101827] px-4 py-4 md:px-5">
+            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.18em] text-gray-500">
+                  Freelancer Workspace
+                </p>
+                <h1 className="mt-2 text-2xl font-semibold text-white">
+                  Operations Dashboard
+                </h1>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-400">
+                  Keep delivery, review timing, dispute pressure, and revenue visibility in one working surface.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 md:w-[360px]">
+                <div className="border border-white/10 bg-[#0b111b] px-3 py-3">
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <WalletCards size={13} />
+                    Revenue
+                  </div>
+                  <div className="mt-2 text-lg font-semibold text-white">
+                    ${stats.totalEarnings.toLocaleString()}
+                  </div>
+                </div>
+                <div className="border border-white/10 bg-[#0b111b] px-3 py-3">
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <Clock3 size={13} />
+                    Review queue
+                  </div>
+                  <div className="mt-2 text-lg font-semibold text-white">
+                    {breakdown.submitted}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {!loading && <FreelancerStats stats={stats} />}
-
           {!loading ? (
-            <>
-              <DashboardAnalyticsPanel
-                doughnutTitle="Workload Distribution"
-                doughnutSubtitle="See how current freelancer work is distributed across active delivery states."
-                doughnutData={doughnutData}
-                barTitle="Lifecycle Breakdown"
-                barSubtitle="A full view of every freelancer job state currently indexed."
-                barData={barData}
-                insights={insights}
-              />
+            <div className="space-y-4">
+              <FreelancerStats stats={stats} />
 
-              <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-                <button
-                  onClick={() => navigate("/freelancer/manage-jobs")}
-                  className="rounded-2xl border border-[#14a19f]/20 bg-[#0d1224]/50 p-5 text-left backdrop-blur-md transition-colors hover:border-[#14a19f]/35"
-                >
-                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#14a19f]/12 text-[#7df3f0]">
-                    <BriefcaseBusiness size={18} />
-                  </div>
-                  <h2 className="mt-4 text-lg font-semibold text-white">Manage Jobs</h2>
-                  <p className="mt-2 text-sm text-gray-400">
-                    Review submitted work, disputes, completed jobs, and every live contract state.
-                  </p>
-                  <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#8ff6f3]">
-                    Open workspace <ArrowRight size={15} />
-                  </div>
-                </button>
+              <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+                <div className="space-y-4">
+                  <DashboardAnalyticsPanel
+                    doughnutTitle="Workload Distribution"
+                    doughnutSubtitle="Where your current contracts are concentrated across delivery states."
+                    doughnutData={doughnutData}
+                    barTitle="Lifecycle Breakdown"
+                    barSubtitle="A full state distribution of freelancer jobs indexed right now."
+                    barData={barData}
+                    insights={insights}
+                  />
+                </div>
 
-                <button
-                  onClick={() => navigate("/browse-jobs")}
-                  className="rounded-2xl border border-[#14a19f]/20 bg-[#0d1224]/50 p-5 text-left backdrop-blur-md transition-colors hover:border-[#14a19f]/35"
-                >
-                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/12 text-sky-300">
-                    <Send size={18} />
+                <div className="space-y-4">
+                  <div className="border border-white/10 bg-[#101827] px-4 py-4">
+                    <div className="border-b border-white/8 pb-3">
+                      <h2 className="text-sm font-semibold text-white">Action Queue</h2>
+                      <p className="mt-1 text-xs text-gray-400">
+                        The highest-leverage places to spend time right now.
+                      </p>
+                    </div>
+                    <div className="mt-4 grid gap-3">
+                      {actionItems.map((item) => (
+                        <ActionPanel key={item.title} {...item} />
+                      ))}
+                    </div>
                   </div>
-                  <h2 className="mt-4 text-lg font-semibold text-white">Find New Work</h2>
-                  <p className="mt-2 text-sm text-gray-400">
-                    Open listings and pending bids are easiest to improve from the browse jobs flow.
-                  </p>
-                  <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-sky-300">
-                    Browse jobs <ArrowRight size={15} />
-                  </div>
-                </button>
 
-                <button
-                  onClick={() => navigate("/governance")}
-                  className="rounded-2xl border border-[#14a19f]/20 bg-[#0d1224]/50 p-5 text-left backdrop-blur-md transition-colors hover:border-[#14a19f]/35"
-                >
-                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/12 text-amber-300">
-                    <Gavel size={18} />
+                  <div className="border border-white/10 bg-[#101827] px-4 py-4">
+                    <div className="border-b border-white/8 pb-3">
+                      <h2 className="text-sm font-semibold text-white">Operational Snapshot</h2>
+                      <p className="mt-1 text-xs text-gray-400">
+                        Compact reads for delivery risk and workflow pacing.
+                      </p>
+                    </div>
+                    <div className="divide-y divide-white/8">
+                      {queueItems.map((item) => (
+                        <div
+                          key={item.label}
+                          className="grid grid-cols-[1fr_auto] gap-4 py-3 first:pt-4 last:pb-0"
+                        >
+                          <div>
+                            <p className="text-sm font-medium text-white">{item.label}</p>
+                            <p className="mt-1 text-xs leading-5 text-gray-400">{item.note}</p>
+                          </div>
+                          <div className="text-sm font-semibold text-white">{item.value}</div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <h2 className="mt-4 text-lg font-semibold text-white">Governance Watch</h2>
-                  <p className="mt-2 text-sm text-gray-400">
-                    Keep an eye on disputes and protocol proposals that affect payment and reputation rules.
-                  </p>
-                  <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-amber-300">
-                    Open governance <ArrowRight size={15} />
-                  </div>
-                </button>
+                </div>
               </div>
-            </>
-          ) : null}
+
+            </div>
+          ) : (
+            <LoadingDashboard />
+          )}
         </div>
       </div>
     </>

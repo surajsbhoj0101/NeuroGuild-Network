@@ -6,7 +6,67 @@ import api from "../../utils/api.js";
 import NoticeToast from "../../components/NoticeToast";
 import { useAuth } from "../../contexts/AuthContext.jsx";
 import DashboardAnalyticsPanel from "../../components/DashboardAnalyticsPanel.jsx";
-import { ArrowRight, BriefcaseBusiness, Vote } from "lucide-react";
+import {
+  ArrowRight,
+  BriefcaseBusiness,
+  Clock3,
+  FilePlus2,
+  Vote,
+  WalletCards,
+} from "lucide-react";
+
+function ActionPanel({ title, detail, meta, icon, onClick, tone = "default" }) {
+  const IconComponent = icon;
+  const iconTone =
+    tone === "violet"
+      ? "bg-violet-500/12 text-violet-300"
+      : tone === "amber"
+        ? "bg-amber-500/12 text-amber-300"
+        : tone === "emerald"
+          ? "bg-emerald-500/12 text-emerald-300"
+          : "bg-white/8 text-white";
+
+  return (
+    <button
+      onClick={onClick}
+      className="border border-white/10 bg-[#101827] p-4 text-left transition-colors hover:border-white/20 hover:bg-[#131d30]"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className={`border border-white/10 p-2 ${iconTone}`}>
+          <IconComponent size={16} />
+        </div>
+        <span className="text-xs text-gray-500">{meta}</span>
+      </div>
+      <h2 className="mt-4 text-sm font-semibold text-white">{title}</h2>
+      <p className="mt-2 text-sm leading-6 text-gray-400">{detail}</p>
+      <div className="mt-4 inline-flex items-center gap-2 text-xs font-medium text-gray-200">
+        Open
+        <ArrowRight size={14} />
+      </div>
+    </button>
+  );
+}
+
+function LoadingDashboard() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      <div className="grid gap-3 xl:grid-cols-4">
+        {[...Array(4)].map((_, index) => (
+          <div key={index} className="h-24 border border-white/8 bg-white/5" />
+        ))}
+      </div>
+      <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="space-y-4">
+          <div className="h-96 border border-white/8 bg-white/5" />
+        </div>
+        <div className="space-y-4">
+          <div className="h-44 border border-white/8 bg-white/5" />
+          <div className="h-44 border border-white/8 bg-white/5" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function Dashboard() {
   const { isAuthentication } = useAuth();
@@ -151,6 +211,54 @@ function Dashboard() {
     },
   ];
 
+  const actionItems = [
+    {
+      title: "Manage open contracts",
+      detail:
+        "Review bids, accept deliveries, and close active work from one workflow surface.",
+      meta: `${breakdown.inProgress} active`,
+      icon: BriefcaseBusiness,
+      tone: "emerald",
+      onClick: () => navigate("/client/manage-jobs"),
+    },
+    {
+      title: "Post new work",
+      detail:
+        "Keep the hiring funnel healthy when open inventory starts to drop or specialist demand rises.",
+      meta: `${breakdown.open} open`,
+      icon: FilePlus2,
+      tone: "violet",
+      onClick: () => navigate("/post-job"),
+    },
+    {
+      title: "Governance and disputes",
+      detail:
+        "Track disputes and policy changes that can affect reviews, escrow, and payout timing.",
+      meta: `${breakdown.disputed} disputed`,
+      icon: Vote,
+      tone: "amber",
+      onClick: () => navigate("/governance"),
+    },
+  ];
+
+  const queueItems = [
+    {
+      label: "Submitted work pending review",
+      value: breakdown.submitted,
+      note: "Freelancer deliveries awaiting your action.",
+    },
+    {
+      label: "Open hiring backlog",
+      value: breakdown.open,
+      note: "Jobs still collecting or waiting on bids.",
+    },
+    {
+      label: "Dispute pressure",
+      value: breakdown.disputed,
+      note: "Contracts that may require governance follow-through.",
+    },
+  ];
+
   return (
     <>
       <NoticeToast
@@ -159,86 +267,109 @@ function Dashboard() {
         onClose={() => setNotice(null)}
       />
 
-      <div className="dark:bg-[#0f111d] py-4 md:py-8 flex flex-col md:flex-row gap-4 bg-[#161c32] min-w-screen min-h-screen ">
+      <div className="dark:bg-[#0f111d] py-4 md:py-6 flex flex-col md:flex-row gap-4 bg-[#161c32] min-w-screen min-h-screen ">
         <div className="hidden md:block">
           <SideBar />
         </div>
 
         <div className="min-w-0 flex-1 px-4 md:px-8 pb-8">
-          <div className="mb-6 md:mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-              Dashboard
-            </h1>
-            <p className="text-gray-400 text-sm md:text-base">
-              Keep hiring, contract progress, and dispute pressure visible from one client control surface.
-            </p>
+          <div className="mb-4 border border-white/10 bg-[#101827] px-4 py-4 md:px-5">
+            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.18em] text-gray-500">
+                  Client Control Surface
+                </p>
+                <h1 className="mt-2 text-2xl font-semibold text-white">
+                  Hiring Dashboard
+                </h1>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-400">
+                  Track hiring backlog, delivery progress, review timing, and dispute load from one operational view.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 md:w-[360px]">
+                <div className="border border-white/10 bg-[#0b111b] px-3 py-3">
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <WalletCards size={13} />
+                    Open pipeline
+                  </div>
+                  <div className="mt-2 text-lg font-semibold text-white">
+                    {stats.openJobs}
+                  </div>
+                </div>
+                <div className="border border-white/10 bg-[#0b111b] px-3 py-3">
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <Clock3 size={13} />
+                    Review queue
+                  </div>
+                  <div className="mt-2 text-lg font-semibold text-white">
+                    {breakdown.submitted}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {!loading && <ClientStats stats={stats} />}
-
           {!loading ? (
-            <>
-              <DashboardAnalyticsPanel
-                doughnutTitle="Hiring Pipeline"
-                doughnutSubtitle="Track open hiring, active delivery, submitted work, and dispute load."
-                doughnutData={doughnutData}
-                barTitle="Contract Lifecycle"
-                barSubtitle="A full distribution of client jobs across the lifecycle."
-                barData={barData}
-                insights={insights}
-              />
+            <div className="space-y-4">
+              <ClientStats stats={stats} />
 
-              <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-                <button
-                  onClick={() => navigate("/client/manage-jobs")}
-                  className="rounded-2xl border border-[#14a19f]/20 bg-[#0d1224]/50 p-5 text-left backdrop-blur-md transition-colors hover:border-[#14a19f]/35"
-                >
-                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#14a19f]/12 text-[#7df3f0]">
-                    <BriefcaseBusiness size={18} />
-                  </div>
-                  <h2 className="mt-4 text-lg font-semibold text-white">Manage Jobs</h2>
-                  <p className="mt-2 text-sm text-gray-400">
-                    Review bids, accept deliveries, raise disputes, and close contracts from one workflow.
-                  </p>
-                  <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#8ff6f3]">
-                    Open workspace <ArrowRight size={15} />
-                  </div>
-                </button>
+              <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+                <div className="space-y-4">
+                  <DashboardAnalyticsPanel
+                    doughnutTitle="Hiring Pipeline"
+                    doughnutSubtitle="Track open hiring, active delivery, submitted work, and dispute load."
+                    doughnutData={doughnutData}
+                    barTitle="Contract Lifecycle"
+                    barSubtitle="A full distribution of client jobs across the lifecycle."
+                    barData={barData}
+                    insights={insights}
+                  />
+                </div>
 
-                <button
-                  onClick={() => navigate("/post-job")}
-                  className="rounded-2xl border border-[#14a19f]/20 bg-[#0d1224]/50 p-5 text-left backdrop-blur-md transition-colors hover:border-[#14a19f]/35"
-                >
-                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/12 text-violet-300">
-                    <ArrowRight size={18} />
+                <div className="space-y-4">
+                  <div className="border border-white/10 bg-[#101827] px-4 py-4">
+                    <div className="border-b border-white/8 pb-3">
+                      <h2 className="text-sm font-semibold text-white">Action Queue</h2>
+                      <p className="mt-1 text-xs text-gray-400">
+                        The best next actions to keep hiring and settlement moving.
+                      </p>
+                    </div>
+                    <div className="mt-4 grid gap-3">
+                      {actionItems.map((item) => (
+                        <ActionPanel key={item.title} {...item} />
+                      ))}
+                    </div>
                   </div>
-                  <h2 className="mt-4 text-lg font-semibold text-white">Post New Job</h2>
-                  <p className="mt-2 text-sm text-gray-400">
-                    Keep the hiring funnel healthy by opening new work when open jobs are running low.
-                  </p>
-                  <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-violet-300">
-                    Post a job <ArrowRight size={15} />
-                  </div>
-                </button>
 
-                <button
-                  onClick={() => navigate("/governance")}
-                  className="rounded-2xl border border-[#14a19f]/20 bg-[#0d1224]/50 p-5 text-left backdrop-blur-md transition-colors hover:border-[#14a19f]/35"
-                >
-                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/12 text-amber-300">
-                    <Vote size={18} />
+                  <div className="border border-white/10 bg-[#101827] px-4 py-4">
+                    <div className="border-b border-white/8 pb-3">
+                      <h2 className="text-sm font-semibold text-white">Operational Snapshot</h2>
+                      <p className="mt-1 text-xs text-gray-400">
+                        Compact reads for queue pressure and contract flow.
+                      </p>
+                    </div>
+                    <div className="divide-y divide-white/8">
+                      {queueItems.map((item) => (
+                        <div
+                          key={item.label}
+                          className="grid grid-cols-[1fr_auto] gap-4 py-3 first:pt-4 last:pb-0"
+                        >
+                          <div>
+                            <p className="text-sm font-medium text-white">{item.label}</p>
+                            <p className="mt-1 text-xs leading-5 text-gray-400">{item.note}</p>
+                          </div>
+                          <div className="text-sm font-semibold text-white">{item.value}</div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <h2 className="mt-4 text-lg font-semibold text-white">Governance</h2>
-                  <p className="mt-2 text-sm text-gray-400">
-                    Disputes and protocol changes can affect payouts, timelock resolution, and platform policy.
-                  </p>
-                  <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-amber-300">
-                    Open governance <ArrowRight size={15} />
-                  </div>
-                </button>
+                </div>
               </div>
-            </>
-          ) : null}
+            </div>
+          ) : (
+            <LoadingDashboard />
+          )}
         </div>
       </div>
     </>

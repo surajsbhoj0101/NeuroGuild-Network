@@ -1,44 +1,65 @@
-import React from 'react';
-import { DollarSign, Clock, TrendingUp, Award } from 'lucide-react';
+import React from "react";
+import { DollarSign, Clock, TrendingUp, Award } from "lucide-react";
 
 function FreelancerStats({ stats }) {
+  const items = [
+    {
+      label: "Total Earnings",
+      value: `$${(stats.totalEarnings || 0).toLocaleString()}`,
+      detail: "Completed contract value",
+      icon: DollarSign,
+      tone: "text-emerald-300",
+    },
+    {
+      label: "Active Projects",
+      value: stats.activeProjects || 0,
+      detail: "In delivery right now",
+      icon: TrendingUp,
+      tone: "text-sky-300",
+    },
+    {
+      label: "Completed",
+      value: stats.completedProjects || 0,
+      detail: "Closed and accepted",
+      icon: Award,
+      tone: "text-white",
+    },
+    {
+      label: "Pending Bids",
+      value: stats.pendingBids || 0,
+      detail: "Awaiting client decision",
+      icon: Clock,
+      tone: "text-amber-200",
+    },
+  ];
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-      {/* Total Earnings */}
-      <div className="backdrop-blur-md border border-[#14a19f]/20 bg-[#0d1224]/50 rounded-lg p-4">
-        <p className="text-xs text-gray-400 mb-1 flex items-center gap-1">
-          <DollarSign size={14} />
-          Total Earnings
-        </p>
-        <p className="text-2xl font-bold text-[#14a19f]">${(stats.totalEarnings || 0).toLocaleString()}</p>
-      </div>
+    <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      {items.map((item) => {
+        const Icon = item.icon;
 
-      {/* Active Projects */}
-      <div className="backdrop-blur-md border border-blue-500/20 bg-blue-500/5 rounded-lg p-4">
-        <p className="text-xs text-gray-400 mb-1 flex items-center gap-1">
-          <TrendingUp size={14} />
-          Active Projects
-        </p>
-        <p className="text-2xl font-bold text-blue-400">{stats.activeProjects || 0}</p>
-      </div>
-
-      {/* Completed Projects */}
-      <div className="backdrop-blur-md border border-green-500/20 bg-green-500/5 rounded-lg p-4">
-        <p className="text-xs text-gray-400 mb-1 flex items-center gap-1">
-          <Award size={14} />
-          Completed
-        </p>
-        <p className="text-2xl font-bold text-green-400">{stats.completedProjects || 0}</p>
-      </div>
-
-      {/* Pending Proposals */}
-      <div className="backdrop-blur-md border border-purple-500/20 bg-purple-500/5 rounded-lg p-4">
-        <p className="text-xs text-gray-400 mb-1 flex items-center gap-1">
-          <Clock size={14} />
-          Pending Bids
-        </p>
-        <p className="text-2xl font-bold text-purple-400">{stats.pendingBids || 0}</p>
-      </div>
+        return (
+          <div
+            key={item.label}
+            className="border border-white/10 bg-[#101827] px-4 py-3 transition-colors hover:border-white/20"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.14em] text-gray-500">
+                  {item.label}
+                </p>
+                <p className={`mt-2 text-2xl font-semibold ${item.tone}`}>
+                  {item.value}
+                </p>
+              </div>
+              <div className="border border-white/10 bg-white/5 p-2 text-gray-300">
+                <Icon size={14} />
+              </div>
+            </div>
+            <p className="mt-3 text-xs text-gray-400">{item.detail}</p>
+          </div>
+        );
+      })}
     </div>
   );
 }

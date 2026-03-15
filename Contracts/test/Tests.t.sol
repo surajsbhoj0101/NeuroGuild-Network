@@ -486,8 +486,9 @@ contract Tests is Test {
         vm.stopPrank();
 
         assertEq(usdc.balanceOf(address(job)), 0);
-        assertEq(usdc.balanceOf(freelancer), 92 * 1e17); // 9.2
+        assertEq(usdc.balanceOf(freelancer), 91 * 1e17); // 9.1 after council fee
         assertEq(usdc.balanceOf(deployed.treasury), 12 * 1e17); // 1.2
+        assertEq(usdc.balanceOf(deployed.councilRegistry), 2 * 1e17); // 0.2
     }
 
     function testFundCouncil() public {
@@ -508,6 +509,27 @@ contract Tests is Test {
 
         ERC20Usdc usdc = ERC20Usdc(deployed.usdc);
         assertEq(usdc.balanceOf(member), 80 * 1e18);
+    }
+
+    function testRemovedCouncilCanStillClaimAccruedRewards() public {
+        address member = vm.addr(31);
+        ERC20Usdc usdc = ERC20Usdc(deployed.usdc);
+        CouncilRegistry council = CouncilRegistry(address(deployed.councilRegistry));
+
+        deal(address(usdc), address(council), 10 * 1e18);
+
+        vm.startPrank(address(deployed.timelock));
+        council.addCouncil(member);
+        council.notifyPoolContribution(10 * 1e18);
+        vm.warp(block.timestamp + 31 days);
+        council.distributeMonthlyPool();
+        council.removeCouncil(member);
+        vm.stopPrank();
+
+        vm.prank(member);
+        council.claimCouncilReward();
+
+        assertEq(usdc.balanceOf(member), 10 * 1e18);
     }
 
     function testDisputeMechanism() public {
@@ -605,6 +627,107 @@ contract Tests is Test {
 
         vm.expectRevert();
         rep.setApprovalForAll(client, true);
+    }
+
+    function testCanReRaiseUnresolvedDisputeAfterCooldown() public {
+        address client = vm.addr(11);
+        address freelancer = vm.addr(12);
+        deal(address(deployed.usdc), client, 100 * 1e18);
+
+        UserRegistry reg = UserRegistry(deployed.registry);
+        JobContract job = JobContract(deployed.jobContract);
+
+        vm.prank(client);
+        reg.registerUser(UserRegistry.Role.Client);
+
+        vm.prank(freelancer);
+        reg.registerUser(UserRegistry.Role.Freelancer);
+
+        uint256 start = 1000;
+        vm.warp(start);
+
+        vm.prank(client);
+        job.createJob("ipfs://job", 8 * 1e18, start + 1 days, start + 2 days);
+
+        bytes32 jobId = job.getAllJobIds()[0];
+
+        vm.warp(start + 100);
+        vm.prank(freelancer);
+        job.submitBid(jobId, 10 * 1e18, "ipfs://proposal");
+
+        vm.startPrank(client);
+        ERC20Usdc(deployed.usdc).approve(address(job), 20 * 1e18);
+        job.acceptBid(jobId, 0);
+        vm.stopPrank();
+
+        vm.prank(freelancer);
+        job.submitWork(jobId, "ipfs://proof");
+
+        vm.prank(client);
+        job.raiseDispute(jobId, "ipfs://reason-1");
+
+        assertEq(job.disputeRaiseCount(jobId), 1);
+
+        vm.prank(client);
+        vm.expectRevert(JobContract.DisputeReraiseTooEarly.selector);
+        job.reRaiseDispute(jobId, "ipfs://reason-2");
+
+        vm.warp(block.timestamp + job.disputeReraiseCooldown());
+        vm.prank(freelancer);
+        job.reRaiseDispute(jobId, "ipfs://reason-2");
+
+        assertEq(job.disputeRaiseCount(jobId), 2);
+        assertEq(uint256(job.getJobStatus(jobId)), uint256(JobContract.JobStatus.Disputed));
+    }
+
+    function testAutoMintedReputationUsesDefaultMetadataURI() public {
+        address client = vm.addr(21);
+        address freelancer = vm.addr(22);
+        deal(address(deployed.usdc), client, 100 * 1e18);
+
+        UserRegistry reg = UserRegistry(deployed.registry);
+        JobContract job = JobContract(deployed.jobContract);
+        ReputationSBT rep = ReputationSBT(address(deployed.reputationSBT));
+
+        vm.prank(client);
+        reg.registerUser(UserRegistry.Role.Client);
+
+        vm.prank(freelancer);
+        reg.registerUser(UserRegistry.Role.Freelancer);
+
+        vm.startPrank(address(deployed.timelock));
+        rep.setJobContract(address(job));
+        job.setDefaultReputationMetadataURI("ipfs://reputation-cid");
+        vm.stopPrank();
+
+        uint256 start = 2000;
+        vm.warp(start);
+
+        vm.prank(client);
+        job.createJob("ipfs://job", 8 * 1e18, start + 1 days, start + 2 days);
+
+        bytes32 jobId = job.getAllJobIds()[0];
+
+        vm.warp(start + 100);
+        vm.prank(freelancer);
+        job.submitBid(jobId, 10 * 1e18, "ipfs://proposal");
+
+        vm.startPrank(client);
+        ERC20Usdc(deployed.usdc).approve(address(job), 20 * 1e18);
+        job.acceptBid(jobId, 0);
+        vm.stopPrank();
+
+        vm.prank(freelancer);
+        job.submitWork(jobId, "ipfs://proof");
+
+        vm.prank(client);
+        job.acceptWork(jobId);
+
+        uint256 tokenId = rep.getTokenId(freelancer);
+        (, , , , , , , string memory metadataURI, ) = rep.repData(tokenId);
+
+        assertEq(metadataURI, "ipfs://reputation-cid");
+        assertEq(rep.tokenURI(tokenId), "ipfs://reputation-cid");
     }
 
     function testClaimAfterReviewPeriod() public {
