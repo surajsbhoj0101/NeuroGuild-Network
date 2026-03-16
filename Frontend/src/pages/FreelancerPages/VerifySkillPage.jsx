@@ -179,7 +179,7 @@ function VerifySkillPage() {
       {/* Pass / Fail Overlay */}
       {isSubmitted && isPassed !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#0f111d] border border-[#1a2537] rounded-xl p-8 w-[400px] text-center space-y-4 shadow-lg">
+          <div className="bg-[#0f111d] border border-[#1a2537] rounded-xl p-6 md:p-8 w-full max-w-sm mx-4 text-center space-y-4 shadow-lg">
             {isPassed ? (
               <>
                 <h2 className="text-2xl font-bold text-[#14a19f]"> Congratulations!</h2>
@@ -211,7 +211,7 @@ function VerifySkillPage() {
         </div>
       )}
 
-      <div className="bg-[#0f1724] min-h-screen">
+      <div className="bg-[#0f1724] min-h-screen overflow-x-hidden">
         <div className="border-b border-white/8 bg-[#0b111b]">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-6">
             <div>

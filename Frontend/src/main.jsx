@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import './index.css';
-import { StrictMode } from 'react';
+import { StrictMode, useEffect, useState } from 'react';
 import App from './App.jsx';
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import Navbar from './components/Navbar.jsx';
@@ -50,6 +50,8 @@ const queryClient = new QueryClient({
 });
 
 
+
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -83,7 +85,7 @@ const router = createBrowserRouter([
     path: "/browse-jobs",
     element: (
       <>
-        {/* <Snowfall snowflakeCount={60} /> */}
+        <Snowfall snowflakeCount={60} />
         <Navbar />
         <BrowseJobs />
       </>
@@ -92,7 +94,7 @@ const router = createBrowserRouter([
     path: "/freelancer/my-profile",
     element: (
       <>
-        {/* <Snowfall snowflakeCount={60} /> */}
+        <Snowfall snowflakeCount={60} />
         <Navbar />
         <MyProfile />
       </>
@@ -143,7 +145,7 @@ const router = createBrowserRouter([
     path: "/client/my-profile",
     element: (
       <>
-        {/* <Snowfall snowflakeCount={60} /> */}
+        <Snowfall snowflakeCount={60} />
         <Navbar />
         <ClientProfile />
       </>
@@ -153,7 +155,7 @@ const router = createBrowserRouter([
     path: "/post-job",
     element: (
       <>
-        {/* <Snowfall snowflakeCount={60} /> */}
+        <Snowfall snowflakeCount={60} />
         <Navbar />
         <PostJobs />
       </>
@@ -162,7 +164,7 @@ const router = createBrowserRouter([
     path: "/job/:jobId",
     element: (
       <>
-        {/* <Snowfall snowflakeCount={60} /> */}
+        <Snowfall snowflakeCount={60} />
         <Navbar />
         <JobPage />
       </>
@@ -180,7 +182,7 @@ const router = createBrowserRouter([
     path: "/client/dashboard",
     element: (
       <>
-        {/* <Snowfall snowflakeCount={60} /> */}
+        <Snowfall snowflakeCount={60} />
         <Navbar />
         <ClientDashboard />
       </>
@@ -198,7 +200,7 @@ const router = createBrowserRouter([
     path: "/governance",
     element: (
       <>
-        {/* <Snowfall snowflakeCount={60} /> */}
+        <Snowfall snowflakeCount={60} />
         <Navbar />
         <Governance />
       </>
@@ -207,7 +209,7 @@ const router = createBrowserRouter([
     path: "/messages/:recipientId",
     element: (
       <>
-        {/* <Snowfall snowflakeCount={60} /> */}
+        <Snowfall snowflakeCount={60} />
         <Messages />
       </>
     )

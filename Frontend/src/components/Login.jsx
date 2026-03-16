@@ -154,7 +154,8 @@ export default function Login({ setLoadingUser, setNotice, setRedNotice }) {
   };
 
   const redirectByRole = (role) => {
-    if (role === "freelancer") {
+    const normalizedRole = String(role || "").toLowerCase();
+    if (normalizedRole === "freelancer") {
       navigate("/freelancer/my-profile");
     } else {
       navigate("/client/my-profile");

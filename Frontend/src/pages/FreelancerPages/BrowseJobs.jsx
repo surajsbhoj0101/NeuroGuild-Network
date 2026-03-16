@@ -150,7 +150,7 @@ function BrowseJobs() {
   const visibleItems = filteredJobs.slice(currentIndex, currentIndex + 3);
 
   return (
-    <div className="dark:bg-[#0f111d] pt-6 flex bg-[#161c32] w-full">
+    <div className="dark:bg-[#0f111d] pt-6 flex bg-[#161c32] w-full min-h-screen overflow-x-clip">
       <NoticeToast
         message={notice}
         isError={redNotice}
@@ -160,10 +160,12 @@ function BrowseJobs() {
       <div className="pointer-events-none absolute right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
       <div className="pointer-events-none absolute left-[5%] bottom-[1%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
 
-      <SideBar />
+      <div className="hidden md:block shrink-0">
+        <SideBar />
+      </div>
 
-      <div className="flex w-full flex-col lg:flex-row mb-4">
-        <div className="filters w-full lg:w-1/2 ">
+      <div className="flex min-w-0 flex-1 flex-col lg:flex-row mb-4">
+        <div className="filters w-full lg:w-1/2 px-2 md:px-0">
           <h1
             style={orbitronStyle}
             className="text-3xl  text-white font-bold px-6 mb-4"
@@ -327,7 +329,7 @@ function BrowseJobs() {
 
         <div
           style={robotoStyle}
-          className="jobs-found w-1/2 py-1 space-y-3 px-1"
+          className="jobs-found w-full lg:w-1/2 py-1 space-y-3 px-1"
         >
           {isFetchingJobs ? (
             // Skeletons

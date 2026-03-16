@@ -235,7 +235,7 @@ export default function MintSkillSbtPage() {
         onClose={() => setNotice(null)}
       />
 
-      <div className="min-h-screen bg-[#0f1724] text-white">
+      <div className="min-h-screen bg-[#0f1724] text-white overflow-x-hidden">
         <div className="border-b border-white/8 bg-[#0b111b]">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-6">
             <div className="flex min-w-0 items-center gap-3">

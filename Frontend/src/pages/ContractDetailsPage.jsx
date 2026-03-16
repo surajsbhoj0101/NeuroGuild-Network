@@ -199,11 +199,13 @@ function ContractDetailsPage() {
     <>
       <NoticeToast message={notice} isError={redNotice} onClose={() => setNotice(null)} />
 
-      <div className="dark:bg-[#0f111d] py-4 md:py-8 flex flex-col md:flex-row gap-4 bg-[#161c32] w-full min-h-screen">
+      <div className="dark:bg-[#0f111d] py-4 md:py-8 flex flex-col md:flex-row gap-4 bg-[#161c32] w-full min-h-screen overflow-x-clip">
         <div className="pointer-events-none fixed right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-20 blur-3xl mix-blend-screen" />
         <div className="pointer-events-none fixed left-[5%] bottom-[1%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-20 blur-3xl mix-blend-screen" />
 
-        <SideBar />
+        <div className="hidden md:block shrink-0">
+          <SideBar />
+        </div>
 
         <div className="flex-1 px-4 md:px-8 pb-8">
           <div className="mb-6 md:mb-8 flex items-center justify-between gap-3">

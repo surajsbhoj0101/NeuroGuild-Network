@@ -130,7 +130,7 @@ export default function MintRules() {
 
   if (!isConnected) {
     return (
-      <div className='dark:bg-[#0f111d] pt-6 flex bg-[#161c32] w-full min-h-screen'>
+      <div className='dark:bg-[#0f111d] pt-6 flex bg-[#161c32] w-full min-h-screen overflow-x-hidden'>
         <div className="hidden md:block">
           {/* <SideBar /> */}
         </div>
@@ -148,11 +148,10 @@ export default function MintRules() {
   }
 
   return (
-    <div className='dark:bg-[#0f111d] pt-6 flex bg-[#161c32] w-full min-h-screen'>
+    <div className='dark:bg-[#0f111d] pt-6 flex bg-[#161c32] w-full min-h-screen overflow-x-hidden'>
       <div className="pointer-events-none absolute right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
       <div className="pointer-events-none absolute left-[20%] top-[1%] w-[120px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
       <div className="hidden md:block">
-        {/* <SideBar /> */}
       </div>
 
       <div className='flex-1 px-6 pb-8 max-w-6xl mx-auto w-full relative z-10'>

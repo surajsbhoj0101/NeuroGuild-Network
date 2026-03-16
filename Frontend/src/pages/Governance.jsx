@@ -70,6 +70,16 @@ const toSafeNumber = (value) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const normalizeAddress = (value) => String(value || "").toLowerCase();
+
+const getSupportLabel = (supportValue) => {
+  const support = toSafeNumber(supportValue);
+  if (support === 1) return "For";
+  if (support === 0) return "Against";
+  if (support === 2) return "Abstain";
+  return "Unknown";
+};
+
 const aggregateProposalVotes = (votes = []) => {
   return votes.reduce(
     (totals, vote) => {
@@ -105,6 +115,12 @@ const mapBackendProposalToCard = (proposal) => {
 
   return {
     id: proposal?.id || `proposal-${Date.now()}`,
+    proposer: normalizeAddress(proposal?.proposer),
+    votesRaw: (proposal?.votes || []).map((vote) => ({
+      voter: normalizeAddress(vote?.voter),
+      support: toSafeNumber(vote?.support),
+      weight: toSafeNumber(vote?.weight),
+    })),
     voteStart: proposal?.voteStart || "",
     title: truncateText(titleSource, 72),
     summary: truncateText(summarySource, 180),
@@ -356,7 +372,7 @@ export default function Governance() {
 
   if (!isAuthentication) {
     return (
-      <div className="dark:bg-[#0f111d] py-4 md:py-8 flex min-h-screen w-full flex-col gap-4 overflow-x-hidden bg-[#161c32]">
+      <div className="dark:bg-[#0f111d] py-4 md:py-8 flex min-h-screen w-full flex-col gap-4 overflow-x-clip bg-[#161c32]">
         <div className="pointer-events-none fixed right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-20 blur-3xl mix-blend-screen" />
         <div className="pointer-events-none fixed left-[5%] bottom-[1%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-20 blur-3xl mix-blend-screen" />
 
@@ -567,16 +583,41 @@ export default function Governance() {
     { label: "Executed", value: `${executedCount}`, icon: Award },
     { label: "Quorum Avg", value: `${participationRate}%`, icon: TrendingUp },
   ];
-  const recentActivity = [...reviewProposals, ...pastProposals].slice(0, 4).map((proposal) => ({
-    item: `Proposal #${proposal.id}`,
-    outcome: proposal.status,
-    color:
-      proposal.status === "Executed" || proposal.status === "Succeeded"
-        ? "text-green-400"
-        : proposal.status === "Defeated" || proposal.status === "Cancelled" || proposal.status === "Canceled"
-          ? "text-red-400"
-          : "text-amber-300",
-  }));
+  const normalizedViewer = normalizeAddress(address);
+  const recentActivity = proposals
+    .flatMap((proposal) => {
+      const entries = [];
+      const activityColor =
+        proposal.status === "Executed" || proposal.status === "Succeeded"
+          ? "text-green-400"
+          : proposal.status === "Defeated" || proposal.status === "Cancelled" || proposal.status === "Canceled"
+            ? "text-red-400"
+            : "text-amber-300";
+
+      if (normalizedViewer && proposal.proposer === normalizedViewer) {
+        entries.push({
+          key: `created-${proposal.id}`,
+          proposalId: proposal.id,
+          item: `You created Proposal #${proposal.id}`,
+          outcome: proposal.status,
+          color: activityColor,
+        });
+      }
+
+      const myVote = proposal.votesRaw?.find((vote) => vote.voter === normalizedViewer);
+      if (normalizedViewer && myVote) {
+        entries.push({
+          key: `voted-${proposal.id}`,
+          proposalId: proposal.id,
+          item: `You voted ${getSupportLabel(myVote.support)} on Proposal #${proposal.id}`,
+          outcome: proposal.status,
+          color: activityColor,
+        });
+      }
+
+      return entries;
+    })
+    .slice(0, 6);
 
 
 
@@ -633,7 +674,7 @@ export default function Governance() {
         onRemoveAction={handleRemoveProposalAction}
       />
 
-      <div className="dark:bg-[#0f111d] py-4 flex flex-col md:flex-row gap-4 bg-[#161c32] min-w-screen min-h-screen ">
+      <div className="dark:bg-[#0f111d] py-4 flex flex-col md:flex-row gap-4 bg-[#161c32] w-full overflow-x-clip min-h-screen">
         <div className="pointer-events-none fixed right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-20 blur-3xl mix-blend-screen" />
         <div className="pointer-events-none fixed left-[5%] bottom-[1%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-20 blur-3xl mix-blend-screen" />
 
@@ -808,23 +849,38 @@ export default function Governance() {
                     <h3 className="text-white text-lg font-semibold mb-3" style={robotoStyle}>
                       Your Activity
                     </h3>
-                    <div className="space-y-2.5">
-                      {recentActivity.length > 0 ? (
-                        recentActivity.map((entry) => (
-                          <div
-                            key={`${entry.item}-${entry.outcome}`}
-                            className="flex flex-col gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between"
+                    {recentActivity.length > 0 ? (
+                      <ul className="space-y-2.5">
+                        {recentActivity.map((entry, index) => (
+                          <li
+                            key={`${entry.key}-${index}`}
+                            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5"
                           >
-                            <span className="text-gray-300 break-words">{entry.item}</span>
-                            <span className={entry.color}>{entry.outcome}</span>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-gray-400" style={robotoStyle}>
-                          Governance activity will appear here once proposal history is available.
-                        </div>
-                      )}
-                    </div>
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                              <p className="text-sm text-gray-300 wrap-break-word leading-5">{entry.item}</p>
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`w-fit rounded-full border border-white/10 px-2.5 py-1 text-xs font-medium ${entry.color}`}
+                                >
+                                  {entry.outcome}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => navigate(`/proposal/${entry.proposalId}`)}
+                                  className="inline-flex items-center gap-1 rounded-md border border-[#14a19f]/30 bg-[#14a19f]/10 px-2 py-1 text-[11px] font-medium text-[#7df3f0] transition-colors hover:bg-[#14a19f]/20"
+                                >
+                                  Open <ArrowUpRight size={12} />
+                                </button>
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-gray-400" style={robotoStyle}>
+                        No personal governance activity found yet. Create or vote on a proposal to see it here.
+                      </div>
+                    )}
                   </div>
 
                   <div className="rounded-xl border border-[#14a19f]/20 bg-[#0d1224]/50 p-5 backdrop-blur-md">

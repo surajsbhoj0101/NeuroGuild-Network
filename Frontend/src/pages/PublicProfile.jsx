@@ -11,6 +11,7 @@ import {
   Mail,
   MapPin,
   MessageSquare,
+  Copy,
   ShieldCheck,
   Sparkles,
   Twitter,
@@ -74,12 +75,12 @@ function InfoPill({ icon: Icon, label, value }) {
     value === 0 || value === "0" ? value : value || "Not provided";
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+    <div className="rounded-2xl border border-white/10 bg-white/4 px-4 py-3">
       <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-gray-400">
         <Icon size={14} />
         <span>{label}</span>
       </div>
-      <p className="mt-2 text-sm font-medium text-white break-words" style={robotoStyle}>
+      <p className="mt-2 text-sm font-medium text-white wrap-break-word" style={robotoStyle}>
         {displayValue}
       </p>
     </div>
@@ -124,6 +125,18 @@ export default function PublicProfile() {
   const [reputationProfile, setReputationProfile] = useState(emptyReputationProfile);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [copiedTag, setCopiedTag] = useState("");
+
+  const copyWalletAddress = async (tag) => {
+    if (!normalized?.walletAddress) return;
+    try {
+      await navigator.clipboard.writeText(normalized.walletAddress);
+      setCopiedTag(tag);
+      setTimeout(() => setCopiedTag(""), 1200);
+    } catch (copyError) {
+      console.error("Failed to copy wallet address:", copyError);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -289,8 +302,17 @@ export default function PublicProfile() {
                       ? `${toLabel(normalized.availability)}`
                       : "Job Poster"}
                   </span>
-                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300">
                     {shortenAddress(normalized.walletAddress)}
+                    <button
+                      type="button"
+                      onClick={() => copyWalletAddress("hero")}
+                      className="inline-flex items-center justify-center rounded p-0.5 text-gray-400 transition-colors hover:text-white"
+                      aria-label="Copy wallet address"
+                      title={copiedTag === "hero" ? "Copied" : "Copy address"}
+                    >
+                      <Copy size={12} />
+                    </button>
                   </span>
                   {profileState.role === "freelancer" && normalized.hourlyRate ? (
                     <span className="rounded-full border border-[#14a19f]/20 bg-[#14a19f]/10 px-3 py-1 text-xs text-[#8ff6f3]">
@@ -303,7 +325,26 @@ export default function PublicProfile() {
 
             <div className="grid grid-cols-2 gap-3">
               <InfoPill icon={MapPin} label="Location" value={normalized.location} />
-              <InfoPill icon={Wallet} label="Wallet" value={shortenAddress(normalized.walletAddress)} />
+              <div className="rounded-2xl border border-white/10 bg-white/4 px-4 py-3">
+                <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-gray-400">
+                  <Wallet size={14} />
+                  <span>Wallet</span>
+                </div>
+                <div className="mt-2 flex items-center gap-1.5">
+                  <p className="text-sm font-medium text-white wrap-break-word" style={robotoStyle}>
+                    {shortenAddress(normalized.walletAddress)}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => copyWalletAddress("info")}
+                    className="inline-flex items-center justify-center rounded p-0.5 text-gray-400 transition-colors hover:text-white"
+                    aria-label="Copy wallet address"
+                    title={copiedTag === "info" ? "Copied" : "Copy address"}
+                  >
+                    <Copy size={13} />
+                  </button>
+                </div>
+              </div>
               <InfoPill
                 icon={profileState.role === "freelancer" ? Briefcase : Building2}
                 label={profileState.role === "freelancer" ? "Experience" : "Type"}

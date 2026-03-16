@@ -6,28 +6,66 @@ import Snowfall from "react-snowfall";
 import { useTheme } from "../contexts/ThemeContext";
 import { useNotifications } from "../contexts/NotificationContext";
 import CustomConnectButton from "./CustomConnectButton";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "../assets/images/logo.png";
 import { useAccount } from "wagmi";
 import { useTokenBalance } from "../contexts/TokenBalanceContext";
+import { useAuth } from "../contexts/AuthContext";
 
 function Navbar() {
   const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
   const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
   const { isDarkMode, toggleDark } = useTheme();
+  const { role, isAuthentication } = useAuth();
   const { address, isConnected } = useAccount();
   const balances  = useTokenBalance();
   const {
     notificationItems,
     appNotificationItems,
+    totalUnreadCount,
     totalNotificationCount,
     markConversationRead,
     markAppNotificationRead,
     markAllAppNotificationsRead,
   } = useNotifications();
   const navigate = useNavigate();
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
+
+  const clientMenu = [
+    { name: "Dashboard", link: "/client/dashboard" },
+    { name: "Manage Jobs", link: "/client/manage-jobs" },
+    { name: "Post Jobs", link: "/post-job" },
+    { name: "Messages", link: "/messages" },
+    { name: "My Profile", link: "/client/my-profile" },
+    { name: "Governance", link: "/governance" },
+    { name: "Settings", link: "/client/settings" },
+  ];
+
+  const freelancerMenu = [
+    { name: "Dashboard", link: "/freelancer/dashboard" },
+    { name: "Manage Jobs", link: "/freelancer/manage-jobs" },
+    { name: "Browse Jobs", link: "/browse-jobs" },
+    { name: "Messages", link: "/messages" },
+    { name: "My Profile", link: "/freelancer/my-profile" },
+    { name: "Governance", link: "/governance" },
+    { name: "Settings", link: "/freelancer/settings" },
+  ];
+
+  const normalizedRole = String(role || "").toLowerCase();
+  const mobileNavItems = isAuthentication
+    ? normalizedRole === "freelancer"
+      ? freelancerMenu
+      : clientMenu
+    : [];
+
+  const isActiveLink = (link) => {
+    if (link === "/messages") {
+      return location.pathname.startsWith("/messages");
+    }
+    return location.pathname === link || location.pathname.startsWith(`${link}/`);
+  };
 
   const formatRelative = (value) => {
     if (!value) return "";
@@ -312,6 +350,30 @@ function Navbar() {
             </div>
 
             <div className="flex flex-col gap-2">
+              {mobileNavItems.length > 0 && (
+                <div className="mb-1 flex flex-col gap-1 rounded-lg border border-[#1f3240] bg-white/3 p-1">
+                  {mobileNavItems.map((item) => (
+                    <Link
+                      key={item.link}
+                      to={item.link}
+                      onClick={() => setMenuOpen(false)}
+                      className={`w-full rounded-md px-3 py-2 text-sm no-underline transition flex items-center justify-between ${
+                        isActiveLink(item.link)
+                          ? "bg-[#14a19f]/20 text-[#53e8e5]"
+                          : "text-white hover:bg-white/4"
+                      }`}
+                    >
+                      <span style={robotoStyle}>{item.name}</span>
+                      {item.link === "/messages" && totalUnreadCount > 0 && (
+                        <span className="min-w-5 h-5 px-1 rounded-full bg-[#14a19f] text-white text-[11px] leading-5 text-center">
+                          {totalUnreadCount > 99 ? "99+" : totalUnreadCount}
+                        </span>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              )}
+
               <button
                 onClick={() => {
                   setMenuOpen(false);

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertCircle, CheckCircle2, ChevronRight, Loader2, MessageSquare, Star, UserRound } from "lucide-react";
+import { AlertCircle, AlertTriangle, CheckCircle2, ChevronRight, Clock, FolderOpen, Loader2, MessageSquare, Plus, Send, Star, UserRound, XCircle, Zap } from "lucide-react";
 import { useWalletClient } from "wagmi";
 import { BrowserProvider, Contract } from "ethers";
 import SideBar from "../../components/SideBar";
@@ -877,70 +877,59 @@ function ManageJobs() {
         </div>
       ) : null}
 
-      <div className="dark:bg-[#0f111d] py-4 md:py-8 flex flex-col md:flex-row gap-4 bg-[#161c32] w-full min-h-screen">
+      <div className="dark:bg-[#0f111d] py-4 md:py-8 flex flex-col md:flex-row gap-4 bg-[#161c32] w-full min-h-screen overflow-x-clip">
         <div className="pointer-events-none fixed right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-20 blur-3xl mix-blend-screen" />
         <div className="pointer-events-none fixed left-[5%] bottom-[1%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-20 blur-3xl mix-blend-screen" />
 
-        <SideBar />
+        <div className="hidden md:block shrink-0">
+          <SideBar />
+        </div>
 
         <div className="flex-1 px-4 md:px-8 pb-8">
-          <div className="mb-6 md:mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-              Manage Jobs
-            </h1>
-            <p className="text-gray-400 text-sm md:text-base">
-              Manage your bids, active projects, and completed work
-            </p>
+          <div className="mb-6 md:mb-8 flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-[#14a19f] mb-1.5">Client Workspace</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-white">Manage Jobs</h1>
+              <p className="text-gray-400 text-sm mt-1">Track bids, active contracts, and completed work.</p>
+            </div>
+            <button
+              onClick={() => navigate("/post-job")}
+              className="shrink-0 hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#14a19f] hover:bg-[#1ecac7] text-white text-sm font-semibold transition-colors"
+            >
+              <Plus size={15} />
+              Post Job
+            </button>
           </div>
 
           {!loading && <ClientStats stats={stats} />}
 
-          <div className="flex gap-2 mb-6 border-b border-[#14a19f]/20 overflow-x-auto pb-1">
+          <div className="mb-5 flex gap-1.5 overflow-x-auto pb-1">
             {[
-              { id: "Open", label: "Open", count: stats.openJobs },
-              {
-                id: "InProgress",
-                label: "InProgress",
-                count: stats.activeProjects,
-              },
-              {
-                id: "Submitted",
-                label: "Submitted",
-                count: stats.submittedProjects,
-              },
-              {
-                id: "Completed",
-                label: "Completed",
-                count: stats.completedProjects,
-              },
-              {
-                id: "Disputed",
-                label: "Disputed",
-                count: stats.disputedProjects,
-              },
-              {
-                id: "Cancelled",
-                label: "Cancelled",
-                count: stats.cancelledProjects,
-              },
-              {
-                id: "Expired",
-                label: "Expired",
-                count: stats.expiredProjects,
-              },
-            ].map((tab) => (
+              { id: "Open",       label: "Open",        count: stats.openJobs,         icon: FolderOpen    },
+              { id: "InProgress", label: "In Progress", count: stats.activeProjects,    icon: Zap           },
+              { id: "Submitted",  label: "Submitted",   count: stats.submittedProjects, icon: Send          },
+              { id: "Completed",  label: "Completed",   count: stats.completedProjects, icon: CheckCircle2  },
+              { id: "Disputed",   label: "Disputed",    count: stats.disputedProjects,  icon: AlertTriangle },
+              { id: "Cancelled",  label: "Cancelled",   count: stats.cancelledProjects, icon: XCircle       },
+              { id: "Expired",    label: "Expired",     count: stats.expiredProjects,   icon: Clock         },
+            ].map(({ id, label, count, icon: Icon }) => (
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`shrink-0 px-4 md:px-6 py-3 font-medium text-sm border-b-2 transition-colors rounded-t-lg ${activeTab === tab.id
-                  ? "text-[#14a19f] border-[#14a19f] bg-[#14a19f]/10"
-                  : "text-gray-400 border-transparent hover:text-gray-300"
-                  }`}
+                key={id}
+                onClick={() => setActiveTab(id)}
+                className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                  activeTab === id
+                    ? "bg-[#14a19f]/15 text-[#14a19f] border-[#14a19f]/35"
+                    : "text-gray-400 hover:text-gray-200 hover:bg-white/5 border-transparent"
+                }`}
               >
-                {tab.label}
-                {tab.count > 0 && (
-                  <span className="ml-2 bg-[#14a19f]/30 text-[#14a19f] px-2 py-1 rounded text-xs font-semibold">
-                    {tab.count}
+                <Icon size={14} />
+                <span className="hidden sm:inline">{label}</span>
+                <span className="sm:hidden">{label.split(" ")[0]}</span>
+                {count > 0 && (
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                    activeTab === id ? "bg-[#14a19f]/25 text-[#14a19f]" : "bg-white/8 text-gray-400"
+                  }`}>
+                    {count}
                   </span>
                 )}
               </button>
@@ -962,7 +951,7 @@ function ManageJobs() {
                     onCta={() => navigate("/post-job")}
                   />
                 ) : (
-                  openJobs.map((job) => (
+                  <div className="grid gap-4">{openJobs.map((job) => (
                     <StatusProjectCard
                       key={job.jobId}
                       project={{
@@ -995,7 +984,7 @@ function ManageJobs() {
                         })
                       }
                     />
-                  ))
+                  ))}</div>
                 ))}
 
               {activeTab === "InProgress" &&
@@ -1005,7 +994,7 @@ function ManageJobs() {
                     description="Accepted bids and running contracts will appear here."
                   />
                 ) : (
-                  inProgressJobs.map((job) => (
+                  <div className="grid gap-4">{inProgressJobs.map((job) => (
                     <StatusProjectCard
                       key={job.jobId}
                       project={{
@@ -1026,7 +1015,7 @@ function ManageJobs() {
                         })
                       }
                     />
-                  ))
+                  ))}</div>
                 ))}
 
               {activeTab === "Submitted" &&
@@ -1036,7 +1025,7 @@ function ManageJobs() {
                     description="Projects waiting for your approval will appear here."
                   />
                 ) : (
-                  submittedJobs.map((job) => (
+                  <div className="grid gap-4">{submittedJobs.map((job) => (
                     <StatusProjectCard
                       key={job.jobId}
                       project={job}
@@ -1092,7 +1081,7 @@ function ManageJobs() {
                       onShowContract={() => handleShowContract(job)}
                       onMessage={() => handleMessage(job)}
                     />
-                  ))
+                  ))}</div>
                 ))}
 
               {activeTab === "Completed" &&
@@ -1102,7 +1091,7 @@ function ManageJobs() {
                     description="Completed contracts will appear here."
                   />
                 ) : (
-                  completedJobs.map((job) => (
+                  <div className="grid gap-4">{completedJobs.map((job) => (
                     <StatusProjectCard
                       key={job.jobId}
                       project={job}
@@ -1125,7 +1114,7 @@ function ManageJobs() {
                       onShowContract={() => handleShowContract(job)}
                       onMessage={() => handleMessage(job)}
                     />
-                  ))
+                  ))}</div>
                 ))}
 
               {activeTab === "Disputed" &&
@@ -1135,7 +1124,7 @@ function ManageJobs() {
                     description="If a contract enters dispute, it will appear in this tab."
                   />
                 ) : (
-                  disputedJobs.map((job) => (
+                  <div className="grid gap-4">{disputedJobs.map((job) => (
                     <StatusProjectCard
                       key={job.jobId}
                       project={job}
@@ -1144,7 +1133,7 @@ function ManageJobs() {
                       onShowContract={() => handleShowContract(job)}
                       onMessage={() => handleMessage(job)}
                     />
-                  ))
+                  ))}</div>
                 ))}
 
               {activeTab === "Cancelled" &&
@@ -1154,7 +1143,7 @@ function ManageJobs() {
                     description="Cancelled contracts will appear here."
                   />
                 ) : (
-                  cancelledJobs.map((job) => (
+                  <div className="grid gap-4">{cancelledJobs.map((job) => (
                     <StatusProjectCard
                       key={job.jobId}
                       project={job}
@@ -1163,7 +1152,7 @@ function ManageJobs() {
                       onShowContract={() => handleShowContract(job)}
                       onMessage={() => handleMessage(job)}
                     />
-                  ))
+                  ))}</div>
                 ))}
 
               {activeTab === "Expired" &&
@@ -1173,7 +1162,7 @@ function ManageJobs() {
                     description="Expired contracts will appear here."
                   />
                 ) : (
-                  expiredJobs.map((job) => (
+                  <div className="grid gap-4">{expiredJobs.map((job) => (
                     <StatusProjectCard
                       key={job.jobId}
                       project={job}
@@ -1182,7 +1171,7 @@ function ManageJobs() {
                       onShowContract={() => handleShowContract(job)}
                       onMessage={() => handleMessage(job)}
                     />
-                  ))
+                  ))}</div>
                 ))}
 
             </>

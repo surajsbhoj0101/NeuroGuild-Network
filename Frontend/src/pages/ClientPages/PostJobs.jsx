@@ -378,14 +378,16 @@ function PostJobs() {
         onClose={() => setNotice(null)}
       />
 
-      <div className="min-h-screen  dark:bg-[#0f111d]  bg-[#161c32]">
+      <div className="min-h-screen dark:bg-[#0f111d] bg-[#161c32] overflow-x-clip">
         <div className="pointer-events-none fixed right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
         <div className="pointer-events-none fixed left-[5%] bottom-[1%] w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
 
-        <div className="flex pt-6">
-          <SideBar />
+        <div className="flex pt-4 md:pt-6">
+          <div className="hidden md:block shrink-0">
+            <SideBar />
+          </div>
 
-          <div className="flex flex-1 px-6 gap-6 ">
+          <div className="flex flex-1 px-4 md:px-6 gap-4 md:gap-6 ">
             <div className="w-full lg:w-[60%] space-y-6">
               <h1
                 style={orbitronStyle}
@@ -607,7 +609,7 @@ function PostJobs() {
                 </div>
               </div>
 
-              <div className="w-full mb-7 mt-3 backdrop-blur-sm flex items-center justify-between rounded-lg p-6 border border-[#14a19f]/20 space-x-4">
+              <div className="w-full mb-7 mt-3 backdrop-blur-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between rounded-lg p-4 md:p-6 border border-[#14a19f]/20 gap-3 sm:gap-4">
                 <button
                   onClick={removeAllDetails}
                   disabled={enhancing || applying || submiting || cancelling}

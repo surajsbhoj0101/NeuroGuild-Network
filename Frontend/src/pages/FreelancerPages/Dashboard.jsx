@@ -247,24 +247,6 @@ function Dashboard() {
     },
   ];
 
-  const queueItems = [
-    {
-      label: "Submitted work waiting on client",
-      value: breakdown.submitted,
-      note: "Contracts currently sitting in review.",
-    },
-    {
-      label: "Delivery workload",
-      value: breakdown.inProgress,
-      note: "Projects still in execution.",
-    },
-    {
-      label: "Pending bid pressure",
-      value: stats.pendingBids,
-      note: "Open proposals that still need outcomes.",
-    },
-  ];
-
   return (
     <>
       <NoticeToast
@@ -273,7 +255,7 @@ function Dashboard() {
         onClose={() => setNotice(null)}
       />
 
-      <div className="dark:bg-[#0f111d] py-4 md:py-6 flex flex-col md:flex-row gap-4 bg-[#161c32] w-full min-h-screen ">
+      <div className="dark:bg-[#0f111d] py-4 md:py-6 flex flex-col md:flex-row gap-4 bg-[#161c32] w-full min-h-screen overflow-x-clip">
         <div className="hidden md:block">
           <SideBar />
         </div>
@@ -286,10 +268,10 @@ function Dashboard() {
                   Freelancer Workspace
                 </p>
                 <h1 className="mt-2 text-2xl font-semibold text-white">
-                  Operations Dashboard
+                  Freelancer Dashboard
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-400">
-                  Keep delivery, review timing, dispute pressure, and revenue visibility in one working surface.
+                  Keep delivery, review timing, dispute pressure, and revenue visibility in one working view.
                 </p>
               </div>
 
@@ -320,56 +302,27 @@ function Dashboard() {
             <div className="space-y-4">
               <FreelancerStats stats={stats} />
 
-              <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-                <div className="space-y-4">
-                  <DashboardAnalyticsPanel
-                    doughnutTitle="Workload Distribution"
-                    doughnutSubtitle="Where your current contracts are concentrated across delivery states."
-                    doughnutData={doughnutData}
-                    barTitle="Lifecycle Breakdown"
-                    barSubtitle="A full state distribution of freelancer jobs indexed right now."
-                    barData={barData}
-                    insights={insights}
-                  />
+              <DashboardAnalyticsPanel
+                doughnutTitle="Workload Distribution"
+                doughnutSubtitle="Where your current contracts are concentrated across delivery states."
+                doughnutData={doughnutData}
+                barTitle="Lifecycle Breakdown"
+                barSubtitle="A full state distribution of freelancer jobs indexed right now."
+                barData={barData}
+                insights={insights}
+              />
+
+              <div className="border border-white/10 bg-[#101827] px-4 py-4">
+                <div className="border-b border-white/8 pb-3">
+                  <h2 className="text-sm font-semibold text-white">Action Queue</h2>
+                  <p className="mt-1 text-xs text-gray-400">
+                    The highest-leverage places to spend time right now.
+                  </p>
                 </div>
-
-                <div className="space-y-4">
-                  <div className="border border-white/10 bg-[#101827] px-4 py-4">
-                    <div className="border-b border-white/8 pb-3">
-                      <h2 className="text-sm font-semibold text-white">Action Queue</h2>
-                      <p className="mt-1 text-xs text-gray-400">
-                        The highest-leverage places to spend time right now.
-                      </p>
-                    </div>
-                    <div className="mt-4 grid gap-3">
-                      {actionItems.map((item) => (
-                        <ActionPanel key={item.title} {...item} />
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="border border-white/10 bg-[#101827] px-4 py-4">
-                    <div className="border-b border-white/8 pb-3">
-                      <h2 className="text-sm font-semibold text-white">Operational Snapshot</h2>
-                      <p className="mt-1 text-xs text-gray-400">
-                        Compact reads for delivery risk and workflow pacing.
-                      </p>
-                    </div>
-                    <div className="divide-y divide-white/8">
-                      {queueItems.map((item) => (
-                        <div
-                          key={item.label}
-                          className="grid grid-cols-[1fr_auto] gap-4 py-3 first:pt-4 last:pb-0"
-                        >
-                          <div>
-                            <p className="text-sm font-medium text-white">{item.label}</p>
-                            <p className="mt-1 text-xs leading-5 text-gray-400">{item.note}</p>
-                          </div>
-                          <div className="text-sm font-semibold text-white">{item.value}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                  {actionItems.map((item) => (
+                    <ActionPanel key={item.title} {...item} />
+                  ))}
                 </div>
               </div>
 

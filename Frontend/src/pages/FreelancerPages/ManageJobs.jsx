@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAccount, useWalletClient } from "wagmi";
 import { BrowserProvider } from "ethers";
-import { AlertCircle, Star } from "lucide-react";
+import { AlertCircle, AlertTriangle, CheckCircle2, Clock, Layers, Search, Send, Star, XCircle, Zap } from "lucide-react";
 import SideBar from "../../components/SideBar";
 import api from "../../utils/api.js";
 import "../../index.css";
@@ -857,74 +857,59 @@ function ManageJobs() {
         </div>
       )}
 
-      <div className="dark:bg-[#0f111d] py-4 md:py-8 flex flex-col md:flex-row gap-4 bg-[#161c32] w-full min-h-screen">
+      <div className="dark:bg-[#0f111d] py-4 md:py-8 flex flex-col md:flex-row gap-4 bg-[#161c32] w-full min-h-screen overflow-x-clip">
         <div className="pointer-events-none fixed right-[1%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-20 blur-3xl mix-blend-screen" />
         <div className="pointer-events-none fixed left-[5%] bottom-[1%] w-[420px] h-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-20 blur-3xl mix-blend-screen" />
 
-        <SideBar />
+        <div className="hidden md:block shrink-0">
+          <SideBar />
+        </div>
 
         <div className="flex-1 px-4 md:px-8 pb-8">
-          <div className="mb-6 md:mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-              Manage Jobs
-            </h1>
-            <p className="text-gray-400 text-sm md:text-base">
-              Manage your bids, active projects, and completed work
-            </p>
+          <div className="mb-6 md:mb-8 flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-[#14a19f] mb-1.5">Freelancer Workspace</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-white">Manage Jobs</h1>
+              <p className="text-gray-400 text-sm mt-1">Track bids, active contracts, and completed work.</p>
+            </div>
+            <button
+              onClick={() => navigate("/browse-jobs")}
+              className="shrink-0 hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#14a19f] hover:bg-[#1ecac7] text-white text-sm font-semibold transition-colors"
+            >
+              <Search size={15} />
+              Browse Jobs
+            </button>
           </div>
 
           {!loading && <FreelancerStats stats={stats} />}
 
-          <div className="flex gap-2 mb-6 border-b border-[#14a19f]/20 overflow-x-auto pb-1">
+          <div className="mb-5 flex gap-1.5 overflow-x-auto pb-1">
             {[
-              {
-                id: "MyBids",
-                label: "My Bids",
-                count: stats.myBids,
-              },
-              {
-                id: "InProgress",
-                label: "InProgress",
-                count: stats.inProgressProjects,
-              },
-              {
-                id: "Submitted",
-                label: "Submitted",
-                count: stats.submittedProjects,
-              },
-              {
-                id: "Completed",
-                label: "Completed",
-                count: stats.completedProjects,
-              },
-              {
-                id: "Disputed",
-                label: "Disputed",
-                count: stats.disputedProjects,
-              },
-              {
-                id: "Cancelled",
-                label: "Cancelled",
-                count: stats.cancelledProjects,
-              },
-              {
-                id: "Expired",
-                label: "Expired",
-                count: stats.expiredProjects,
-              },
-            ].map((tab) => (
+              { id: "MyBids",     label: "My Bids",     count: stats.myBids,             icon: Layers        },
+              { id: "InProgress", label: "In Progress", count: stats.inProgressProjects, icon: Zap           },
+              { id: "Submitted",  label: "Submitted",   count: stats.submittedProjects,  icon: Send          },
+              { id: "Completed",  label: "Completed",   count: stats.completedProjects,  icon: CheckCircle2  },
+              { id: "Disputed",   label: "Disputed",    count: stats.disputedProjects,   icon: AlertTriangle },
+              { id: "Cancelled",  label: "Cancelled",   count: stats.cancelledProjects,  icon: XCircle       },
+              { id: "Expired",    label: "Expired",     count: stats.expiredProjects,    icon: Clock         },
+            ].map(({ id, label, count, icon: Icon }) => (
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`shrink-0 px-4 md:px-6 py-3 font-medium text-sm border-b-2 transition-colors rounded-t-lg ${activeTab === tab.id
-                    ? "text-[#14a19f] border-[#14a19f] bg-[#14a19f]/10"
-                    : "text-gray-400 border-transparent hover:text-gray-300"
-                  }`}
+                key={id}
+                onClick={() => setActiveTab(id)}
+                className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                  activeTab === id
+                    ? "bg-[#14a19f]/15 text-[#14a19f] border-[#14a19f]/35"
+                    : "text-gray-400 hover:text-gray-200 hover:bg-white/5 border-transparent"
+                }`}
               >
-                {tab.label}
-                {tab.count > 0 && (
-                  <span className="ml-2 bg-[#14a19f]/30 text-[#14a19f] px-2 py-1 rounded text-xs font-semibold">
-                    {tab.count}
+                <Icon size={14} />
+                <span className="hidden sm:inline">{label}</span>
+                <span className="sm:hidden">{label.split(" ")[0]}</span>
+                {count > 0 && (
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                    activeTab === id ? "bg-[#14a19f]/25 text-[#14a19f]" : "bg-white/8 text-gray-400"
+                  }`}>
+                    {count}
                   </span>
                 )}
               </button>
@@ -951,66 +936,54 @@ function ManageJobs() {
                       {myBids.map((bid) => (
                         <div
                           key={`${bid.jobId}-${bid.createdAt || bid.jobStatus}`}
-                          className="backdrop-blur-md border border-[#14a19f]/20 bg-[#0d1224]/50 rounded-xl p-5 hover:border-[#14a19f]/40 transition-all space-y-4"
+                          className={`relative overflow-hidden rounded-xl border border-white/10 bg-[#0b1022]/75 hover:border-[#14a19f]/30 transition-all duration-200`}
                         >
+                          <div className={`absolute left-0 top-0 h-full w-0.75 ${
+                            bid.bidStatus === "accepted" ? "bg-emerald-400/70" :
+                            bid.bidStatus === "rejected" ? "bg-red-400/70" : "bg-amber-400/70"
+                          }`} />
+                          <div className="pl-4 pr-4 pt-4 pb-3 md:pl-5 md:pr-5 space-y-3">
                           <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <h3 className="text-lg font-semibold text-white">
+                            <div className="min-w-0 flex-1">
+                              <h3 className="text-base md:text-lg font-semibold text-white leading-snug">
                                 {bid.jobTitle || "Untitled Job"}
                               </h3>
-                              <p className="text-xs text-gray-400 mt-1">
-                                Job ID: {bid.jobId || "N/A"}
+                              <p className="text-[11px] text-gray-500 mt-0.5 font-mono tracking-wide">
+                                #{bid.jobId || "N/A"}
                               </p>
                             </div>
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${getBidStatusClasses(
-                                bid.bidStatus
-                              )}`}
-                            >
+                            <span className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-semibold capitalize border ${getBidStatusClasses(bid.bidStatus)}`}>
                               {bid.bidStatus}
                             </span>
                           </div>
 
-                          <p className="text-sm text-gray-300 bg-[#161c32]/50 rounded p-3">
-                            {bid.jobDescription || "No description provided."}
-                          </p>
-
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                            <div>
-                              <p className="text-gray-500 text-xs">Your Bid</p>
-                              <p className="text-gray-300 font-medium">
-                                ${bid?.bidAmount ?? 0}
-                              </p>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <div className="rounded-lg bg-white/3 border border-white/6 px-3 py-2">
+                              <p className="text-[10px] uppercase tracking-wide text-gray-500 mb-1">Your Bid</p>
+                              <p className="text-sm font-semibold text-white">${bid?.bidAmount ?? 0}</p>
                             </div>
-                            <div>
-                              <p className="text-gray-500 text-xs">Job Status</p>
-                              <p className="text-gray-300 font-medium capitalize">
-                                {(bid?.jobStatus || "OPEN")
-                                  .replace("_", " ")
-                                  .toLowerCase()}
-                              </p>
+                            <div className="rounded-lg bg-white/3 border border-white/6 px-3 py-2">
+                              <p className="text-[10px] uppercase tracking-wide text-gray-500 mb-1">Job Status</p>
+                              <p className="text-sm font-semibold text-white capitalize">{(bid?.jobStatus || "OPEN").replace("_", " ").toLowerCase()}</p>
                             </div>
-                            <div>
-                              <p className="text-gray-500 text-xs">Deadline</p>
-                              <p className="text-gray-300 font-medium">
-                                {bid?.deadline
-                                  ? new Date(bid.deadline).toLocaleDateString()
-                                  : "N/A"}
-                              </p>
+                            <div className="rounded-lg bg-white/3 border border-white/6 px-3 py-2">
+                              <p className="text-[10px] uppercase tracking-wide text-gray-500 mb-1">Deadline</p>
+                              <p className="text-sm font-semibold text-white">{bid?.deadline ? new Date(bid.deadline).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }) : "N/A"}</p>
                             </div>
-                            <div>
-                              <p className="text-gray-500 text-xs">Client</p>
-                              <p className="text-gray-300 font-medium line-clamp-1">
-                                {bid?.clientName || bid?.clientAddress || "N/A"}
-                              </p>
+                            <div className="rounded-lg bg-white/3 border border-white/6 px-3 py-2 min-w-0">
+                              <p className="text-[10px] uppercase tracking-wide text-gray-500 mb-1">Client</p>
+                              <p className="text-sm font-semibold text-white truncate">{bid?.clientName || bid?.clientAddress || "N/A"}</p>
                             </div>
                           </div>
 
-                          <div>
-                            <p className="text-gray-500 text-xs mb-1">Proposal</p>
-                            <p className="text-sm text-gray-300 bg-[#161c32]/50 rounded p-3">
-                              {bid?.proposal || "No proposal text available."}
-                            </p>
+                          {bid?.proposal && (
+                            <div>
+                              <p className="text-[10px] uppercase tracking-wide text-gray-500 mb-1.5">Proposal</p>
+                              <p className="text-sm text-gray-400 bg-white/3 border border-white/6 rounded-lg px-3 py-2.5 leading-relaxed line-clamp-3">
+                                {bid.proposal}
+                              </p>
+                            </div>
+                          )}
                           </div>
                         </div>
                       ))}

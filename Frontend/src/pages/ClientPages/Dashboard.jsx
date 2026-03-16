@@ -241,24 +241,6 @@ function Dashboard() {
     },
   ];
 
-  const queueItems = [
-    {
-      label: "Submitted work pending review",
-      value: breakdown.submitted,
-      note: "Freelancer deliveries awaiting your action.",
-    },
-    {
-      label: "Open hiring backlog",
-      value: breakdown.open,
-      note: "Jobs still collecting or waiting on bids.",
-    },
-    {
-      label: "Dispute pressure",
-      value: breakdown.disputed,
-      note: "Contracts that may require governance follow-through.",
-    },
-  ];
-
   return (
     <>
       <NoticeToast
@@ -267,7 +249,7 @@ function Dashboard() {
         onClose={() => setNotice(null)}
       />
 
-      <div className="dark:bg-[#0f111d] py-4 md:py-6 flex flex-col md:flex-row gap-4 bg-[#161c32] min-w-screen min-h-screen ">
+      <div className="dark:bg-[#0f111d] py-4 md:py-6 flex flex-col md:flex-row gap-4 bg-[#161c32] w-full min-h-screen overflow-x-clip">
         <div className="hidden md:block">
           <SideBar />
         </div>
@@ -283,7 +265,7 @@ function Dashboard() {
                   Hiring Dashboard
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-400">
-                  Track hiring backlog, delivery progress, review timing, and dispute load from one operational view.
+                  Track hiring backlog, delivery progress, review timing, and dispute load from one unified view.
                 </p>
               </div>
 
@@ -314,56 +296,27 @@ function Dashboard() {
             <div className="space-y-4">
               <ClientStats stats={stats} />
 
-              <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-                <div className="space-y-4">
-                  <DashboardAnalyticsPanel
-                    doughnutTitle="Hiring Pipeline"
-                    doughnutSubtitle="Track open hiring, active delivery, submitted work, and dispute load."
-                    doughnutData={doughnutData}
-                    barTitle="Contract Lifecycle"
-                    barSubtitle="A full distribution of client jobs across the lifecycle."
-                    barData={barData}
-                    insights={insights}
-                  />
+              <DashboardAnalyticsPanel
+                doughnutTitle="Hiring Pipeline"
+                doughnutSubtitle="Track open hiring, active delivery, submitted work, and dispute load."
+                doughnutData={doughnutData}
+                barTitle="Contract Lifecycle"
+                barSubtitle="A full distribution of client jobs across the lifecycle."
+                barData={barData}
+                insights={insights}
+              />
+
+              <div className="border border-white/10 bg-[#101827] px-4 py-4">
+                <div className="border-b border-white/8 pb-3">
+                  <h2 className="text-sm font-semibold text-white">Action Queue</h2>
+                  <p className="mt-1 text-xs text-gray-400">
+                    The best next actions to keep hiring and settlement moving.
+                  </p>
                 </div>
-
-                <div className="space-y-4">
-                  <div className="border border-white/10 bg-[#101827] px-4 py-4">
-                    <div className="border-b border-white/8 pb-3">
-                      <h2 className="text-sm font-semibold text-white">Action Queue</h2>
-                      <p className="mt-1 text-xs text-gray-400">
-                        The best next actions to keep hiring and settlement moving.
-                      </p>
-                    </div>
-                    <div className="mt-4 grid gap-3">
-                      {actionItems.map((item) => (
-                        <ActionPanel key={item.title} {...item} />
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="border border-white/10 bg-[#101827] px-4 py-4">
-                    <div className="border-b border-white/8 pb-3">
-                      <h2 className="text-sm font-semibold text-white">Operational Snapshot</h2>
-                      <p className="mt-1 text-xs text-gray-400">
-                        Compact reads for queue pressure and contract flow.
-                      </p>
-                    </div>
-                    <div className="divide-y divide-white/8">
-                      {queueItems.map((item) => (
-                        <div
-                          key={item.label}
-                          className="grid grid-cols-[1fr_auto] gap-4 py-3 first:pt-4 last:pb-0"
-                        >
-                          <div>
-                            <p className="text-sm font-medium text-white">{item.label}</p>
-                            <p className="mt-1 text-xs leading-5 text-gray-400">{item.note}</p>
-                          </div>
-                          <div className="text-sm font-semibold text-white">{item.value}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                  {actionItems.map((item) => (
+                    <ActionPanel key={item.title} {...item} />
+                  ))}
                 </div>
               </div>
             </div>

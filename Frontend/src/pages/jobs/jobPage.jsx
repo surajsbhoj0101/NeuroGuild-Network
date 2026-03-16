@@ -69,6 +69,15 @@ function jobPage() {
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+  const createdDate = jobDetails?.createdAt
+    ? new Date(jobDetails.createdAt).toLocaleDateString()
+    : "—";
+  const deadlineDate = jobDetails?.deadline
+    ? new Date(jobDetails.deadline).toLocaleDateString()
+    : "—";
+  const completionDate = jobDetails?.completion
+    ? new Date(jobDetails.completion).toLocaleDateString()
+    : "—";
 
   async function getSigner() {
     let signer;
@@ -205,7 +214,7 @@ function jobPage() {
     const payload = {
       proposal: bidData.proposal.trim(),
       amount: bidData.amount ? Number(bidData.amount) : 0,
-      freelancer: address.toLowerCase,
+      freelancer: address?.toLowerCase(),
     };
 
     try {
@@ -310,7 +319,7 @@ function jobPage() {
 
   return (
     <>
-      <div className="dark:bg-[#0f111d]  flex bg-[#161c32] w-full">
+      <div className="dark:bg-[#0f111d] flex bg-[#161c32] w-full overflow-x-hidden">
         <NoticeToast
           message={notice}
           isError={redNotice}
@@ -319,12 +328,12 @@ function jobPage() {
 
         {showClientProfile && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="text-white w-full  bg-[#161c32]/50 max-w-lg shadow-2xl rounded-xl p-6 animate-fadeIn">
+            <div className="text-white w-full bg-[#161c32]/70 max-w-lg mx-4 shadow-2xl rounded-xl p-5 md:p-6 animate-fadeIn">
               {/* Header */}
               <div className="flex items-center gap-4 mb-6">
                 <img
                   src={
-                    JSON.stringify(jobDetails._doc.companyDetails.logoUrl) ||
+                    jobDetails?.clientDetails?.companyDetails?.logoUrl ||
                     `https://api.dicebear.com/7.x/bottts/svg?seed=${jobDetails?.clientAddress}`
                   }
                   alt="Client Logo"
@@ -513,39 +522,38 @@ function jobPage() {
           </div>
         )}
 
-        <div className="pointer-events-none fixed right-[5%] bottom-[20%] w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div>
+        <div className="pointer-events-none fixed right-[5%] bottom-[20%] w-105 h-105 rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen hidden md:block"></div>
         {/* <div className="pointer-events-none fixed left-[5%] bottom-[1%] w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen"></div> */}
 
-        <div className="flex min-h-screen gap-3 p-8 w-full">
-          <div className=" w-[60%] space-y-6">
+        <div className="mx-auto flex w-full max-w-7xl flex-col lg:flex-row min-h-screen gap-4 p-4 md:p-6 lg:p-8">
+          <div className="w-full lg:w-[60%] space-y-4 md:space-y-6 min-w-0">
             <div className="border p-4 rounded-xl border-[#14a19f]/10">
               <h1
                 style={orbitronStyle}
-                className="text-3xl font-semibold text-white"
+                className="text-2xl md:text-3xl font-semibold text-white leading-tight"
               >
                 {jobDetails?.title}
               </h1>
 
-              <div className="flex gap-4 p-2  text-gray-300 text-sm">
-                <span className="bg-[#1b233d] px-3 py-1 rounded">
+              <div className="mt-3 flex flex-wrap gap-2 text-gray-300 text-xs sm:text-sm">
+                <span className="bg-[#1b233d] px-3 py-1 rounded-full border border-white/10">
                   Intermediate
                 </span>
 
-                <span className="flex items-center gap-1">
-                  <Clock size={16} /> {jobDetails?.createdAt?.slice(0, 10)}
+                <span className="flex items-center gap-1 rounded-full border border-white/10 px-3 py-1 bg-white/3">
+                  <Clock size={14} /> {createdDate}
                 </span>
 
-                <span className="flex items-center gap-1 text-red-300">
-                  <Clock size={16} /> {jobDetails?.deadline?.slice(0, 10)}
+                <span className="flex items-center gap-1 rounded-full border border-red-300/20 px-3 py-1 bg-red-400/10 text-red-200">
+                  <Clock size={14} /> {deadlineDate}
                 </span>
 
-                <span className="flex items-center gap-1 text-blue-300">
-                  <Clock size={16} />{" "}
-                  {jobDetails?.completion?.slice(0, 10) ?? "—"}
+                <span className="flex items-center gap-1 rounded-full border border-blue-300/20 px-3 py-1 bg-blue-400/10 text-blue-200">
+                  <Clock size={14} /> {completionDate}
                 </span>
 
-                <span className="flex items-center gap-1 text-white">
-                  <User size={16} /> {totalApplied || 0}
+                <span className="flex items-center gap-1 rounded-full border border-white/10 px-3 py-1 bg-white/3 text-white">
+                  <User size={14} /> {totalApplied || 0} Applied
                 </span>
               </div>
             </div>
@@ -568,7 +576,7 @@ function jobPage() {
                 Required Skills
               </h2>
               <div className="flex gap-2 flex-wrap">
-                {jobDetails?.skills.map((skill, idx) => (
+                {(jobDetails?.skills || []).map((skill, idx) => (
                   <span
                     key={idx}
                     className="bg-[#1be4e0]/50 
@@ -597,52 +605,52 @@ function jobPage() {
             </div>
           </div>
 
-          <div className="hidden lg:flex  flex-col w-[40%] items-center">
-            <div className="sticky w-4/5 top-3 flex flex-col justify-center space-y-3">
+          <div className="flex flex-col w-full lg:w-[40%] items-stretch">
+            <div className="lg:sticky lg:top-3 flex flex-col justify-center space-y-3 lg:px-2">
               <div className=" ">
                 {isJobOpen ? (
                   isConnected ? (
                     fetchingScore ? (
-                      <div className="flex flex-col items-center rounded-xl border border-[#14a19f]/10 px-6 py-6 space-y-4 animate-pulse">
+                      <div className="flex flex-col items-center rounded-xl border border-[#14a19f]/10 px-4 md:px-6 py-6 space-y-4 animate-pulse">
                         <div className="h-6 w-48 bg-white/10 rounded-md" />
                         <div className="h-28 w-28 rounded-full bg-white/10" />
-                        <div className="w-full flex gap-4">
+                        <div className="w-full flex flex-col sm:flex-row gap-3 sm:gap-4">
                           <div className="w-1/2 h-12 bg-white/10 rounded-lg" />
                           <div className="w-1/2 h-12 bg-white/10 rounded-lg" />
                         </div>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center rounded-xl border border-[#14a19f]/10 px-6 py-4 space-y-6">
-                        <h1 className="text-3xl font-semibold text-white mb-2">
+                      <div className="flex flex-col items-center rounded-xl border border-[#14a19f]/10 px-4 md:px-6 py-4 space-y-5">
+                        <h1 className="text-2xl md:text-3xl font-semibold text-white mb-1 text-center">
                           Apply for this Gig
                         </h1>
 
-                        <div className="backdrop-blur-md border border-[#14a19f]/10 bg-[#161c32]/40 rounded-xl shadow-lg px-14 py-8 flex flex-col items-center">
+                        <div className="w-full backdrop-blur-md border border-[#14a19f]/10 bg-[#161c32]/40 rounded-xl shadow-lg px-6 py-6 flex flex-col items-center">
                           <MatchScore score={score} />
                         </div>
 
-                        <div className="w-full flex gap-4">
+                        <div className="w-full flex flex-col sm:flex-row gap-3 sm:gap-4">
                           {jobInteraction.isApplied ? (
-                            <button className="w-1/2 bg-transparent border-white border text-white font-semibold py-3 rounded-lg transition-colors">
+                            <button className="w-full sm:w-1/2 bg-transparent border-white border text-white font-semibold py-3 rounded-lg transition-colors">
                               Applied
                             </button>
                           ) : (
                             <button
                               onClick={() => setIsBidding(true)}
-                              className="w-1/2 bg-transparent text-[#14a19f] dark:text-white border border-[#14a19f] dark:border-[#0a184b] font-semibold py-3 rounded-lg hover:bg-[#14a19f]/10 dark:hover:bg-[#0d1c4e] transition-colors"
+                              className="w-full sm:w-1/2 bg-transparent text-[#14a19f] dark:text-white border border-[#14a19f] dark:border-[#0a184b] font-semibold py-3 rounded-lg hover:bg-[#14a19f]/10 dark:hover:bg-[#0d1c4e] transition-colors"
                             >
                               Apply
                             </button>
                           )}
 
                           {jobInteraction.isSaved ? (
-                            <button className="w-1/2 bg-transparent border-white border text-white font-semibold py-3 rounded-lg transition-colors">
+                            <button className="w-full sm:w-1/2 bg-transparent border-white border text-white font-semibold py-3 rounded-lg transition-colors">
                               Saved
                             </button>
                           ) : (
                             <button
                               onClick={saveJob}
-                              className="w-1/2 dark:bg-[#0a184b] dark:hover:bg-[#0a184b]/80 bg-[#14a19f] text-white font-semibold py-3 rounded-lg hover:bg-[#14a19f]/70 transition-colors"
+                              className="w-full sm:w-1/2 dark:bg-[#0a184b] dark:hover:bg-[#0a184b]/80 bg-[#14a19f] text-white font-semibold py-3 rounded-lg hover:bg-[#14a19f]/70 transition-colors"
                             >
                               Save for later
                             </button>
@@ -656,20 +664,20 @@ function jobPage() {
                         aria-hidden="true"
                         className="pointer-events-none select-none blur-md"
                       >
-                        <div className="flex relative flex-col items-center rounded-2xl border border-[#14a19f]/10 px-6 py-4 space-y-6 bg-[#0b1022]/50">
-                          <h1 className="text-3xl font-semibold text-white mb-2">
+                        <div className="flex relative flex-col items-center rounded-2xl border border-[#14a19f]/10 px-4 md:px-6 py-4 space-y-5 bg-[#0b1022]/50">
+                          <h1 className="text-2xl md:text-3xl font-semibold text-white mb-1 text-center">
                             Apply for this Gig
                           </h1>
 
-                          <div className="backdrop-blur-md border border-[#14a19f]/10 bg-[#161c32]/40 rounded-xl shadow-lg px-14 py-8 flex flex-col items-center">
+                          <div className="w-full backdrop-blur-md border border-[#14a19f]/10 bg-[#161c32]/40 rounded-xl shadow-lg px-6 py-6 flex flex-col items-center">
                             <MatchScore />
                           </div>
 
-                          <div className="w-full flex gap-4">
-                            <button className="w-1/2 dark:bg-[#0a184b] dark:hover:bg-[#0a184b]/80 bg-[#14a19f] text-white font-semibold py-3 rounded-lg hover:bg-[#14a19f]/70 transition-colors">
+                          <div className="w-full flex flex-col sm:flex-row gap-3 sm:gap-4">
+                            <button className="w-full sm:w-1/2 dark:bg-[#0a184b] dark:hover:bg-[#0a184b]/80 bg-[#14a19f] text-white font-semibold py-3 rounded-lg hover:bg-[#14a19f]/70 transition-colors">
                               Apply Now
                             </button>
-                            <button className="w-1/2 bg-transparent text-[#14a19f] dark:text-white border border-[#14a19f] dark:border-[#0a184b] font-semibold py-3 rounded-lg hover:bg-[#14a19f]/10 dark:hover:bg-[#0d1c4e] transition-colors">
+                            <button className="w-full sm:w-1/2 bg-transparent text-[#14a19f] dark:text-white border border-[#14a19f] dark:border-[#0a184b] font-semibold py-3 rounded-lg hover:bg-[#14a19f]/10 dark:hover:bg-[#0d1c4e] transition-colors">
                               Save for Later
                             </button>
                           </div>

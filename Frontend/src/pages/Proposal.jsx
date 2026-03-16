@@ -379,7 +379,7 @@ function VoteStat({ label, value, total, accentClass, barClass, tones }) {
 
 function LoadingSkeleton({ tones, pageTone }) {
   return (
-    <div className={`min-h-screen px-4 py-6 md:px-8 md:py-8 ${pageTone}`}>
+    <div className={`min-h-screen overflow-x-hidden px-4 py-6 md:px-8 md:py-8 ${pageTone}`}>
       <div className="mx-auto max-w-6xl space-y-4">
         <div className={`h-44 rounded-[28px] border animate-pulse ${tones.loading}`} />
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.45fr_0.95fr]">
@@ -694,7 +694,7 @@ function Proposal() {
 
   if (error || !proposal) {
     return (
-      <div className={`min-h-screen px-4 py-8 md:px-8 ${tones.page}`}>
+      <div className={`min-h-screen overflow-x-hidden px-4 py-8 md:px-8 ${tones.page}`}>
         <div className="mx-auto max-w-3xl rounded-3xl border border-red-400/20 bg-[#0d1224]/75 p-6 text-center backdrop-blur-sm">
           <div className="mx-auto mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/10 text-red-300">
             <CircleAlert size={22} />

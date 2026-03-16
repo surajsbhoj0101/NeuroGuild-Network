@@ -101,7 +101,7 @@ function SideBar() {
   }, [location.pathname, menuItems]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <aside className="h-screen  sticky top-0 w-fit border-r border-t rounded-tr-md  border-[#262f55]  backdrop-blur-sm flex flex-col dark:border-[#161b2c] dark:bg-none ">
+    <aside className="h-screen sticky top-0 self-start w-fit border-r border-t rounded-tr-md border-[#262f55] backdrop-blur-sm flex flex-col dark:border-[#161b2c] dark:bg-none">
       <ul className="space-y-3">
         {menuItems.map((item, idx) => (
           <li key={idx}>
