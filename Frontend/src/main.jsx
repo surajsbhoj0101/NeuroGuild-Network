@@ -129,7 +129,7 @@ const router = createBrowserRouter([
     path: "/verify-skill/:skill",
     element: (
       <>
-        <Navbar />
+        {/* <Navbar /> */}
         <VerifySkillPage /></>
     )
   }, {
