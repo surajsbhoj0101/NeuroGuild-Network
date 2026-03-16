@@ -75,6 +75,34 @@ export const fetchProposalQuorum = async (provider, timepoint) => {
   }
 };
 
+export const fetchProposalState = async (provider, proposalId) => {
+  try {
+    ensureGovernorAddress();
+
+    if (!provider) {
+      throw new Error("Provider is required.");
+    }
+
+    if (!proposalId && proposalId !== 0) {
+      throw new Error("Proposal id is required.");
+    }
+
+    const contract = new Contract(governorAddress, GovernanceContract, provider);
+    const state = await contract.state(BigInt(proposalId));
+
+    return {
+      success: true,
+      state: Number(state),
+    };
+  } catch (error) {
+    console.error("fetchProposalState error:", error);
+    return {
+      success: false,
+      error: error?.reason || error?.shortMessage || error?.message || "Failed to fetch proposal state.",
+    };
+  }
+};
+
 export const queueProposal = async (signer, proposal) => {
   try {
     ensureGovernorAddress();

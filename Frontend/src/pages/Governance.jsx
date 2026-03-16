@@ -8,6 +8,7 @@ import {
   CalendarClock,
   CheckCircle2,
   ChevronRight,
+  Copy,
   ShieldCheck,
   TrendingUp,
   Vote,
@@ -27,7 +28,7 @@ import {
 import { useTokenBalance } from "../contexts/TokenBalanceContext.jsx";
 import { delegateOther, delegateSelf } from "../utils/delegate_gov.js";
 import api from "../utils/api.js";
-import { fetchProposalQuorum } from "../utils/governance_actions.js";
+import { fetchProposalQuorum, fetchProposalState } from "../utils/governance_actions.js";
 const robotoStyle = { fontFamily: "Roboto, sans-serif" };
 const rpcUrl = import.meta.env.VITE_RPC_URL;
 const createInitialAction = () => ({
@@ -71,6 +72,15 @@ const toSafeNumber = (value) => {
 };
 
 const normalizeAddress = (value) => String(value || "").toLowerCase();
+
+const sliceProposalId = (value) => {
+  const text = String(value || "");
+  if (text.length <= 14) {
+    return text;
+  }
+
+  return `${text.slice(0, 8)}...${text.slice(-6)}`;
+};
 
 const getSupportLabel = (supportValue) => {
   const support = toSafeNumber(supportValue);
@@ -136,6 +146,29 @@ const ACTIVE_STATUSES = new Set(["Active", "Pending"]);
 const REVIEW_STATUSES = new Set(["Succeeded", "Queued"]);
 const PAST_STATUSES = new Set(["Defeated", "Executed", "Canceled", "Cancelled", "Expired"]);
 
+const mapOnchainProposalState = (state) => {
+  switch (Number(state)) {
+    case 0:
+      return "Pending";
+    case 1:
+      return "Active";
+    case 2:
+      return "Canceled";
+    case 3:
+      return "Defeated";
+    case 4:
+      return "Succeeded";
+    case 5:
+      return "Queued";
+    case 6:
+      return "Expired";
+    case 7:
+      return "Executed";
+    default:
+      return null;
+  }
+};
+
 const getProposalTone = (status) => {
   const normalized = status?.toLowerCase?.() || "";
 
@@ -162,7 +195,7 @@ const formatProposalDateLabel = (proposal) => {
   return proposal?.endsAt ? `Closed at ${proposal.endsAt}` : "Past proposal";
 };
 
-function ProposalCard({ proposal }) {
+function ProposalCard({ proposal, onCopyProposalId }) {
   const hasNumericQuorum =
     typeof proposal.quorum === "number" && Number.isFinite(proposal.quorum) && proposal.quorum > 0;
   const progress = hasNumericQuorum
@@ -178,9 +211,19 @@ function ProposalCard({ proposal }) {
     <div className="min-w-0 rounded-2xl border border-[#14a19f]/25 bg-[#0f1730]/70 p-4 sm:p-5 hover:border-[#14a19f]/45 transition-colors">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="text-xs text-[#7df3f0] tracking-tight uppercase">
-            Proposal #{proposal.id}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs text-[#7df3f0] tracking-tight uppercase">
+              Proposal #{sliceProposalId(proposal.id)}
+            </p>
+            <button
+              type="button"
+              onClick={() => onCopyProposalId?.(proposal.id)}
+              className="inline-flex items-center justify-center rounded-md border border-[#14a19f]/30 bg-[#14a19f]/10 p-1 text-[#7df3f0] transition-colors hover:bg-[#14a19f]/20 hover:text-white"
+              aria-label={`Copy proposal id ${proposal.id}`}
+            >
+              <Copy size={12} />
+            </button>
+          </div>
           <h3 className="mt-1 text-white text-lg font-semibold break-words" style={robotoStyle}>
             {proposal.title}
           </h3>
@@ -230,7 +273,7 @@ function ProposalCard({ proposal }) {
   );
 }
 
-function PastProposalRow({ proposal }) {
+function PastProposalRow({ proposal, onCopyProposalId }) {
   const navigate = useNavigate();
 
   return (
@@ -241,9 +284,22 @@ function PastProposalRow({ proposal }) {
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-[#7df3f0]">
-            Proposal #{proposal.id}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[11px] uppercase tracking-[0.14em] text-[#7df3f0]">
+              Proposal #{sliceProposalId(proposal.id)}
+            </p>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onCopyProposalId?.(proposal.id);
+              }}
+              className="inline-flex items-center justify-center rounded-md border border-[#14a19f]/30 bg-[#14a19f]/10 p-1 text-[#7df3f0] transition-colors hover:bg-[#14a19f]/20 hover:text-white"
+              aria-label={`Copy proposal id ${proposal.id}`}
+            >
+              <Copy size={12} />
+            </button>
+          </div>
           <p className="mt-1 text-sm font-semibold text-white">{proposal.title}</p>
           <p className="mt-1 line-clamp-2 text-xs text-gray-400" style={robotoStyle}>
             {proposal.summary}
@@ -266,6 +322,7 @@ function PastProposalRow({ proposal }) {
 
 export default function Governance() {
   const { isAuthentication } = useAuth();
+  const navigate = useNavigate();
   const { address } = useAccount();
   const balances = useTokenBalance();
   const { data: walletClient } = useWalletClient();
@@ -306,10 +363,15 @@ export default function Governance() {
           }
 
           const quorumResult = await fetchProposalQuorum(provider, proposalCard.voteStart);
+          const stateResult = await fetchProposalState(provider, proposalCard.id);
           const quorumValue = Number(quorumResult?.quorum);
+          const onchainStatus = stateResult?.success
+            ? mapOnchainProposalState(stateResult.state)
+            : null;
 
           return {
             ...proposalCard,
+            status: onchainStatus || proposalCard.status,
             quorum:
               quorumResult?.success && Number.isFinite(quorumValue) && quorumValue > 0
                 ? quorumValue
@@ -659,6 +721,25 @@ export default function Governance() {
     }
   }
 
+  const handleCopyProposalId = async (proposalId) => {
+    const value = String(proposalId || "");
+    if (!value) {
+      setRedNotice(true);
+      setNotice("Proposal ID unavailable to copy.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(value);
+      setRedNotice(false);
+      setNotice("Proposal ID copied.");
+    } catch (error) {
+      console.log("Failed to copy proposal id", error);
+      setRedNotice(true);
+      setNotice("Could not copy proposal ID.");
+    }
+  };
+
 
   return (
     <>
@@ -775,7 +856,11 @@ export default function Governance() {
                   </>
                 ) : activeProposals.length > 0 ? (
                   activeProposals.map((proposal) => (
-                    <ProposalCard key={proposal.id} proposal={proposal} />
+                    <ProposalCard
+                      key={proposal.id}
+                      proposal={proposal}
+                      onCopyProposalId={handleCopyProposalId}
+                    />
                   ))
                 ) : (
                   <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-sm text-gray-400" style={robotoStyle}>
@@ -800,7 +885,11 @@ export default function Governance() {
                   <div className="space-y-3">
                     {reviewProposals.length > 0 ? (
                       reviewProposals.map((proposal) => (
-                        <PastProposalRow key={proposal.id} proposal={proposal} />
+                        <PastProposalRow
+                          key={proposal.id}
+                          proposal={proposal}
+                          onCopyProposalId={handleCopyProposalId}
+                        />
                       ))
                     ) : (
                       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-gray-400" style={robotoStyle}>
@@ -825,7 +914,11 @@ export default function Governance() {
                       <div className="h-28 animate-pulse rounded-2xl border border-white/10 bg-white/[0.03]" />
                     ) : pastProposals.length > 0 ? (
                       pastProposals.slice(0, 8).map((proposal) => (
-                        <PastProposalRow key={proposal.id} proposal={proposal} />
+                        <PastProposalRow
+                          key={proposal.id}
+                          proposal={proposal}
+                          onCopyProposalId={handleCopyProposalId}
+                        />
                       ))
                     ) : (
                       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-gray-400" style={robotoStyle}>
@@ -857,13 +950,23 @@ export default function Governance() {
                             className="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5"
                           >
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                              <p className="text-sm text-gray-300 wrap-break-word leading-5">{entry.item}</p>
+                              <p className="text-sm text-gray-300 wrap-break-word leading-5">
+                                {entry.item.replace(`#${entry.proposalId}`, `#${sliceProposalId(entry.proposalId)}`)}
+                              </p>
                               <div className="flex items-center gap-2">
                                 <span
                                   className={`w-fit rounded-full border border-white/10 px-2.5 py-1 text-xs font-medium ${entry.color}`}
                                 >
                                   {entry.outcome}
                                 </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyProposalId(entry.proposalId)}
+                                  className="inline-flex items-center justify-center rounded-md border border-[#14a19f]/30 bg-[#14a19f]/10 p-1 text-[#7df3f0] transition-colors hover:bg-[#14a19f]/20 hover:text-white"
+                                  aria-label={`Copy proposal id ${entry.proposalId}`}
+                                >
+                                  <Copy size={12} />
+                                </button>
                                 <button
                                   type="button"
                                   onClick={() => navigate(`/proposal/${entry.proposalId}`)}
