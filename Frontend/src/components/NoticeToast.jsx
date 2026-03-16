@@ -2,13 +2,13 @@ import React, { useEffect } from "react";
 import { AlertTriangle, CheckCircle2, X } from "lucide-react";
 
 export default function NoticeToast({ message, isError = false, onClose }) {
-  if (!message) return null;
-
   useEffect(() => {
-    if (!onClose) return undefined;
+    if (!message || !onClose) return undefined;
     const timer = setTimeout(() => onClose(), 4200);
     return () => clearTimeout(timer);
   }, [message, onClose]);
+
+  if (!message) return null;
 
   const containerClasses = isError
     ? "border-red-300/35 bg-red-900/20 text-red-100 shadow-[0_12px_32px_rgba(60,10,15,0.28)]"
