@@ -7,21 +7,11 @@ services:
       - ./Backend/.env
       - ./Backend/contract.env
     depends_on:
-      - mongo
       - redis
     volumes:
       - ./Backend:/app
       - /app/node_modules
 
-  mongo:
-    image: mongo:7
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-
   redis:
     image: redis:7
   
-volumes:
-  mongo_data:
