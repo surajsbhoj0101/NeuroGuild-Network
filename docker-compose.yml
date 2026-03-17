@@ -8,10 +8,14 @@ services:
       - ./Backend/contract.env
     depends_on:
       - redis
-    volumes:
-      - ./Backend:/app
-      - /app/node_modules
+    restart: always
+
+  frontend:
+    build: ./Frontend
+    ports:
+      - "80:80"
+    restart: always
 
   redis:
     image: redis:7
-  
+    restart: always
