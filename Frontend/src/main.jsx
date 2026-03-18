@@ -38,6 +38,7 @@ import { TokenBalanceProvider } from './contexts/TokenBalanceContext.jsx';
 import Proposal from './pages/Proposal.jsx';
 import PublicProfile from './pages/PublicProfile.jsx';
 import NotFound from './pages/NotFound.jsx';
+import PendingProfile from './pages/PendingProfile.jsx';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
@@ -236,6 +237,15 @@ const router = createBrowserRouter([
       <>
         {/* <Navbar /> */}
         <PublicProfile />
+      </>
+    )
+  },
+  {
+    path: "/getting-started",
+    element: (
+      <>
+        <Navbar />
+        <PendingProfile />
       </>
     )
   },

@@ -9,11 +9,12 @@ import { BrowserProvider } from "ethers";
 import { postJob } from "../../utils/post_job";
 import { useAuth } from "../../contexts/AuthContext.jsx";
 import { useNotifications } from "../../contexts/NotificationContext.jsx";
+import { completePendingRegistration } from "../../utils/completeRegistration";
 // import { funkiMainnet } from 'viem/chains';
 
 function PostJobs() {
   const { address } = useAccount();
-  const { isAuthentication } = useAuth();
+  const { isAuthentication, isPending, setAuthState } = useAuth();
   const navigate = useNavigate();
   const timeoutRef = useRef(null);
   const { addJobNotification } = useNotifications();
@@ -224,6 +225,29 @@ function PostJobs() {
       setNotice("Wallet address missing");
       return;
     }
+
+    // Auto-complete pending registration on first job posting
+    if (isPending) {
+      try {
+        setNotice("Activating your account...");
+        await completePendingRegistration();
+        
+        // Update auth state to reflect completed registration
+        const res = await api.get("/api/auth/check-jwt");
+        if (res.data?.isFound && !res.data?.isPending && res.data?.userId) {
+          setAuthState({
+            role: res.data.role,
+            userId: res.data.userId,
+            isPending: false,
+          });
+        }
+      } catch (error) {
+        setRedNotice(true);
+        setNotice("Failed to activate account. Please try again.");
+        return;
+      }
+    }
+
     if (!jobDetails.title.trim()) {
       setRedNotice(true);
       setNotice("Please add a job title");
@@ -353,7 +377,7 @@ function PostJobs() {
       setSubmiting(false);
       removeAllDetails();
     }
-  }, [address, jobDetails, navigate, addJobNotification]);
+  }, [address, jobDetails, navigate, addJobNotification, isPending, setAuthState]);
 
   function removeAllDetails() {
     setCancelling(true);

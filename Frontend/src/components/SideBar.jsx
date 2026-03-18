@@ -16,11 +16,11 @@ function SideBar() {
   const [activeIndex, setActiveIndex] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
-  const { role, isAuthentication } = useAuth();
+  const { role, isAuthentication, isPending } = useAuth();
   const { totalUnreadCount } = useNotifications();
 
   useEffect(() => {
-    if (isAuthentication) return;
+    if (isAuthentication || isPending) return;
 
     let active = true;
 
@@ -34,6 +34,9 @@ function SideBar() {
 
         if (!res.data?.isFound) {
           navigate("/");
+        } else if (res.data?.isPending) {
+          // User is pending, redirect to onboarding
+          navigate("/getting-started");
         }
       } catch (error) {
         if (!active) return;
@@ -47,7 +50,14 @@ function SideBar() {
     return () => {
       active = false;
     };
-  }, [isAuthentication, navigate]);
+  }, [isAuthentication, isPending, navigate]);
+
+  // Redirect pending users to getting-started page
+  useEffect(() => {
+    if (isPending && location.pathname !== "/getting-started") {
+      navigate("/getting-started");
+    }
+  }, [isPending, navigate, location.pathname]);
 
   const orbitronStyle = { fontFamily: "Orbitron, sans-serif" };
   const robotoStyle = { fontFamily: "Roboto, sans-serif" };

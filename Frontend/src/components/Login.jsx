@@ -137,14 +137,30 @@ export default function Login({ setLoadingUser, setNotice, setRedNotice }) {
         client: 0,
         freelancer: 1,
       };
+      
+      // Register on-chain
       const resCreateUser = await createUserOnchain(signer, RoleEnum[role]);
       
+      // Store role selection on backend (pending state, not yet registered in DB)
       const user = await axios.post(`${API_BASE_URL}/api/auth/create-user`,
         {role},
         {withCredentials: true}
       )
 
+      // Close role selection modal
       setIsSelectingRole(false);
+      
+      // Update auth context with pending state (role selected but not registered)
+      // User will be registered when they complete their first action
+      if (setAuthState) {
+        setAuthState({
+          role,
+          userId: null,
+          isPending: true,
+        });
+      }
+      
+      // Re-authenticate to reload auth state
       authenticate()
     } catch (error) {
       setRedNotice(true);

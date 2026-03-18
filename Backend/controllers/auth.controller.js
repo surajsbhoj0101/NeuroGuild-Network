@@ -205,20 +205,101 @@ export const createUser = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    const user = await User.create({
+    // Store role in pending session, but don't create user yet
+    // User will be created when they complete their first action
+    const updatedPending = {
+      walletAddress,
       role: roleLowerCase,
+      roleSelectedAt: new Date().toISOString(),
+    };
+
+    await redis.set(
+      getPendingAuthKey(pendingKey),
+      JSON.stringify(updatedPending),
+      "EX",
+      15 * 60,
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Role selected. Complete your profile to activate account.",
+      roleSelected: true,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Role selection failed" });
+  }
+};
+
+export const completeRegistration = async (req, res) => {
+  try {
+    // This endpoint is called after user completes their first action
+    // (posts job, applies to job, updates profile, etc.)
+    const userId = req.user?.userId;
+    const pendingKey = req.user?.pendingSessionKey;
+
+    // If user already has userId, they're already registered
+    if (userId) {
+      const user = await User.findById(userId).select("_id role");
+      if (user) {
+        return res.status(200).json({
+          success: true,
+          message: "User already registered",
+          user,
+        });
+      }
+    }
+
+    // Get pending session with role
+    if (!pendingKey) {
+      return res.status(401).json({
+        message: "No pending registration found",
+      });
+    }
+
+    const pending = await getPendingAuthSession(pendingKey);
+    if (!pending || !pending.role) {
+      if (pendingKey) {
+        await redis.del(getPendingAuthKey(pendingKey));
+      }
+      return res
+        .status(401)
+        .json({ message: "Pending signup session expired or invalid" });
+    }
+
+    const walletAddress = pending.walletAddress?.toLowerCase();
+    if (!walletAddress) {
+      return res
+        .status(400)
+        .json({ message: "Wallet address not found in pending session" });
+    }
+
+    // Check if user already exists (shouldn't happen, but safety check)
+    const existingUser = await User.findOne({ wallets: walletAddress });
+    if (existingUser) {
+      return res.status(200).json({
+        success: true,
+        message: "User already exists",
+        user: existingUser,
+      });
+    }
+
+    // Create user and role-specific profile
+    const user = await User.create({
+      role: pending.role,
       wallets: walletAddress,
     });
 
-    if (roleLowerCase === "client") {
+    if (pending.role === "client") {
       await Client.create({ user: user._id, walletAddress });
     } else {
       await Freelancer.create({ user: user._id, walletAddress });
     }
 
+    // Generate new token with userId (no longer pending)
     const newToken = jwt.sign(
       {
-        role: roleLowerCase,
+        role: pending.role,
         userId: user._id,
       },
       process.env.JWT_SECRET,
@@ -230,14 +311,20 @@ export const createUser = async (req, res) => {
       newToken,
       buildCookieOptions({ maxAge: ACCESS_TOKEN_MAX_AGE_MS }),
     );
+
+    // Clean up pending session
     if (pendingKey) {
       await redis.del(getPendingAuthKey(pendingKey));
     }
 
-    return res.status(200).json({ isFound: true, user });
+    return res.status(200).json({
+      success: true,
+      message: "Registration completed successfully",
+      user,
+    });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "User creation failed" });
+    return res.status(500).json({ message: "Registration completion failed" });
   }
 };
 
@@ -285,10 +372,13 @@ export const checkJwt = async (req, res) => {
           message: "Pending signup session expired",
         });
       }
+      // Return pending user with role selected but not fully registered
       return res.status(200).json({
         isFound: true,
-        role: null,
+        isPending: true,
+        role: pending.role || null,
         userId: null,
+        message: "Role selected. Complete your profile to activate account.",
       });
     }
 
@@ -302,6 +392,7 @@ export const checkJwt = async (req, res) => {
 
     return res.status(200).json({
       isFound: true,
+      isPending: false,
       role: user.role || decoded.role || null,
       userId: user._id || decoded.userId || null,
     });

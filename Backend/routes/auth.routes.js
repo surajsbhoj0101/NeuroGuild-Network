@@ -1,5 +1,5 @@
 import express from "express";
-import { createUser } from "../controllers/auth.controller.js";
+import { createUser, completeRegistration } from "../controllers/auth.controller.js";
 import { checkJwt } from "../controllers/auth.controller.js";
 import { verifySiwe } from "../controllers/auth.controller.js";
 import { getNonce } from "../controllers/auth.controller.js";
@@ -15,6 +15,7 @@ import { getPublicProfileByUserId } from "../controllers/auth.controller.js";
 const authRoutes = express.Router();
 
 authRoutes.post("/create-user", requireAuth, createUser);
+authRoutes.post("/complete-registration", requireAuth, completeRegistration);
 authRoutes.get("/check-jwt", checkJwt);
 authRoutes.get("/get-nonce", getNonce);
 authRoutes.post("/verify-siwe", verifySiwe);
