@@ -5,7 +5,9 @@ dotenv.config();
 dotenv.config({ path: "./contract.env" });
 
 const MONGODB_URI =
-  process.env.MONGODB_URI ;
+  process.env.MONGODB_URI ||
+  process.env.MONGO_URI ||
+  "mongodb://localhost:27017/NeuroGuild";
 
 const RETRY_DELAY_MS = 5000;
 
