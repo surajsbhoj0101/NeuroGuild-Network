@@ -8,8 +8,19 @@ export default function socketHandler(io) {
 
   io.on("connection", (socket) => {
     const currentUserId = socket.user?.userId;
-    socket.join(currentUserId)
-     console.log(`User ${currentUserId} joined personal room`);
+    const isPending = socket.isPending;
+
+    if (!isPending && currentUserId) {
+      socket.join(currentUserId);
+      console.log(`User ${currentUserId} connected and joined personal room`);
+    } else {
+      console.log(`Pending user connected with socket ${socket.id}`);
+    }
+
     registerSocketEvents(io, socket);
+  });
+
+  io.on("error", (error) => {
+    console.error("Socket.IO server error:", error);
   });
 }

@@ -5,12 +5,42 @@ import User from "../models/user.model.js";
 export const registerSocketEvents = (io, socket) => {
   console.log("New client connected: " + socket.id);
 
+  // Prevent pending users from sending messages
   socket.on("sendMessage", async ({ receiverId, message }, callback) => {
     try {
+      // Block pending users from sending messages
+      if (socket.isPending || !socket.user?.userId) {
+        const error = "You must complete registration before messaging";
+        console.warn(`Pending user ${socket.id} attempted to send message`);
+        callback?.({ ok: false, message: error });
+        return;
+      }
+
       const senderId = socket.user.userId;
       const content = String(message || "").trim();
 
-      if (!content) throw new Error("message required");
+      if (!content) {
+        callback?.({ ok: false, message: "Message content cannot be empty" });
+        return;
+      }
+
+      if (!receiverId) {
+        callback?.({ ok: false, message: "Receiver ID is required" });
+        return;
+      }
+
+      // Validate receiver exists
+      const receiver = await User.findById(receiverId);
+      if (!receiver) {
+        callback?.({ ok: false, message: "Recipient not found" });
+        return;
+      }
+
+      // Prevent self-messaging
+      if (senderId.toString() === receiverId.toString()) {
+        callback?.({ ok: false, message: "Cannot message yourself" });
+        return;
+      }
 
       let conversation = await Conversation.findOne({
         participants: { $all: [senderId, receiverId] },
@@ -24,7 +54,7 @@ export const registerSocketEvents = (io, socket) => {
           lastMessageTimestamp: new Date(),
           unreadCounts: {
             [senderId]: 0,
-            [receiverId]: 0,
+            [receiverId]: 1,
           },
         });
       }
@@ -39,18 +69,21 @@ export const registerSocketEvents = (io, socket) => {
 
       conversation.lastMessage = content;
       conversation.lastMessageTimestamp = savedMessage.createdAt;
+      
       if (!conversation.unreadCounts || !(conversation.unreadCounts instanceof Map)) {
         conversation.unreadCounts = new Map();
       }
+
       const participants = conversation.participants || [];
       participants.forEach((participantId) => {
-        if (participantId === senderId) {
-          conversation.unreadCounts.set(participantId, 0);
+        if (participantId.toString() === senderId.toString()) {
+          conversation.unreadCounts.set(participantId.toString(), 0);
         } else {
-          const current = Number(conversation.unreadCounts.get(participantId) || 0);
-          conversation.unreadCounts.set(participantId, current + 1);
+          const current = Number(conversation.unreadCounts.get(participantId.toString()) || 0);
+          conversation.unreadCounts.set(participantId.toString(), current + 1);
         }
       });
+      
       await conversation.save();
 
       const payload = {
@@ -64,26 +97,38 @@ export const registerSocketEvents = (io, socket) => {
       };
 
       /**
-       * Server saves DB
+       * Message delivery flow:
         │
-        ├── callback → "success"
+        ├── callback → acknowledge to sender
         │
         ├── socket.emit → update sender UI
         │
-        └── io.to(receiver) → update receiver UI
+        └── io.to(receiver) → deliver to receiver's room
        */
 
-      io.to(receiverId.toString()).emit("receiveMessage", payload);
+      // Send acknowledgment to sender
+      callback?.({ ok: true, message: payload });
 
+      // Update sender UI
       socket.emit("receiveMessage", payload);
 
-      callback?.({ ok: true, message: payload });
+      // Deliver to receiver's personal room
+      io.to(receiverId.toString()).emit("receiveMessage", payload);
+
+      console.log(`Message sent from ${senderId} to ${receiverId}`);
     } catch (err) {
-      callback?.({ ok: false, message: err.message });
+      console.error("Send message error:", err);
+      callback?.({ ok: false, message: err.message || "Failed to send message" });
     }
   });
 
+  // Handle user disconnect
   socket.on("disconnect", () => {
     console.log("Client disconnected: " + socket.id);
+  });
+
+  // Handle connection errors
+  socket.on("error", (error) => {
+    console.error(`Socket error for ${socket.id}:`, error);
   });
 };

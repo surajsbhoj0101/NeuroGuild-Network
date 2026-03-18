@@ -339,7 +339,8 @@ function Messages() {
 
     if (!socket?.connected) {
       setRedNotice(true);
-      setNotice("Socket is disconnected. Reconnect and try again.");
+      setNotice("Socket is disconnected. Attempting to reconnect...");
+      socket?.connect?.();
       return;
     }
 
@@ -353,20 +354,39 @@ function Messages() {
     // Clear input immediately to keep composer responsive.
     setMessageInput("");
 
-    socket.emit(
-      "sendMessage",
-      {
-        receiverId: selectedChat.participant._id,
-        message: trimmedMessage,
-      },
-      (ack) => {
-        // Backend can reject send operation (validation, permission, etc.).
-        if (!ack?.ok) {
-          setRedNotice(true);
-          setNotice(ack?.message || "Failed to send message");
-        }
-      },
-    );
+    // Timeout handler for stuck messages
+    let timeoutId;
+    try {
+      const sendPromise = new Promise((resolve, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error("Message send timeout - please check connection"));
+        }, 10000); // 10 second timeout
+
+        socket.emit(
+          "sendMessage",
+          {
+            receiverId: selectedChat.participant._id,
+            message: trimmedMessage,
+          },
+          (ack) => {
+            clearTimeout(timeoutId);
+            // Backend can reject send operation (validation, permission, etc.).
+            if (!ack?.ok) {
+              reject(new Error(ack?.message || "Failed to send message"));
+            } else {
+              resolve(ack);
+            }
+          }
+        );
+      });
+
+      await sendPromise;
+    } catch (error) {
+      setRedNotice(true);
+      setNotice(error.message || "Failed to send message");
+      // Restore message on error for retry
+      setMessageInput(trimmedMessage);
+    }
   };
 
   // De-duplicate sidebar chats by participant so same person is shown once.

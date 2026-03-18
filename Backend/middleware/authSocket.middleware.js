@@ -23,16 +23,23 @@ export const requireAuthSocket = (socket, next) => {
     const token = tokenFromAuth || cookies.access_token;
 
     if (!token) {
-      return next(new Error("Unauthorized"));
+      return next(new Error("Unauthorized: No token"));
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (!decoded?.userId) {
-      return next(new Error("Unauthorized"));
+    
+    // Allow both fully registered users (with userId) and pending users (with pendingSessionKey)
+    // However, only users with userId can use messaging features
+    if (!decoded?.userId && !decoded?.pendingSessionKey) {
+      return next(new Error("Unauthorized: Invalid token"));
     }
+
     socket.user = decoded;
+    socket.isPending = !!decoded.pendingSessionKey && !decoded.userId;
+    
     return next();
   } catch (error) {
-    return next(new Error("Unauthorized"));
+    console.error("Socket auth error:", error.message);
+    return next(new Error(`Unauthorized: ${error.message}`));
   }
 };
