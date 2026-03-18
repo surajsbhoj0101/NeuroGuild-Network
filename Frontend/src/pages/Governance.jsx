@@ -28,7 +28,12 @@ import {
 import { useTokenBalance } from "../contexts/TokenBalanceContext.jsx";
 import { delegateOther, delegateSelf } from "../utils/delegate_gov.js";
 import api from "../utils/api.js";
-import { fetchProposalQuorum, fetchProposalState } from "../utils/governance_actions.js";
+import {
+  executeProposal,
+  fetchProposalQuorum,
+  fetchProposalState,
+  queueProposal,
+} from "../utils/governance_actions.js";
 const robotoStyle = { fontFamily: "Roboto, sans-serif" };
 const rpcUrl = import.meta.env.VITE_RPC_URL;
 const createInitialAction = () => ({
@@ -320,6 +325,86 @@ function PastProposalRow({ proposal, onCopyProposalId }) {
   );
 }
 
+function ReviewProposalRow({
+  proposal,
+  onCopyProposalId,
+  onProposalAction,
+  isSubmitting,
+}) {
+  const navigate = useNavigate();
+  const status = proposal?.status?.toLowerCase?.() || "";
+  const canQueue = status === "succeeded";
+  const canExecute = status === "queued";
+
+  return (
+    <div className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition-colors hover:border-[#14a19f]/30 hover:bg-[#14a19f]/8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[11px] uppercase tracking-[0.14em] text-[#7df3f0]">
+              Proposal #{sliceProposalId(proposal.id)}
+            </p>
+            <button
+              type="button"
+              onClick={() => onCopyProposalId?.(proposal.id)}
+              className="inline-flex items-center justify-center rounded-md border border-[#14a19f]/30 bg-[#14a19f]/10 p-1 text-[#7df3f0] transition-colors hover:bg-[#14a19f]/20 hover:text-white"
+              aria-label={`Copy proposal id ${proposal.id}`}
+            >
+              <Copy size={12} />
+            </button>
+          </div>
+          <p className="mt-1 text-sm font-semibold text-white">{proposal.title}</p>
+          <p className="mt-1 line-clamp-2 text-xs text-gray-400" style={robotoStyle}>
+            {proposal.summary}
+          </p>
+        </div>
+
+        <div className="flex w-fit shrink-0 items-center gap-2 self-start sm:self-auto">
+          <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${getProposalTone(proposal.status)}`}>
+            {proposal.status}
+          </span>
+          <button
+            type="button"
+            onClick={() => navigate(`/proposal/${proposal.id}`)}
+            className="inline-flex items-center gap-1 rounded-md border border-[#14a19f]/30 bg-[#14a19f]/10 px-2 py-1 text-[11px] font-medium text-[#7df3f0] transition-colors hover:bg-[#14a19f]/20"
+          >
+            Open <ArrowUpRight size={12} />
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-3 break-words text-[11px] text-gray-500">
+        <span>{proposal.quorumLabel || `Votes: ${proposal.votes}`}</span>
+        <span>{formatProposalDateLabel(proposal)}</span>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {canQueue ? (
+          <button
+            type="button"
+            onClick={() => onProposalAction?.("queue", proposal.id)}
+            disabled={isSubmitting}
+            className="rounded-lg bg-[#14a19f] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#1ecac7] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSubmitting ? "Queueing..." : "Queue Proposal"}
+          </button>
+        ) : null}
+
+        {canExecute ? (
+          <button
+            type="button"
+            onClick={() => onProposalAction?.("execute", proposal.id)}
+            disabled={isSubmitting}
+            className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSubmitting ? "Executing..." : "Execute Proposal"}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export default function Governance() {
   const { isAuthentication } = useAuth();
   const navigate = useNavigate();
@@ -333,6 +418,7 @@ export default function Governance() {
   const [notice, setNotice] = useState(null);
   const [redNotice, setRedNotice] = useState(false);
   const [submittingProposal, setSubmittingProposal] = useState(false);
+  const [submittingReviewAction, setSubmittingReviewAction] = useState("");
   const [reputationStatus, setReputationStatus] = useState(emptyReputationSbtStatus);
   const [loadingReputationStatus, setLoadingReputationStatus] = useState(false);
   const [loadingProposals, setLoadingProposals] = useState(false);
@@ -740,6 +826,54 @@ export default function Governance() {
     }
   };
 
+  const handleReviewProposalAction = async (actionType, proposalId) => {
+    if (!proposalId) {
+      setRedNotice(true);
+      setNotice("Proposal ID missing.");
+      return;
+    }
+
+    const signer = await getSigner();
+    if (!signer) {
+      setRedNotice(true);
+      setNotice("Please connect your wallet first.");
+      return;
+    }
+
+    try {
+      setSubmittingReviewAction(`${actionType}-${proposalId}`);
+      const response = await api.get(`/api/governance/proposal/${proposalId}`);
+      const proposalDetails = response?.data?.proposal;
+
+      if (!proposalDetails?.description) {
+        setRedNotice(true);
+        setNotice("Proposal details unavailable for governance action.");
+        return;
+      }
+
+      const result =
+        actionType === "queue"
+          ? await queueProposal(signer, proposalDetails)
+          : await executeProposal(signer, proposalDetails);
+
+      if (!result?.success) {
+        setRedNotice(true);
+        setNotice(result?.error || `Failed to ${actionType} proposal.`);
+        return;
+      }
+
+      setRedNotice(false);
+      setNotice(actionType === "queue" ? "Proposal queued successfully." : "Proposal executed successfully.");
+      await fetchAllProposals();
+    } catch (error) {
+      console.error(`Failed to ${actionType} proposal:`, error);
+      setRedNotice(true);
+      setNotice(error?.message || `Failed to ${actionType} proposal.`);
+    } finally {
+      setSubmittingReviewAction("");
+    }
+  };
+
 
   return (
     <>
@@ -885,10 +1019,12 @@ export default function Governance() {
                   <div className="space-y-3">
                     {reviewProposals.length > 0 ? (
                       reviewProposals.map((proposal) => (
-                        <PastProposalRow
+                        <ReviewProposalRow
                           key={proposal.id}
                           proposal={proposal}
                           onCopyProposalId={handleCopyProposalId}
+                          onProposalAction={handleReviewProposalAction}
+                          isSubmitting={submittingReviewAction === `queue-${proposal.id}` || submittingReviewAction === `execute-${proposal.id}`}
                         />
                       ))
                     ) : (
@@ -1003,9 +1139,6 @@ export default function Governance() {
                           You need a reputation SBT in this wallet before creating proposals.
                         </p>
                       )}
-                      <button className="w-full px-4 py-2.5 bg-[#1c2744] hover:bg-[#25345a] text-gray-200 rounded-lg transition-colors text-sm font-semibold border border-white/10">
-                        Explore Governance Docs
-                      </button>
                     </div>
                   </div>
                 </div>

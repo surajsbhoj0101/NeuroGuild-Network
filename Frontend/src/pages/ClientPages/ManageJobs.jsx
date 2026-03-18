@@ -69,6 +69,9 @@ function ManageJobs() {
   const [hoveredRating, setHoveredRating] = useState(0);
   const [submittingRatingJobId, setSubmittingRatingJobId] = useState(null);
   const [ratedJobIds, setRatedJobIds] = useState({});
+  const [ongoingGovernanceDisputeJobIds, setOngoingGovernanceDisputeJobIds] = useState(
+    new Set()
+  );
 
   const [stats, setStats] = useState({
     openJobs: 0,
@@ -85,6 +88,19 @@ function ManageJobs() {
     if (proofs) return [proofs];
     return fallbackProof ? [fallbackProof] : [];
   };
+
+  const extractJobIdFromProposalDescription = (description = "") => {
+    const match = String(description).match(/Job\s*ID\s*:\s*([^\n\r]+)/i);
+    return match?.[1]?.trim?.() || "";
+  };
+
+  const isOngoingDisputeProposalStatus = (status = "") => {
+    const normalized = String(status).trim().toLowerCase();
+    return ["created", "pending", "active", "succeeded", "queued"].includes(normalized);
+  };
+
+  const hasOngoingGovernanceDispute = (jobId) =>
+    ongoingGovernanceDisputeJobIds.has(String(jobId || ""));
 
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -229,6 +245,27 @@ function ManageJobs() {
   async function fetchDashboardData() {
     try {
       setLoading(true);
+
+      try {
+        const governanceResponse = await api.get("/api/governance/fetch-proposals");
+        const proposals = governanceResponse?.data?.proposals || [];
+        const nextOngoingJobIds = new Set();
+
+        proposals.forEach((proposal) => {
+          const proposalJobId = extractJobIdFromProposalDescription(
+            proposal?.description || ""
+          );
+
+          if (proposalJobId && isOngoingDisputeProposalStatus(proposal?.status)) {
+            nextOngoingJobIds.add(String(proposalJobId));
+          }
+        });
+
+        setOngoingGovernanceDisputeJobIds(nextOngoingJobIds);
+      } catch (governanceError) {
+        console.error("Failed to fetch governance proposals for dispute state:", governanceError);
+        setOngoingGovernanceDisputeJobIds(new Set());
+      }
 
       const response = await api.get(
         "http://localhost:5000/api/jobs/fetch-client-jobs",
@@ -1072,9 +1109,12 @@ function ManageJobs() {
 
                           <button
                             onClick={() => openDisputeModal(job)}
+                            disabled={hasOngoingGovernanceDispute(job.jobId)}
                             className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 text-sm font-semibold py-2 rounded transition-colors"
                           >
-                            Raise Dispute
+                            {hasOngoingGovernanceDispute(job.jobId)
+                              ? "Governance Dispute Ongoing"
+                              : "Re-raise Dispute"}
                           </button>
                         </div>
                       }
@@ -1130,6 +1170,17 @@ function ManageJobs() {
                       project={job}
                       status="Disputed"
                       showActions={true}
+                      extraActions={
+                        <button
+                          onClick={() => openDisputeModal(job)}
+                          disabled={hasOngoingGovernanceDispute(job.jobId)}
+                          className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 text-sm font-semibold py-2 rounded transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          {hasOngoingGovernanceDispute(job.jobId)
+                            ? "Governance Dispute Ongoing"
+                            : "Re-raise Dispute"}
+                        </button>
+                      }
                       onShowContract={() => handleShowContract(job)}
                       onMessage={() => handleMessage(job)}
                     />

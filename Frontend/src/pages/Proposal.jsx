@@ -22,6 +22,7 @@ import api from "../utils/api";
 import {
   executeProposal,
   fetchProposalQuorum,
+  fetchProposalState,
   queueProposal,
   submitProposalVote,
 } from "../utils/governance_actions.js";
@@ -54,6 +55,64 @@ const formatProposalStatus = (status) => {
   }
 
   return normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase();
+};
+
+const mapOnchainProposalState = (state) => {
+  switch (Number(state)) {
+    case 0:
+      return "Pending";
+    case 1:
+      return "Active";
+    case 2:
+      return "Canceled";
+    case 3:
+      return "Defeated";
+    case 4:
+      return "Succeeded";
+    case 5:
+      return "Queued";
+    case 6:
+      return "Expired";
+    case 7:
+      return "Executed";
+    default:
+      return null;
+  }
+};
+
+const normalizeBackendProposalStatus = (status) => {
+  const normalized = formatProposalStatus(status);
+
+  if (normalized === "Created") {
+    return "Pending";
+  }
+
+  if (normalized === "Cancelled") {
+    return "Canceled";
+  }
+
+  return normalized;
+};
+
+const hydrateProposalWithStatus = async (proposal) => {
+  if (!proposal) {
+    return proposal;
+  }
+
+  const fallbackStatus = normalizeBackendProposalStatus(proposal.status);
+  const provider = createReadProvider();
+
+  if (!provider || (!proposal?.id && proposal?.id !== 0)) {
+    return { ...proposal, status: fallbackStatus };
+  }
+
+  const stateResult = await fetchProposalState(provider, proposal.id);
+  const onchainStatus = stateResult?.success ? mapOnchainProposalState(stateResult.state) : null;
+
+  return {
+    ...proposal,
+    status: onchainStatus || fallbackStatus,
+  };
 };
 
 const shortenAddress = (value) => {
@@ -453,7 +512,8 @@ function Proposal() {
           return;
         }
 
-        setProposal(response?.data?.proposal || null);
+        const nextProposal = await hydrateProposalWithStatus(response?.data?.proposal || null);
+        setProposal(nextProposal);
       } catch (fetchError) {
         if (!isMounted) {
           return;
@@ -608,7 +668,8 @@ function Proposal() {
 
   const refreshProposal = async () => {
     const response = await api.get(`/api/governance/proposal/${id}`);
-    setProposal(response?.data?.proposal || null);
+    const nextProposal = await hydrateProposalWithStatus(response?.data?.proposal || null);
+    setProposal(nextProposal);
   };
 
   const handleVote = async (support, label) => {

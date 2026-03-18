@@ -37,6 +37,7 @@ import ContractDetailsPage from './pages/ContractDetailsPage.jsx';
 import { TokenBalanceProvider } from './contexts/TokenBalanceContext.jsx';
 import Proposal from './pages/Proposal.jsx';
 import PublicProfile from './pages/PublicProfile.jsx';
+import NotFound from './pages/NotFound.jsx';
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
@@ -237,6 +238,10 @@ const router = createBrowserRouter([
         <PublicProfile />
       </>
     )
+  },
+  {
+    path: "*",
+    element: <NotFound />
   }
 ]);
 

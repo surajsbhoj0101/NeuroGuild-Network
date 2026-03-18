@@ -7,6 +7,9 @@ import NoticeToast from "../components/NoticeToast";
 import api from "../utils/api.js";
 import { submitJobRating } from "../utils/submit_job_rating.js";
 
+const orbitronStyle = { fontFamily: "Orbitron, sans-serif" };
+const robotoStyle = { fontFamily: "Roboto, sans-serif" };
+
 function formatDate(dateValue) {
   if (!dateValue) return "N/A";
   const date = new Date(dateValue);
@@ -207,19 +210,26 @@ function ContractDetailsPage() {
           <SideBar />
         </div>
 
-        <div className="flex-1 px-4 md:px-8 pb-8">
-          <div className="mb-6 md:mb-8 flex items-center justify-between gap-3">
+        <div className="relative z-10 flex-1 px-4 md:px-8 pb-8">
+          <div className="mx-auto w-full max-w-6xl">
+          <div className="mb-6 md:mb-8 rounded-2xl border border-[#14a19f]/20 bg-[#0d1224]/50 p-4 backdrop-blur-md sm:p-5 md:p-6">
+            <div className="flex items-start justify-between gap-3">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Contract Details</h1>
-              <p className="text-gray-400 text-sm md:text-base">Shared view for client and freelancer contracts.</p>
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#14a19f]/35 bg-[#14a19f]/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-[#8ff6f3]" style={robotoStyle}>
+                Contract Workspace
+              </span>
+              <h1 className="mt-3 text-2xl md:text-3xl font-bold text-white" style={orbitronStyle}>Contract Details</h1>
+              <p className="mt-2 text-sm md:text-base text-gray-400" style={robotoStyle}>Shared view for client and freelancer contracts.</p>
             </div>
             <button
               onClick={() => navigate(-1)}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#14a19f]/40 bg-[#14a19f]/10 hover:bg-[#14a19f]/20 text-[#7df3f0] text-sm font-semibold transition-colors"
+              style={robotoStyle}
             >
               <ArrowLeft size={16} />
               Back
             </button>
+          </div>
           </div>
 
           {loading ? (
@@ -229,17 +239,17 @@ function ContractDetailsPage() {
           ) : !contract ? (
             <div className="backdrop-blur-md border border-[#14a19f]/20 bg-[#0d1224]/50 rounded-2xl p-10 text-center">
               <AlertCircle size={46} className="mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-semibold text-gray-200 mb-2">Contract not found</h3>
-              <p className="text-gray-400">We could not load this contract. Try opening it again from Manage Jobs.</p>
+              <h3 className="text-lg font-semibold text-gray-200 mb-2" style={orbitronStyle}>Contract not found</h3>
+              <p className="text-gray-400" style={robotoStyle}>We could not load this contract. Try opening it again from Manage Jobs.</p>
             </div>
           ) : (
-            <div className="w-full max-w-5xl bg-[#0d1224] border border-[#14a19f]/30 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="w-full border border-[#14a19f]/20 bg-[#0d1224]/50 rounded-2xl backdrop-blur-md overflow-hidden">
               <div className="bg-gradient-to-r from-[#0f1c2f] via-[#11253a] to-[#0d1224] border-b border-[#14a19f]/20 px-6 py-5">
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                   <div>
-                    <p className="text-xs tracking-wide uppercase text-[#7df3f0]">Contract #{contract.jobId || "N/A"}</p>
-                    <h2 className="text-xl md:text-2xl font-semibold text-white mt-1">{contract.jobTitle || "Untitled Job"}</h2>
-                    <p className="text-xs text-gray-400 mt-2">
+                    <p className="text-xs tracking-wide uppercase text-[#7df3f0]" style={robotoStyle}>Contract #{contract.jobId || "N/A"}</p>
+                    <h2 className="text-xl md:text-2xl font-semibold text-white mt-1" style={orbitronStyle}>{contract.jobTitle || "Untitled Job"}</h2>
+                    <p className="text-xs text-gray-400 mt-2" style={robotoStyle}>
                       {viewerRole === "freelancer" ? "Freelancer View" : viewerRole === "client" ? "Client View" : "Contract View"}
                     </p>
                   </div>
@@ -253,99 +263,102 @@ function ContractDetailsPage() {
 
               <div className="p-6 space-y-6">
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="rounded-lg border border-[#14a19f]/20 bg-[#161c32]/40 p-4">
-                    <p className="text-xs text-gray-400 mb-1">Contract Value</p>
-                    <p className="text-[#14a19f] text-lg font-semibold">{formatCurrency(contract.contractValue)}</p>
+                  <div className="rounded-xl border border-[#14a19f]/20 bg-[#161c32]/35 p-4">
+                    <p className="text-xs text-gray-400 mb-1" style={robotoStyle}>Contract Value</p>
+                    <p className="text-[#8ff6f3] text-lg font-semibold" style={orbitronStyle}>{formatCurrency(contract.contractValue)}</p>
                   </div>
-                  <div className="rounded-lg border border-[#14a19f]/20 bg-[#161c32]/40 p-4">
-                    <p className="text-xs text-gray-400 mb-1">Deadline</p>
-                    <p className="text-white font-medium">{formatDate(contract.deadline)}</p>
+                  <div className="rounded-xl border border-[#14a19f]/20 bg-[#161c32]/35 p-4">
+                    <p className="text-xs text-gray-400 mb-1" style={robotoStyle}>Deadline</p>
+                    <p className="text-white font-medium" style={robotoStyle}>{formatDate(contract.deadline)}</p>
                   </div>
-                  <div className="rounded-lg border border-[#14a19f]/20 bg-[#161c32]/40 p-4">
-                    <p className="text-xs text-gray-400 mb-1">Status</p>
-                    <p className="text-white font-medium">{(contract.status || "N/A").toString().replace("_", " ")}</p>
+                  <div className="rounded-xl border border-[#14a19f]/20 bg-[#161c32]/35 p-4">
+                    <p className="text-xs text-gray-400 mb-1" style={robotoStyle}>Status</p>
+                    <p className="text-white font-medium" style={robotoStyle}>{(contract.status || "N/A").toString().replace("_", " ")}</p>
                   </div>
-                  <div className="rounded-lg border border-[#14a19f]/20 bg-[#161c32]/40 p-4">
-                    <p className="text-xs text-gray-400 mb-1">Job ID</p>
-                    <p className="text-white text-xs font-medium break-all">{contract.jobId || "N/A"}</p>
+                  <div className="rounded-xl border border-[#14a19f]/20 bg-[#161c32]/35 p-4">
+                    <p className="text-xs text-gray-400 mb-1" style={robotoStyle}>Job ID</p>
+                    <p className="text-white text-xs font-medium break-all" style={robotoStyle}>{contract.jobId || "N/A"}</p>
                   </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4">
-                  <div className="rounded-lg border border-[#14a19f]/20 bg-[#161c32]/40 p-4">
+                  <div className="rounded-xl border border-[#14a19f]/20 bg-[#161c32]/35 p-4">
                     <div className="flex items-center gap-2 mb-2 text-[#7df3f0]">
                       <BriefcaseBusiness size={15} />
-                      <p className="text-xs uppercase tracking-wide">Client</p>
+                      <p className="text-xs uppercase tracking-wide" style={robotoStyle}>Client</p>
                     </div>
                     {contract.clientId ? (
                       <Link
                         to={`/profile/${contract.clientId}`}
                         className="font-medium text-cyan-300 underline underline-offset-4 hover:text-cyan-200"
+                        style={robotoStyle}
                       >
                         {contract.clientName || "N/A"}
                       </Link>
                     ) : (
-                      <p className="text-white font-medium">{contract.clientName || "N/A"}</p>
+                      <p className="text-white font-medium" style={robotoStyle}>{contract.clientName || "N/A"}</p>
                     )}
-                    <p className="text-xs text-gray-400 break-all mt-1">{contract.clientAddress || "N/A"}</p>
+                    <p className="text-xs text-gray-400 break-all mt-1" style={robotoStyle}>{contract.clientAddress || "N/A"}</p>
                   </div>
 
-                  <div className="rounded-lg border border-[#14a19f]/20 bg-[#161c32]/40 p-4">
+                  <div className="rounded-xl border border-[#14a19f]/20 bg-[#161c32]/35 p-4">
                     <div className="flex items-center gap-2 mb-2 text-[#7df3f0]">
                       <UserRound size={15} />
-                      <p className="text-xs uppercase tracking-wide">Freelancer</p>
+                      <p className="text-xs uppercase tracking-wide" style={robotoStyle}>Freelancer</p>
                     </div>
                     {contract.freelancerId ? (
                       <Link
                         to={`/profile/${contract.freelancerId}`}
                         className="font-medium text-cyan-300 underline underline-offset-4 hover:text-cyan-200"
+                        style={robotoStyle}
                       >
                         {contract.freelancerName || "N/A"}
                       </Link>
                     ) : (
-                      <p className="text-white font-medium">{contract.freelancerName || "N/A"}</p>
+                      <p className="text-white font-medium" style={robotoStyle}>{contract.freelancerName || "N/A"}</p>
                     )}
-                    <p className="text-xs text-gray-400 break-all mt-1">{contract.freelancerAddress || "N/A"}</p>
+                    <p className="text-xs text-gray-400 break-all mt-1" style={robotoStyle}>{contract.freelancerAddress || "N/A"}</p>
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-[#14a19f]/20 bg-[#161c32]/40 p-4">
+                <div className="rounded-xl border border-[#14a19f]/20 bg-[#161c32]/35 p-4">
                   <div className="flex items-center gap-2 mb-2 text-[#7df3f0]">
                     <CalendarClock size={15} />
-                    <p className="text-xs uppercase tracking-wide">Scope</p>
+                    <p className="text-xs uppercase tracking-wide" style={robotoStyle}>Scope</p>
                   </div>
-                  <p className="text-gray-200 text-sm whitespace-pre-wrap">{contract.jobDescription || "No project scope provided."}</p>
+                  <p className="text-gray-200 text-sm whitespace-pre-wrap leading-7" style={robotoStyle}>{contract.jobDescription || "No project scope provided."}</p>
                 </div>
 
                 <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">Skills</p>
+                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-2" style={robotoStyle}>Skills</p>
                   <div className="flex flex-wrap gap-2">
                     {contract.skills.length > 0 ? (
                       contract.skills.map((skill) => (
                         <span
                           key={skill}
-                          className="bg-[#14a19f]/10 text-[#14a19f] px-3 py-1 rounded-full text-xs border border-[#14a19f]/30"
+                          className="bg-[#14a19f]/10 text-[#8ff6f3] px-3 py-1 rounded-full text-xs border border-[#14a19f]/30"
+                          style={robotoStyle}
                         >
                           {skill}
                         </span>
                       ))
                     ) : (
-                      <p className="text-sm text-gray-400">No skills listed.</p>
+                      <p className="text-sm text-gray-400" style={robotoStyle}>No skills listed.</p>
                     )}
                   </div>
                 </div>
 
                 {contract.milestones.length > 0 ? (
                   <div>
-                    <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">Milestones</p>
+                    <p className="text-xs text-gray-400 uppercase tracking-wide mb-2" style={robotoStyle}>Milestones</p>
                     <div className="space-y-2">
                       {contract.milestones.map((milestone, index) => (
                         <div
                           key={`${milestone.name || "milestone"}-${index}`}
-                          className="rounded-lg border border-[#14a19f]/20 bg-[#161c32]/40 px-3 py-2 flex items-center justify-between"
+                          className="rounded-xl border border-[#14a19f]/20 bg-[#161c32]/35 px-3 py-2.5 flex items-center justify-between"
                         >
-                          <p className="text-sm text-gray-200">{milestone.name || `Milestone ${index + 1}`}</p>
-                          <p className={`text-xs font-medium ${milestone.completed ? "text-green-400" : "text-yellow-400"}`}>
+                          <p className="text-sm text-gray-200" style={robotoStyle}>{milestone.name || `Milestone ${index + 1}`}</p>
+                          <p className={`text-xs font-medium ${milestone.completed ? "text-green-400" : "text-yellow-400"}`} style={robotoStyle}>
                             {milestone.completed ? "Completed" : "Pending"}
                           </p>
                         </div>
@@ -355,14 +368,14 @@ function ContractDetailsPage() {
                 ) : null}
 
                 {isCompletedContract ? (
-                  <div className="rounded-xl border border-[#14a19f]/20 bg-[#161c32]/40 p-5">
+                  <div className="rounded-xl border border-[#14a19f]/20 bg-[#161c32]/35 p-5">
                     <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                       <div>
-                        <p className="text-xs uppercase tracking-wide text-[#7df3f0]">
+                        <p className="text-xs uppercase tracking-wide text-[#7df3f0]" style={robotoStyle}>
                           Completed Job Rating
                         </p>
-                        <h3 className="mt-1 text-lg font-semibold text-white">{ratingHeading}</h3>
-                        <p className="mt-2 text-sm text-gray-400">
+                        <h3 className="mt-1 text-lg font-semibold text-white" style={orbitronStyle}>{ratingHeading}</h3>
+                        <p className="mt-2 text-sm text-gray-400" style={robotoStyle}>
                           Share a 1 to 5 star rating for the {ratingTargetLabel}. This will be submitted onchain.
                         </p>
                       </div>
@@ -403,7 +416,7 @@ function ContractDetailsPage() {
                     </div>
 
                     <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                      <p className="text-sm text-gray-300">
+                      <p className="text-sm text-gray-300" style={robotoStyle}>
                         {selectedRating
                           ? `Selected rating: ${selectedRating} / 5`
                           : `Select a star rating for the ${ratingTargetLabel}.`}
@@ -413,6 +426,7 @@ function ContractDetailsPage() {
                         onClick={handleSubmitRating}
                         disabled={!selectedRating || ratingSubmitted || submittingRating}
                         className="inline-flex items-center justify-center rounded-lg bg-[#14a19f] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#1ecac7] disabled:cursor-not-allowed disabled:bg-[#1d3742] disabled:text-gray-400"
+                        style={robotoStyle}
                       >
                         {submittingRating ? "Submitting..." : ratingSubmitted ? "Submitted" : "Submit Rating"}
                       </button>
@@ -422,6 +436,7 @@ function ContractDetailsPage() {
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
     </>

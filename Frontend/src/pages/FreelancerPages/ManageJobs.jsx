@@ -58,6 +58,9 @@ function ManageJobs() {
   const [hoveredRating, setHoveredRating] = useState(0);
   const [submittingRatingJobId, setSubmittingRatingJobId] = useState(null);
   const [ratedJobIds, setRatedJobIds] = useState({});
+  const [ongoingGovernanceDisputeJobIds, setOngoingGovernanceDisputeJobIds] = useState(
+    new Set()
+  );
 
   const [myBids, setMyBids] = useState([]);
   const [activeProjects, setActiveProjects] = useState([]);
@@ -86,6 +89,19 @@ function ManageJobs() {
     if (proofs) return [proofs];
     return fallbackProof ? [fallbackProof] : [];
   };
+
+  const extractJobIdFromProposalDescription = (description = "") => {
+    const match = String(description).match(/Job\s*ID\s*:\s*([^\n\r]+)/i);
+    return match?.[1]?.trim?.() || "";
+  };
+
+  const isOngoingDisputeProposalStatus = (status = "") => {
+    const normalized = String(status).trim().toLowerCase();
+    return ["created", "pending", "active", "succeeded", "queued"].includes(normalized);
+  };
+
+  const hasOngoingGovernanceDispute = (jobId) =>
+    ongoingGovernanceDisputeJobIds.has(String(jobId || ""));
 
   const scheduleDashboardRefresh = (proofOverrides = submittedProofByJob) => {
     window.setTimeout(() => {
@@ -185,6 +201,27 @@ function ManageJobs() {
   const fetchDashboardData = async (proofOverrides = submittedProofByJob) => {
     setLoading(true);
     try {
+      try {
+        const governanceResponse = await api.get("/api/governance/fetch-proposals");
+        const proposals = governanceResponse?.data?.proposals || [];
+        const nextOngoingJobIds = new Set();
+
+        proposals.forEach((proposal) => {
+          const proposalJobId = extractJobIdFromProposalDescription(
+            proposal?.description || ""
+          );
+
+          if (proposalJobId && isOngoingDisputeProposalStatus(proposal?.status)) {
+            nextOngoingJobIds.add(String(proposalJobId));
+          }
+        });
+
+        setOngoingGovernanceDisputeJobIds(nextOngoingJobIds);
+      } catch (governanceError) {
+        console.error("Failed to fetch governance proposals for dispute state:", governanceError);
+        setOngoingGovernanceDisputeJobIds(new Set());
+      }
+
       const response = await api.get(
         "http://localhost:5000/api/jobs/fetch-freelancer-jobs",
         { withCredentials: true }
@@ -1083,9 +1120,12 @@ function ManageJobs() {
 
                               <button
                                 onClick={() => openDisputeModal(project)}
+                                disabled={hasOngoingGovernanceDispute(project.jobId)}
                                 className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 text-sm font-semibold py-2 rounded transition-colors"
                               >
-                                Raise Dispute
+                                {hasOngoingGovernanceDispute(project.jobId)
+                                  ? "Governance Dispute Ongoing"
+                                  : "Re-raise Dispute"}
                               </button>
                             </div>
                           }
@@ -1151,6 +1191,17 @@ function ManageJobs() {
                           project={project}
                           status="Disputed"
                           showActions={true}
+                          extraActions={
+                            <button
+                              onClick={() => openDisputeModal(project)}
+                              disabled={hasOngoingGovernanceDispute(project.jobId)}
+                              className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 text-sm font-semibold py-2 rounded transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                              {hasOngoingGovernanceDispute(project.jobId)
+                                ? "Governance Dispute Ongoing"
+                                : "Re-raise Dispute"}
+                            </button>
+                          }
                           onShowContract={() => handleShowContract(project)}
                           onMessage={() => handleMessage(project)}
                         />
