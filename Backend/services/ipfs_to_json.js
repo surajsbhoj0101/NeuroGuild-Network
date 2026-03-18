@@ -28,10 +28,16 @@ export async function getJsonFromIpfs(uri) {
     });
 
     const json = response.data;
-    
 
-    // console.log("JSON fetched:", json);
-    return  JSON.parse(json); ;
+    if (typeof json === "string") {
+      return JSON.parse(json);
+    }
+
+    if (json && typeof json === "object") {
+      return json;
+    }
+
+    return false;
   } catch (error) {
     console.error("Error fetching JSON from IPFS:", error.message);
     return false;

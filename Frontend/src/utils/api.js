@@ -30,9 +30,12 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const status = error.response?.status;
+    const requestUrl = String(error.config?.url || "");
+    const isSessionProbe = requestUrl.includes("/api/auth/check-jwt");
+
+    if (status === 401 && !isSessionProbe) {
       localStorage.removeItem("token");
-      window.location.replace("/"); 
     }
     return Promise.reject(error);
   }

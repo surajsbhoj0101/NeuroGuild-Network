@@ -566,10 +566,20 @@ export const fetchAiScoreAndJobInteraction = async (req, res) => {
 
     const job = jobIpfs?.jobs?.[0];
 
-    if (!candidateProfile || !job) {
+    if (!job) {
       return res.status(404).json({
         success: false,
-        message: "Candidate or Job not found.",
+        message: "Job not found.",
+      });
+    }
+
+    if (!candidateProfile) {
+      return res.status(200).json({
+        success: true,
+        aiAvailable: false,
+        aiScore: null,
+        isSaved: interaction?.isSaved ?? false,
+        isApplied: false,
       });
     }
 
