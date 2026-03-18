@@ -22,12 +22,21 @@ const frontendOrigins = (process.env.FRONTEND_URL || "")
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-if (!frontendOrigins.length) {
+const redirectOrigin = (process.env.FRONTEND_REDIRECT_URL || "").trim();
+
+if (redirectOrigin) {
+  frontendOrigins.push(redirectOrigin);
+}
+
+const normalizeOrigin = (value) => String(value || "").trim().replace(/\/$/, "").toLowerCase();
+const allowedOrigins = new Set(frontendOrigins.map(normalizeOrigin).filter(Boolean));
+
+if (!allowedOrigins.size) {
   throw new Error("Missing FRONTEND_URL in environment.");
 }
 
 const corsOriginValidator = (origin, callback) => {
-  if (!origin || frontendOrigins.includes(origin)) {
+  if (!origin || allowedOrigins.has(normalizeOrigin(origin))) {
     callback(null, true);
     return;
   }
@@ -41,7 +50,7 @@ app.use(cookieParser());
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: frontendOrigins,
+    origin: corsOriginValidator,
     methods: ["GET", "POST"],
     credentials: true,
   }
