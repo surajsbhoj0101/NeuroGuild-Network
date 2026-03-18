@@ -201,7 +201,7 @@ function ClientProfile() {
             <div className="flex justify-between items-center">
               <p
                 style={orbitronStyle}
-                className="mb-1 text-3xl font-extrabold tracking-widest text-slate-900 dark:text-white"
+                className="mb-1 text-3xl font-extrabold tracking-widest text-white"
               >
                 My Profile
               </p>
@@ -215,11 +215,11 @@ function ClientProfile() {
             </div>
           </div>
 
-          <div className="mb-6 w-full rounded-lg border border-slate-200 bg-white p-6 backdrop-blur-sm dark:border-[#14a19f]/20 dark:bg-[#0d1224]/50">
+          <div className="mb-6 w-full rounded-lg border border-[#14a19f]/20 bg-[#0d1224]/50 p-6 backdrop-blur-sm">
             <div className="flex justify-between items-center mb-3">
               <p
                 style={robotoStyle}
-                className="text-lg font-semibold text-slate-900 dark:text-white"
+                className="text-lg font-semibold text-white"
               >
                 Profile Completion
               </p>
@@ -230,7 +230,7 @@ function ClientProfile() {
                 {completion}%
               </span>
             </div>
-            <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-[#0f111d]">
+            <div className="h-3 w-full overflow-hidden rounded-full bg-[#0f111d]">
               <div
                 className="bg-linear-to-r from-[#14a19f] to-[#1ecac7] h-full transition-all duration-500 relative"
                 style={{ width: `${completion}%` }}
@@ -242,10 +242,10 @@ function ClientProfile() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
             <div className="lg:col-span-2 space-y-6">
-              <div className="rounded-lg border border-slate-200 bg-white p-4 backdrop-blur-sm dark:border-[#14a19f]/20 dark:bg-[#0d1224]/50">
+              <div className="rounded-lg border border-[#14a19f]/20 bg-[#0d1224]/50 p-4 backdrop-blur-sm">
                 <h2
                   style={orbitronStyle}
-                  className="mb-4 text-xl font-bold tracking-wide text-slate-900 dark:text-white"
+                  className="mb-4 text-xl font-bold tracking-wide text-white"
                 >
                   Company Details
                 </h2>
@@ -264,7 +264,7 @@ function ClientProfile() {
                     <div className="flex-1 w-full text-center sm:text-left">
                       <div>
                         <label
-                          className="mb-2 block text-sm text-slate-600 dark:text-gray-400"
+                          className="mb-2 block text-sm text-gray-400"
                           style={robotoStyle}
                         >
                           Company Name
@@ -276,12 +276,12 @@ function ClientProfile() {
                             onChange={(e) =>
                               handleInputChange("companyName", e.target.value)
                             }
-                            className="w-full rounded border border-slate-300 bg-white px-4 py-2 text-slate-900 outline-none focus:border-[#14a19f] dark:border-[#14a19f]/30 dark:bg-[#0f111d] dark:text-white"
+                            className="w-full rounded border border-[#14a19f]/30 bg-[#0f111d] px-4 py-2 text-white outline-none focus:border-[#14a19f]"
                             style={robotoStyle}
                           />
                         ) : (
                           <p
-                            className="text-lg font-bold text-slate-900 dark:text-white"
+                            className="text-lg font-bold text-white"
                             style={robotoStyle}
                           >
                             {profile.companyName || "Not set"}
@@ -290,7 +290,7 @@ function ClientProfile() {
                       </div>
                       <div className="mt-4">
                         <label
-                          className="mb-2 block text-sm text-slate-600 dark:text-gray-400"
+                          className="mb-2 block text-sm text-gray-400"
                           style={robotoStyle}
                         >
                           Tag line
@@ -302,11 +302,11 @@ function ClientProfile() {
                             onChange={(e) =>
                               handleInputChange("tagline", e.target.value)
                             }
-                            className="w-full rounded border border-slate-300 bg-white px-4 py-2 text-slate-900 outline-none focus:border-[#14a19f] dark:border-[#14a19f]/30 dark:bg-[#0f111d] dark:text-white"
+                            className="w-full rounded border border-[#14a19f]/30 bg-[#0f111d] px-4 py-2 text-white outline-none focus:border-[#14a19f]"
                             style={robotoStyle}
                           />
                         ) : (
-                          <p className="text-lg text-slate-900 dark:text-white" style={robotoStyle}>
+                          <p className="text-lg text-white" style={robotoStyle}>
                             {profile.tagline || "Not set"}
                           </p>
                         )}
@@ -316,7 +316,7 @@ function ClientProfile() {
                   {editMode && (
                     <div>
                       <label
-                        className="mb-2 block text-sm text-slate-600 dark:text-gray-400"
+                        className="mb-2 block text-sm text-gray-400"
                         style={robotoStyle}
                       >
                         Logo Url
@@ -328,14 +328,14 @@ function ClientProfile() {
                         onChange={(e) =>
                           handleInputChange("logoUrl", e.target.value)
                         }
-                        className="w-full rounded border border-slate-300 bg-white px-4 py-2 text-slate-900 outline-none focus:border-[#14a19f] dark:border-[#14a19f]/30 dark:bg-[#0f111d] dark:text-white"
+                        className="w-full rounded border border-[#14a19f]/30 bg-[#0f111d] px-4 py-2 text-white outline-none focus:border-[#14a19f]"
                         style={robotoStyle}
                       />
                     </div>
                   )}
                   <div>
                     <label
-                      className="mb-2 block text-sm text-slate-600 dark:text-gray-400"
+                      className="mb-2 block text-sm text-gray-400"
                       style={robotoStyle}
                     >
                       Bio
@@ -347,11 +347,11 @@ function ClientProfile() {
                           handleInputChange("bio", e.target.value)
                         }
                         rows={4}
-                        className="w-full resize-none rounded border border-slate-300 bg-white px-4 py-2 text-slate-900 outline-none focus:border-[#14a19f] dark:border-[#14a19f]/30 dark:bg-[#0f111d] dark:text-white"
+                        className="w-full resize-none rounded border border-[#14a19f]/30 bg-[#0f111d] px-4 py-2 text-white outline-none focus:border-[#14a19f]"
                         style={robotoStyle}
                       />
                     ) : (
-                      <p className="text-slate-800 dark:text-white" style={robotoStyle}>
+                      <p className="text-white" style={robotoStyle}>
                         {profile.bio || "Not set"}
                       </p>
                     )}
@@ -359,7 +359,7 @@ function ClientProfile() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label
-                        className="mb-2 flex items-center gap-2 text-sm text-slate-600 dark:text-gray-400"
+                        className="mb-2 flex items-center gap-2 text-sm text-gray-400"
                         style={robotoStyle}
                       >
                         <MapPin size={16} /> Location
@@ -371,18 +371,18 @@ function ClientProfile() {
                           onChange={(e) =>
                             handleInputChange("location", e.target.value)
                           }
-                          className="w-full rounded border border-slate-300 bg-white px-4 py-2 text-slate-900 outline-none focus:border-[#14a19f] dark:border-[#14a19f]/30 dark:bg-[#0f111d] dark:text-white"
+                          className="w-full rounded border border-[#14a19f]/30 bg-[#0f111d] px-4 py-2 text-white outline-none focus:border-[#14a19f]"
                           style={robotoStyle}
                         />
                       ) : (
-                        <p className="text-slate-800 dark:text-white" style={robotoStyle}>
+                        <p className="text-white" style={robotoStyle}>
                           {profile.location || "Not set"}
                         </p>
                       )}
                     </div>
                     <div>
                       <label
-                        className="mb-2 flex items-center gap-2 text-sm text-slate-600 dark:text-gray-400"
+                        className="mb-2 flex items-center gap-2 text-sm text-gray-400"
                         style={robotoStyle}
                       >
                         <Mail size={16} />
@@ -395,11 +395,11 @@ function ClientProfile() {
                           onChange={(e) =>
                             handleInputChange("publicEmail", e.target.value)
                           }
-                          className="w-full rounded border border-slate-300 bg-white px-4 py-2 text-slate-900 outline-none focus:border-[#14a19f] dark:border-[#14a19f]/30 dark:bg-[#0f111d] dark:text-white"
+                          className="w-full rounded border border-[#14a19f]/30 bg-[#0f111d] px-4 py-2 text-white outline-none focus:border-[#14a19f]"
                           style={robotoStyle}
                         />
                       ) : (
-                        <p className="text-slate-800 dark:text-white" style={robotoStyle}>
+                        <p className="text-white" style={robotoStyle}>
                           {profile.publicEmail || "Not set"}
                         </p>
                       )}
@@ -407,7 +407,7 @@ function ClientProfile() {
 
                     <div>
                       <label
-                        className="mb-2 flex items-center gap-2 text-sm text-slate-600 dark:text-gray-400"
+                        className="mb-2 flex items-center gap-2 text-sm text-gray-400"
                         style={robotoStyle}
                       >
                         <Mail size={16} />
@@ -420,11 +420,11 @@ function ClientProfile() {
                           onChange={(e) =>
                             handleInputChange("website", e.target.value)
                           }
-                          className="w-full rounded border border-slate-300 bg-white px-4 py-2 text-slate-900 outline-none focus:border-[#14a19f] dark:border-[#14a19f]/30 dark:bg-[#0f111d] dark:text-white"
+                          className="w-full rounded border border-[#14a19f]/30 bg-[#0f111d] px-4 py-2 text-white outline-none focus:border-[#14a19f]"
                           style={robotoStyle}
                         />
                       ) : (
-                        <p className="text-slate-800 dark:text-white" style={robotoStyle}>
+                        <p className="text-white" style={robotoStyle}>
                           {profile.website || "Not set"}
                         </p>
                       )}
@@ -435,7 +435,7 @@ function ClientProfile() {
             </div>
 
             <div className="space-y-6">
-              <div className="rounded-lg border border-slate-200 bg-white p-6 backdrop-blur-sm dark:border-[#14a19f]/20 dark:bg-[#0d1224]/50">
+              <div className="rounded-lg border border-[#14a19f]/20 bg-[#0d1224]/50 p-6 backdrop-blur-sm">
                 <ReputationSbtCard
                   reputationProfile={reputationProfile}
                   orbitronStyle={orbitronStyle}

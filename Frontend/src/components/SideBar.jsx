@@ -20,34 +20,33 @@ function SideBar() {
   const { totalUnreadCount } = useNotifications();
 
   useEffect(() => {
-    if (!isAuthentication || role) return;
+    if (isAuthentication) return;
+
+    let active = true;
 
     const getUser = async () => {
       try {
-        const res = axios
-          .get(`${API_BASE_URL}/api/auth/check-jwt`, {
-            withCredentials: true,
-          })
-          .then((res) => {
-            if (!res.data.isFound) {
-              navigate("/");
-              return;
-            }
-            // role is managed by AuthContext
-          })
-          .catch(() => navigate("/"));
+        const res = await axios.get(`${API_BASE_URL}/api/auth/check-jwt`, {
+          withCredentials: true,
+        });
+
+        if (!active) return;
+
+        if (!res.data?.isFound) {
+          navigate("/");
+        }
       } catch (error) {
+        if (!active) return;
         console.error("Error fetching or creating user:", error);
+        navigate("/");
       }
     };
 
     getUser();
-  }, [isAuthentication, role, navigate]);
 
-  useEffect(() => {
-    if (!isAuthentication) {
-      navigate("/");
-    }
+    return () => {
+      active = false;
+    };
   }, [isAuthentication, navigate]);
 
   const orbitronStyle = { fontFamily: "Orbitron, sans-serif" };
