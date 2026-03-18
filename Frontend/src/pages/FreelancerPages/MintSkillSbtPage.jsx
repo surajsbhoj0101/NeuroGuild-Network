@@ -129,7 +129,7 @@ export default function MintSkillSbtPage() {
     setLoading(true);
     try {
       const response = await api.get(
-        "http://localhost:5000/api/freelancer/skill-mint-status",
+        "/api/freelancer/skill-mint-status",
         {
           params: { skill },
           withCredentials: true,

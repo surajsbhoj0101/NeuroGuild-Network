@@ -7,6 +7,7 @@ import { Github, Linkedin, ArrowRight, Award, Brain, Users, Star, CheckCircle, A
 
 const orbitronStyle = { fontFamily: 'Orbitron, sans-serif' };
 const robotoStyle = { fontFamily: 'Roboto, sans-serif' };
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 export default function MintRules() {
   const CLIENT_ID = import.meta.env.VITE_CLIENT_ID;
@@ -63,7 +64,7 @@ export default function MintRules() {
   ];
 
   function handleGithubOAuth() {
-    window.location.href = "http://localhost:5000/api/auth/github";
+    window.location.href = `${API_BASE_URL}/api/auth/github`;
   }
 
 
@@ -71,7 +72,7 @@ export default function MintRules() {
   async function checkSkillData() {
     try {
       const res = await api.get(
-        "http://localhost:5000/api/auth/check-skill-data",
+        "/api/auth/check-skill-data",
         { withCredentials: true }
       );
 
@@ -88,7 +89,7 @@ export default function MintRules() {
 
   async function getUserGitAuthData() {
     try {
-      const res = await api.get('http://localhost:5000/api/auth/github-auth-user');
+      const res = await api.get('/api/auth/github-auth-user');
       const data = res.data.data;
       console.log(data.githubUser)
       setConnectedInfo({

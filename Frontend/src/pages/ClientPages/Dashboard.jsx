@@ -112,7 +112,7 @@ function Dashboard() {
     try {
       setLoading(true);
       const response = await api.get(
-        "http://localhost:5000/api/jobs/fetch-client-jobs",
+        "/api/jobs/fetch-client-jobs",
         { withCredentials: true }
       );
 

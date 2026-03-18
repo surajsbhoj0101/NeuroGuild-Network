@@ -30,6 +30,41 @@ const getUserQuery = `
 
 const PENDING_AUTH_REDIS_PREFIX = "siwe:pending:";
 
+const isProduction = process.env.NODE_ENV === "production";
+const useSecureCookies =
+  process.env.COOKIE_SECURE === "true" ||
+  (process.env.COOKIE_SECURE !== "false" && isProduction);
+const defaultSameSite = process.env.COOKIE_SAME_SITE || (useSecureCookies ? "none" : "lax");
+const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
+const frontendRedirectOrigin =
+  process.env.FRONTEND_REDIRECT_URL ||
+  process.env.FRONTEND_URL?.split(",")?.[0]?.trim?.() ||
+  "";
+
+const buildCookieOptions = ({
+  maxAge,
+  httpOnly = true,
+  sameSite = defaultSameSite,
+  secure = useSecureCookies,
+} = {}) => {
+  const options = {
+    httpOnly,
+    secure,
+    sameSite,
+    path: "/",
+  };
+
+  if (cookieDomain) {
+    options.domain = cookieDomain;
+  }
+
+  if (typeof maxAge === "number") {
+    options.maxAge = maxAge;
+  }
+
+  return options;
+};
+
 const getPendingAuthKey = (pendingSessionKey) =>
   `${PENDING_AUTH_REDIS_PREFIX}${pendingSessionKey}`;
 
@@ -190,12 +225,11 @@ export const createUser = async (req, res) => {
       { expiresIn: ACCESS_TOKEN_EXPIRES_IN },
     );
 
-    res.cookie("access_token", newToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-      maxAge: ACCESS_TOKEN_MAX_AGE_MS,
-    });
+    res.cookie(
+      "access_token",
+      newToken,
+      buildCookieOptions({ maxAge: ACCESS_TOKEN_MAX_AGE_MS }),
+    );
     if (pendingKey) {
       await redis.del(getPendingAuthKey(pendingKey));
     }
@@ -332,12 +366,13 @@ export const verifySiwe = async (req, res) => {
       expiresIn: hasUser ? ACCESS_TOKEN_EXPIRES_IN : PENDING_TOKEN_EXPIRES_IN,
     });
 
-    res.cookie("access_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: hasUser ? ACCESS_TOKEN_MAX_AGE_MS : PENDING_TOKEN_MAX_AGE_MS,
-    });
+    res.cookie(
+      "access_token",
+      token,
+      buildCookieOptions({
+        maxAge: hasUser ? ACCESS_TOKEN_MAX_AGE_MS : PENDING_TOKEN_MAX_AGE_MS,
+      }),
+    );
     console.log("Set done");
     return res.status(200).json({
       success: true,
@@ -351,11 +386,7 @@ export const verifySiwe = async (req, res) => {
 };
 
 export const logout = (req, res) => {
-  res.clearCookie("access_token", {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: false,
-  });
+  res.clearCookie("access_token", buildCookieOptions());
 
   res.status(200).json({ success: true });
 };
@@ -369,11 +400,11 @@ export const checkSkillName = async (req, res) => {
     return res.status(403).json({ success: false, error: "Invalid skill" });
   }
 
-  res.cookie("skill_access", skillName, {
-    httpOnly: true,
-    sameSite: "lax",
-    maxAge: 5 * 60 * 1000,
-  });
+  res.cookie(
+    "skill_access",
+    skillName,
+    buildCookieOptions({ maxAge: 5 * 60 * 1000 }),
+  );
 
   console.log("Name set success");
 
@@ -398,10 +429,11 @@ export const checkSkillData = async (req, res) => {
 
 export const gitHubAuthStart = async (req, res) => {
   const state = crypto.randomBytes(16).toString("hex");
-  res.cookie("oauth_state", state, {
-    httpOnly: true,
-    sameSite: "lax",
-  });
+  res.cookie(
+    "oauth_state",
+    state,
+    buildCookieOptions({ maxAge: 10 * 60 * 1000, sameSite: "lax" }),
+  );
 
   const githubUrl =
     `https://github.com/login/oauth/authorize` +
@@ -468,14 +500,17 @@ export const githubAuthCallback = async (req, res) => {
       { expiresIn: "3d" },
     );
 
-    res.cookie("github_auth", token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: false,
-    });
+    res.cookie(
+      "github_auth",
+      token,
+      buildCookieOptions({ maxAge: 3 * 24 * 60 * 60 * 1000, sameSite: "lax" }),
+    );
 
-    console.log(process.env.FRONTEND_URL);
-    res.redirect(`${process.env.FRONTEND_URL}/mint-rules`);
+    if (!frontendRedirectOrigin) {
+      return res.status(500).send("Missing FRONTEND_REDIRECT_URL or FRONTEND_URL");
+    }
+
+    res.redirect(`${frontendRedirectOrigin}/mint-rules`);
   } catch (error) {
     console.error("GitHub OAuth Error:", error);
     res.status(500).send("OAuth failed");

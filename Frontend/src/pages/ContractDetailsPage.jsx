@@ -129,7 +129,7 @@ function ContractDetailsPage() {
 
       setLoading(true);
       try {
-        const response = await api.get(`http://localhost:5000/api/jobs/fetch-job/${jobId}`, {
+        const response = await api.get(`/api/jobs/fetch-job/${jobId}`, {
           withCredentials: true,
         });
 

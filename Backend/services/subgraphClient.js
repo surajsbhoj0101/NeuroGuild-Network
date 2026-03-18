@@ -4,14 +4,11 @@ import dotenv from "dotenv";
 dotenv.config();
 dotenv.config({ path: "./contract.env" });
 
-const API_KEY = process.env.SUBGRAPH_API_KEY;
-const SUBGRAPH_ID = process.env.SUBGRAPH_ID; // MUST be Qm...
+const SUBGRAPH_URL = process.env.SUBGRAPH_URL;
 
-if (!API_KEY || !SUBGRAPH_ID) {
-  throw new Error("Missing SUBGRAPH_API_KEY or SUBGRAPH_ID in .env file.");
+if (!SUBGRAPH_URL) {
+  throw new Error("Missing SUBGRAPH_URL in .env file.");
 }
-
-const SUBGRAPH_URL = `https://api.studio.thegraph.com/query/113184/neuroguild-network/version/latest`;
 
 export async function querySubgraph(query, variables) {
   console.log(query);

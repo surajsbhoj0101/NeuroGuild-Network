@@ -223,7 +223,7 @@ function ManageJobs() {
       }
 
       const response = await api.get(
-        "http://localhost:5000/api/jobs/fetch-freelancer-jobs",
+        "/api/jobs/fetch-freelancer-jobs",
         { withCredentials: true }
       );
 
@@ -542,7 +542,7 @@ function ManageJobs() {
       if (selectedSubmitProject?.clientId) {
         try {
           await api.post(
-            "http://localhost:5000/api/notifications/job-event",
+            "/api/notifications/job-event",
             {
               eventType: "work_submitted",
               recipientId: selectedSubmitProject.clientId,

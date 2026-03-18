@@ -17,13 +17,31 @@ import socketHandler from "./sockets/handler.socket.js";
 dotenv.config();
 dotenv.config({ path: "./contract.env" });
 
+const frontendOrigins = (process.env.FRONTEND_URL || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+if (!frontendOrigins.length) {
+  throw new Error("Missing FRONTEND_URL in environment.");
+}
+
+const corsOriginValidator = (origin, callback) => {
+  if (!origin || frontendOrigins.includes(origin)) {
+    callback(null, true);
+    return;
+  }
+
+  callback(new Error("Not allowed by CORS"));
+};
+
 const app = express();
 app.use(cookieParser());
 
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:80",
+    origin: frontendOrigins,
     methods: ["GET", "POST"],
     credentials: true,
   }
@@ -33,7 +51,7 @@ socketHandler(io);
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: corsOriginValidator,
     credentials: true,
   })
 );
@@ -61,7 +79,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/governance", governanceRoutes);
 
 // start server
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   await connectDB();

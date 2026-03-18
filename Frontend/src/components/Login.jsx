@@ -31,6 +31,8 @@ const roleOptions = [
   },
 ];
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+
 export default function Login({ setLoadingUser, setNotice, setRedNotice }) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
@@ -63,7 +65,7 @@ export default function Login({ setLoadingUser, setNotice, setRedNotice }) {
       setLoadingUser(true);
 
       const jwtRes = await axios.get(
-        "http://localhost:5000/api/auth/check-jwt",
+        `${API_BASE_URL}/api/auth/check-jwt`,
         { withCredentials: true }
       );
 
@@ -90,7 +92,7 @@ export default function Login({ setLoadingUser, setNotice, setRedNotice }) {
   const handleSiwe = async () => {
     try {
       const nonceRes = await axios.get(
-        "http://localhost:5000/api/auth/get-nonce",
+        `${API_BASE_URL}/api/auth/get-nonce`,
         { withCredentials: true }
       );
 
@@ -109,7 +111,7 @@ export default function Login({ setLoadingUser, setNotice, setRedNotice }) {
       });
 
       await axios.post(
-        "http://localhost:5000/api/auth/verify-siwe",
+        `${API_BASE_URL}/api/auth/verify-siwe`,
         { message, signature },
         { withCredentials: true }
       );
@@ -137,7 +139,7 @@ export default function Login({ setLoadingUser, setNotice, setRedNotice }) {
       };
       const resCreateUser = await createUserOnchain(signer, RoleEnum[role]);
       
-      const user = await axios.post('http://localhost:5000/api/auth/create-user',
+      const user = await axios.post(`${API_BASE_URL}/api/auth/create-user`,
         {role},
         {withCredentials: true}
       )

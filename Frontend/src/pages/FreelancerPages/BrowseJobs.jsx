@@ -36,7 +36,7 @@ function BrowseJobs() {
     if (!isAuthentication || !address) return;
     try {
       setIsFetchingJobs(true);
-      const jobs = await api.get("http://localhost:5000/api/jobs/fetch-jobs");
+      const jobs = await api.get("/api/jobs/fetch-jobs");
       setFilteredJobs(jobs.data.jobs);
       setJobs(jobs.data.jobs);
     } catch (error) {

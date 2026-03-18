@@ -91,7 +91,7 @@ function jobPage() {
   const fetchJob = async (params) => {
     try {
       const job = await api.get(
-        `http://localhost:5000/api/jobs/fetch-job/${jobId}`,
+        `/api/jobs/fetch-job/${jobId}`,
         { withCredentials: true }
       );
       setJobDetails(job.data.jobDetails);
@@ -122,7 +122,7 @@ function jobPage() {
 
     try {
       const score = await api.post(
-        "http://localhost:5000/api/jobs/fetch-ai-score-and-job-interaction",
+        "/api/jobs/fetch-ai-score-and-job-interaction",
         { jobId }
       );
 
@@ -159,7 +159,7 @@ function jobPage() {
 
     try {
       const res = await api.put(
-        "http://localhost:5000/api/jobs/save-job",
+        "/api/jobs/save-job",
         {
           jobId,
         },
@@ -223,7 +223,7 @@ function jobPage() {
 
       try {
         const getProposalIpfs = await api.post(
-          "http://localhost:5000/api/jobs/get-bid-proposal-ipfs",
+          "/api/jobs/get-bid-proposal-ipfs",
           { payload }
         );
 
@@ -255,7 +255,7 @@ function jobPage() {
         if (clientRecipientId) {
           try {
             await api.post(
-              "http://localhost:5000/api/notifications/job-event",
+              "/api/notifications/job-event",
               {
                 eventType: "bid_submitted",
                 recipientId: clientRecipientId,

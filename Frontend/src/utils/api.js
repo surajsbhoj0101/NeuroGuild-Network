@@ -1,8 +1,30 @@
 import axios from "axios";
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: API_BASE_URL || undefined,
   withCredentials: true, 
+});
+
+api.interceptors.request.use((config) => {
+  const request = { ...config };
+  const url = String(request.url || "");
+
+  if (/^https?:\/\//i.test(url)) {
+    const parsed = new URL(url);
+    const nextPath = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    request.url = API_BASE_URL ? `${API_BASE_URL}${nextPath}` : nextPath;
+    request.baseURL = undefined;
+    return request;
+  }
+
+  if (API_BASE_URL && url.startsWith("/")) {
+    request.url = `${API_BASE_URL}${url}`;
+    request.baseURL = undefined;
+  }
+
+  return request;
 });
 
 api.interceptors.response.use(

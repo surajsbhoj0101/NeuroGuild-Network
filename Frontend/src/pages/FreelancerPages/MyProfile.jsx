@@ -98,7 +98,7 @@ export default function MyProfile() {
 
     try {
       const response = await api.get(
-        "http://localhost:5000/api/freelancer/get-freelancer",
+        "/api/freelancer/get-freelancer",
         {
           withCredentials: true
         }
@@ -165,7 +165,7 @@ export default function MyProfile() {
         }
       };
       console.log('Sending payload:', payload);
-      const response = await api.put(`http://localhost:5000/api/freelancer/update-profile`, { payload }, { withCredentials: true });
+      const response = await api.put(`/api/freelancer/update-profile`, { payload }, { withCredentials: true });
       console.log('Update response:', response);
       setRedNotice(false);
       setNotice("Profile updated successfully");
@@ -181,7 +181,7 @@ export default function MyProfile() {
   const mintSBTForSkill = async (skill) => {
     try {
       const res = await api.post(
-        "http://localhost:5000/api/auth/check-skill-name",
+        "/api/auth/check-skill-name",
         { skillName: skill },
         { withCredentials: true }
       );
@@ -208,7 +208,7 @@ export default function MyProfile() {
       setIsLoading(true);
 
       try {
-        const response = await api.post("http://localhost:5000/api/freelancer/fetch-sbt/", {});
+        const response = await api.post("/api/freelancer/fetch-sbt/", {});
         const data = response.data;
 
         if (data.success && data.sbt) {

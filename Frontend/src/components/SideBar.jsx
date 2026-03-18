@@ -10,6 +10,8 @@ import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
 import { useNotifications } from "../contexts/NotificationContext";
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+
 function SideBar() {
   const [activeIndex, setActiveIndex] = useState(0);
   const location = useLocation();
@@ -23,7 +25,7 @@ function SideBar() {
     const getUser = async () => {
       try {
         const res = axios
-          .get("http://localhost:5000/api/auth/check-jwt", {
+          .get(`${API_BASE_URL}/api/auth/check-jwt`, {
             withCredentials: true,
           })
           .then((res) => {

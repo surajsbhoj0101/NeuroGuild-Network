@@ -113,7 +113,7 @@ function Dashboard() {
     setLoading(true);
     try {
       const response = await api.get(
-        "http://localhost:5000/api/jobs/fetch-freelancer-jobs",
+        "/api/jobs/fetch-freelancer-jobs",
         { withCredentials: true }
       );
 

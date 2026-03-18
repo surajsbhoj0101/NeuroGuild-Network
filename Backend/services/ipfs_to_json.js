@@ -1,4 +1,7 @@
 import axios from "axios";
+
+const IPFS_GATEWAY_URL = (process.env.IPFS_GATEWAY_URL || "").replace(/\/$/, "");
+
 export async function getJsonFromIpfs(uri) {
   try {
     console.log("Gpt jere")
@@ -7,8 +10,14 @@ export async function getJsonFromIpfs(uri) {
       return false;
     }
 
+    if (!IPFS_GATEWAY_URL) {
+      console.error("Missing IPFS_GATEWAY_URL in environment");
+      return false;
+    }
+
     console.log("Fetching from IPFS:", uri);
-    const url = uri.replace("ipfs://", "https://ipfs.io/ipfs/");
+    const ipfsCid = uri.replace("ipfs://", "");
+    const url = `${IPFS_GATEWAY_URL}/ipfs/${ipfsCid}`;
 
     const response = await axios.get(url, {
       headers: {

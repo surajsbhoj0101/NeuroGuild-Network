@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+
 function Logout() {
   const { address, isConnected } = useAccount();
   const { clearAuthState } = useAuth();
@@ -11,7 +13,7 @@ function Logout() {
     try {
       clearAuthState();
       await axios.post(
-        "http://localhost:5000/api/auth/logout",
+        `${API_BASE_URL}/api/auth/logout`,
         {},
         { withCredentials: true }
       );

@@ -268,7 +268,7 @@ function ManageJobs() {
       }
 
       const response = await api.get(
-        "http://localhost:5000/api/jobs/fetch-client-jobs",
+        "/api/jobs/fetch-client-jobs",
         { withCredentials: true }
       );
 
@@ -536,7 +536,7 @@ function ManageJobs() {
       if (bid?.freelancerId) {
         try {
           await api.post(
-            "http://localhost:5000/api/notifications/job-event",
+            "/api/notifications/job-event",
             {
               eventType: "bid_accepted",
               recipientId: bid.freelancerId,
@@ -603,7 +603,7 @@ function ManageJobs() {
       if (confirmAcceptWorkJob?.freelancerId) {
         try {
           await api.post(
-            "http://localhost:5000/api/notifications/job-event",
+            "/api/notifications/job-event",
             {
               eventType: "work_accepted",
               recipientId: confirmAcceptWorkJob.freelancerId,

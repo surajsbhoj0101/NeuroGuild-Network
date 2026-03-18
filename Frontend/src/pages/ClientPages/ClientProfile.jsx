@@ -96,7 +96,7 @@ function ClientProfile() {
       setIsLoading(true);
 
       const { data } = await api.get(
-        "http://localhost:5000/api/client/get-client",
+        "/api/client/get-client",
         {
           withCredentials: true,
         },
@@ -152,7 +152,7 @@ function ClientProfile() {
       setIsLoading(true);
 
       await api.put(
-        "http://localhost:5000/api/client/update-profile",
+        "/api/client/update-profile",
         { payload },
         { withCredentials: true }
       );

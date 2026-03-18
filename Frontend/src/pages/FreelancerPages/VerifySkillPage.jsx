@@ -50,7 +50,7 @@ function VerifySkillPage() {
   async function getQuizQuestions() {
   
     try {
-      const response = await api.get("http://localhost:5000/api/freelancer/fetch-questions");
+      const response = await api.get("/api/freelancer/fetch-questions");
 
       if (response.data.success) {
         setQuestions(response.data.questions);
@@ -131,7 +131,7 @@ function VerifySkillPage() {
 
   const submitQuiz = async (finalAnswers) => {
     try {
-      const res = await api.post("http://localhost:5000/api/freelancer/submit-quiz", {
+      const res = await api.post("/api/freelancer/submit-quiz", {
         address,
         skill,
         answers: finalAnswers,

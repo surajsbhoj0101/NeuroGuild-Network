@@ -174,8 +174,8 @@ function PostJobs() {
 
     try {
       setEnhancing(true);
-      const res = await api.post(
-        "http://localhost:5000/api/jobs/ai-enhancement",
+        const res = await api.post(
+          "/api/jobs/ai-enhancement",
         { payload }
       );
 
@@ -293,8 +293,8 @@ function PostJobs() {
       let jobipfs;
 
       try {
-        const res = await api.post(
-          "http://localhost:5000/api/jobs/get-job-ipfs",
+          const res = await api.post(
+            "/api/jobs/get-job-ipfs",
           { payload }
         );
 

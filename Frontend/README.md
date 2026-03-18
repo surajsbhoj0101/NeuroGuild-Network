@@ -69,6 +69,7 @@ Create [`Frontend/.env`](/home/suraj/Documents/NeuroGuild-Network/Frontend/.env)
 
 ```env
 VITE_API_URL=
+VITE_SOCKET_URL=
 VITE_CLIENT_ID=
 VITE_RPC_URL=
 ```

@@ -3,6 +3,7 @@ import axios from "axios";
 import { useAccount } from "wagmi";
 
 const AuthContext = createContext(null);
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 export function AuthProvider({ children }) {
   const { isConnected } = useAccount();
@@ -32,7 +33,7 @@ export function AuthProvider({ children }) {
       }
 
       try {
-        const res = await axios.get("http://localhost:5000/api/auth/check-jwt", {
+        const res = await axios.get(`${API_BASE_URL}/api/auth/check-jwt`, {
           withCredentials: true,
         });
 
