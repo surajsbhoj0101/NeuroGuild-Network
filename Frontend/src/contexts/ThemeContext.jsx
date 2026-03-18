@@ -8,9 +8,13 @@ export const ThemeProvider = ({ children }) => {
     if (typeof window !== "undefined") {
       const savedTheme = localStorage.getItem("theme");
       const prefersDark = window.matchMedia(
-        "(prefers-color-scheme: light)"
+        "(prefers-color-scheme: dark)"
       ).matches;
-      return savedTheme === "dark" || (!savedTheme && prefersDark);
+
+      if (savedTheme === "dark") return true;
+      if (savedTheme === "light") return false;
+
+      return prefersDark;
     }
     return false;
   });

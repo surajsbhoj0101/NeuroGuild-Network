@@ -189,7 +189,7 @@ function ClientProfile() {
         onClose={() => setNotice(null)}
       />
 
-      <div className="flex min-h-screen w-full overflow-x-clip bg-slate-50 pt-6 dark:bg-[#0f111d]">
+      <div className="flex min-h-screen w-full overflow-x-clip bg-[#161c32] pt-6 dark:bg-[#0f111d]">
         <div className="pointer-events-none absolute right-[1%] bottom-[20%] hidden h-[420px] w-[420px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen dark:block"></div>
         <div className="pointer-events-none absolute left-[20%] top-[1%] hidden h-[420px] w-[120px] rounded-full bg-linear-to-br from-[#142e2b] via-[#112a3f] to-[#0b1320] opacity-30 blur-2xl mix-blend-screen dark:block"></div>
         <div className="hidden md:block">
