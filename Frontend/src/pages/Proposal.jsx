@@ -280,7 +280,7 @@ const getVoteButtonTone = (type) => {
   return "bg-sky-500 hover:bg-sky-400 text-white";
 };
 
-const buildAiSummary = (proposal, details, voteTotals, isProposer, timeline) => {
+const buildSummary = (proposal, details, voteTotals, isProposer, timeline) => {
   const summaryBits = [];
 
   summaryBits.push(details.summary);
@@ -656,7 +656,7 @@ function Proposal() {
     };
   }, [chainSnapshot.blockNumber, chainSnapshot.timestampSeconds, proposal?.voteEnd, proposal?.voteStart]);
 
-  const aiSummary = buildAiSummary(proposal, details, voteTotals, isProposer, timeline);
+  const summary = buildSummary(proposal, details, voteTotals, isProposer, timeline);
   const descriptionFields = extractDescriptionFields(details.body);
   const isDisputeProposal = Boolean(
     descriptionFields["Evidence IPFS"] || descriptionFields["Reason IPFS"] || descriptionFields["Work Proof 1"],
@@ -1181,14 +1181,14 @@ function Proposal() {
         </section>
 
         <section className="mt-4">
-          <SectionCard title="AI Summary" icon={Bot} tones={tones}>
+          <SectionCard title="Summary" icon={Bot} tones={tones}>
             <div className={`rounded-2xl border p-4 ${tones.notice}`}>
               <div className="flex items-center gap-2">
                 <Sparkles size={15} />
                 <span className="text-xs uppercase tracking-[0.16em]">Assistant Brief</span>
               </div>
               <p className="mt-3 text-sm leading-7 text-gray-200" style={robotoStyle}>
-                {aiSummary}
+                {summary}
               </p>
             </div>
 

@@ -37,7 +37,7 @@ if (!allowedOrigins.size) {
 
 const corsOriginValidator = (origin, callback) => {
   if (!origin || allowedOrigins.has(normalizeOrigin(origin))) {
-    callback(null, true);
+    callback(null, true); //error and allow
     return;
   }
 

@@ -32,7 +32,7 @@ export const TokenBalanceProvider = ({ children }) => {
         };
     }, [isAuthentication, isConnected, address]);
 
-    // No need for useMemo here – balances is stable until changed.
+    
     return (
         <TokenBalanceContext.Provider value={balances}>
             {children}
