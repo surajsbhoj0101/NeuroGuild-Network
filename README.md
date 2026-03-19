@@ -266,6 +266,12 @@ Most routes require the authenticated JWT cookie set after SIWE verification.
 - Treat deployment private keys and broadcast artifacts as sensitive.
 - Review contract addresses before running against shared or production-like environments.
 
+
+https://github.com/user-attachments/assets/308b23c6-53f4-4bfb-ac27-cf4492544a02
+
+
+- 
+
 ## Current Status
 
 This repository is an actively evolving protocol/application stack. Treat defaults as development-oriented unless explicitly hardened for production.
